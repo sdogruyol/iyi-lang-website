@@ -57,6 +57,7 @@
   --radius: 8px;
   --radius-lg: 14px;
   --tittle: 4px;
+  --quick: 150ms ease;
 }
 
 /* One scheme. The page is white whatever the system prefers; there is no dark

@@ -121,7 +121,16 @@ const current = (path: string) => here.startsWith(href(path));
           <img src={href("mascot.webp")} alt="" width="28" height="26" />
           <span>iyi</span>
         </a>
-        <nav aria-label="Sections">
+        <button
+          type="button"
+          class="menu-toggle"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          aria-label="Menu"
+        >
+          <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        </button>
+        <nav id="site-nav" aria-label="Sections">
           <ul>
             {
               nav.map(([label, path]) => (
@@ -139,6 +148,21 @@ const current = (path: string) => here.startsWith(href(path));
         </nav>
       </div>
     </header>
+
+    <script>
+      /* The menu folds only where a script can unfold it. Without one, the
+       * nav stays in the page as a plain list, which is the honest fallback. */
+      const header = document.querySelector<HTMLElement>(".masthead");
+      const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle");
+      if (header && toggle) {
+        header.dataset.js = "true";
+        toggle.addEventListener("click", () => {
+          const open = header.dataset.open !== "true";
+          header.dataset.open = String(open);
+          toggle.setAttribute("aria-expanded", String(open));
+        });
+      }
+    </script>
 
     <main id="main">
       <slot />
@@ -201,6 +225,79 @@ const current = (path: string) => here.startsWith(href(path));
         gap: 2rem;
         min-height: 3.75rem;
         flex-wrap: wrap;
+      }
+
+      /* The hamburger: three bars, shown only below the breakpoint and only
+       * once the script has claimed the header. */
+      .menu-toggle {
+        display: none;
+        background: none;
+        border: var(--hair) solid var(--hairline);
+        border-radius: 6px;
+        padding: 0.5rem 0.55rem;
+        cursor: pointer;
+        color: var(--ink);
+      }
+
+      .menu-toggle:hover {
+        border-color: var(--graphite);
+      }
+
+      .bars {
+        display: grid;
+        gap: 4px;
+        width: 18px;
+      }
+
+      .bars i {
+        display: block;
+        height: 2px;
+        background: currentColor;
+        border-radius: 1px;
+        transition: transform var(--quick), opacity var(--quick);
+      }
+
+      .masthead[data-open="true"] .bars i:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+      }
+      .masthead[data-open="true"] .bars i:nth-child(2) {
+        opacity: 0;
+      }
+      .masthead[data-open="true"] .bars i:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+      }
+
+      @media (max-width: 52rem) {
+        .masthead[data-js="true"] .menu-toggle {
+          display: inline-flex;
+        }
+
+        .masthead[data-js="true"] nav {
+          display: none;
+          flex-basis: 100%;
+          padding-block: 0.25rem 0.75rem;
+        }
+
+        .masthead[data-open="true"] nav {
+          display: block;
+        }
+
+        .masthead nav ul {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.1rem;
+        }
+
+        .masthead nav a {
+          display: block;
+          padding: 0.6rem 0.7rem;
+          font-size: var(--step-0);
+        }
+
+        .nav-github {
+          margin-inline-start: 0;
+          margin-block-start: 0.3rem;
+        }
       }
 
       .wordmark {

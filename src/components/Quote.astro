@@ -27,9 +27,13 @@ interface Props {
   id: string;
   as?: "console" | "diagnostic" | "source";
   caption?: string;
+  /** On a console face: a control that copies the commands, without their
+   * prompts and without the output, so what lands in a shell is what the
+   * recording ran. */
+  copy?: boolean;
 }
 
-const { id, as = "console", caption } = Astro.props;
+const { id, as = "console", caption, copy = false } = Astro.props;
 
 type Block = { text: string; from: number; to: number; source: string; cite: string };
 
@@ -44,6 +48,14 @@ if (!block) {
 }
 
 const body = as === "source" ? null : renderRecording(block.text, as);
+
+/* The commands alone: the lines the recording ran, with the prompt stripped.
+ * Taken from the text, not the markup, so the copy cannot pick up a span. */
+const commands = block.text
+  .split("\n")
+  .filter((line) => line.startsWith("$ "))
+  .map((line) => line.slice(2))
+  .join("\n");
 ---
 
 {
@@ -54,6 +66,11 @@ const body = as === "source" ? null : renderRecording(block.text, as);
         <i aria-hidden="true" />
         <i aria-hidden="true" />
         <span class="caption">{caption ?? `quoted from ${block.cite}`}</span>
+        {copy && (
+          <button type="button" class="copy" data-copy={commands} aria-label="Copy the commands">
+            Copy
+          </button>
+        )}
       </div>
       <pre set:html={body} />
     </div>
@@ -74,3 +91,68 @@ const body = as === "source" ? null : renderRecording(block.text, as);
     </figure>
   )
 }
+
+{
+  copy && (
+    <script>
+      /* One listener for every copy control on the page. The button carries
+       * the text it copies, so the script reads nothing off the rendered
+       * recording. The async clipboard needs a secure context and a permission
+       * some browsers withhold; the fallback is the old selection-and-copy
+       * through a scratch textarea, which works everywhere a user gesture is
+       * in flight. */
+      const copyText = async (text: string): Promise<boolean> => {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          const scratch = document.createElement("textarea");
+          scratch.value = text;
+          scratch.setAttribute("readonly", "");
+          scratch.style.position = "fixed";
+          scratch.style.opacity = "0";
+          document.body.appendChild(scratch);
+          scratch.select();
+          let ok = false;
+          try {
+            ok = document.execCommand("copy");
+          } catch {
+            ok = false;
+          }
+          scratch.remove();
+          return ok;
+        }
+      };
+
+      for (const button of document.querySelectorAll<HTMLButtonElement>("button.copy[data-copy]")) {
+        button.addEventListener("click", async () => {
+          const ok = await copyText(button.dataset.copy ?? "");
+          button.textContent = ok ? "Copied" : "Could not copy";
+          setTimeout(() => {
+            button.textContent = "Copy";
+          }, 1600);
+        });
+      }
+    </script>
+  )
+}
+
+<style>
+  .copy {
+    margin-inline-start: auto;
+    font-family: var(--font-sans);
+    font-size: var(--step--2);
+    font-weight: 600;
+    color: var(--graphite);
+    background: var(--paper);
+    border: var(--hair) solid var(--hairline);
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .copy:hover {
+    color: var(--ink);
+    border-color: var(--graphite);
+  }
+</style>

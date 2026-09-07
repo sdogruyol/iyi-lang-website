@@ -58,8 +58,8 @@ ROOT_DOCS = {
 
 EXTENSIONS = {
     ".md", ".cr", ".iyi", ".iyimod", ".py", ".sh", ".json", ".mjs", ".ts",
-    ".astro", ".mdx", ".css", ".yml", ".yaml", ".svg", ".png", ".txt", ".toml",
-    ".lock", ".wasm", ".html", ".o",
+    ".astro", ".mdx", ".css", ".yml", ".yaml", ".svg", ".png", ".webp", ".txt",
+    ".toml", ".lock", ".wasm", ".html", ".o",
 }
 
 # A candidate inside backticks, inside a markdown link, or bare in prose.

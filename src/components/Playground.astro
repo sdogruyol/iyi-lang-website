@@ -20,13 +20,13 @@
  *    that did not run.
  *
  * 2. THE RUN IS PRECOMPILED, AND THE PAGE SAYS SO IN ONE LINE. Nothing here
- *    compiles. The pane is editable so a reader can move around in the
- *    program, and the moment the text stops being the recorded text the run
- *    control renames itself and the line under the pane says which bytes will
- *    execute.
+ *    compiles, so the listing is not editable: an editor whose text cannot
+ *    reach the run would be a control that does nothing, and the reader it
+ *    misleads is exactly the one this page is for. When the compiler runs in
+ *    the tab, the listing becomes a pane; until then it is a listing.
  *
  * 3. COLOURING COMES FROM THE COMPILER'S LEXER OR IT DOES NOT COME AT ALL.
- *    Recorded for this file, plain ink for anything typed over it.
+ *    Recorded for this file, out of `records/highlight.json`.
  */
 import { activeEngine } from "../playground/registry";
 import type { Capability } from "../playground/types";
@@ -56,11 +56,10 @@ const inkLines = highlightedLines(sample.path);
  * file. */
 const blurb = source.split("\n")[0].replace(/^#\s*/, "").replace(/\.$/, "");
 
-/* The HTML parser drops one newline immediately after a `<textarea>` open tag
- * and after a `<pre>` open tag. Every sample begins with a comment, so this
- * costs nothing today; it is here so that a program beginning with a blank line
- * does not silently lose it and shift every line number by one. */
-const seed = source.startsWith("\n") ? `\n${source}` : source;
+/* The HTML parser drops one newline immediately after a `<pre>` open tag.
+ * Every sample begins with a comment, so this costs nothing today; it is here
+ * so that a program beginning with a blank line does not silently lose it and
+ * shift every line number by one. */
 const ink = inkLines.join("\n");
 const seedInk = ink.startsWith("\n") ? `\n${ink}` : ink;
 
@@ -68,7 +67,6 @@ const seedInk = ink.startsWith("\n") ? `\n${ink}` : ink;
  * not sit in a page of white, and a long sample scrolls. */
 const lineCount = inkLines.length;
 
-const editable = caps.maxSourceBytes > 0;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 
 /* Previous and next through the tour, in the recorder's order. A repository
@@ -94,15 +92,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
         type="button"
         class="cta run"
         data-control="run"
-        data-label="Run"
-        data-label-stale="Run recorded"
-        disabled={supports("run") && editable ? undefined : true}
+        data-path={sample.path}
+        disabled={supports("run") ? undefined : true}
       >
-        <span class="run-label">Run</span>
-        <span class="chord">Ctrl + Enter</span>
-      </button>
-      <button type="button" class="cta ghost" data-role="reset" hidden={true}>
-        Reset
+        Run <span class="chord">Ctrl + Enter</span>
       </button>
       <button type="button" class="cta ghost" data-role="cancel" hidden={true}>
         Stop
@@ -132,35 +125,22 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     </div>
   </div>
 
-  {/* Editor first in source order, which is also the order the panes stack in
-      below the breakpoint, so the program is what a narrow screen shows first. */}
+  {/* Listing first in source order, which is also the order the panes stack
+      in below the breakpoint, so the program is what a narrow screen shows
+      first. */}
   <div class="panes">
-    <figure class="source pane-editor">
+    <figure class="source pane-listing">
       <figcaption class="source-head">
         <span class="path">{sample.path}</span>
-        <span data-role="ink-state">{sample.wasm}</span>
+        <span>{sample.wasm}</span>
       </figcaption>
-
-      <div class="editor" style={`--lines: ${lineCount}`}>
-        <pre
-          class="editor-ink"
-          data-role="ink"
-          aria-hidden="true"
-          set:html={seedInk}
-        />
-        <textarea
-          class="editor-text"
-          data-role="source"
-          data-path={sample.path}
-          spellcheck="false"
-          autocomplete="off"
-          autocapitalize="off"
-          autocorrect="off"
-          wrap="off"
-          readonly={editable ? undefined : true}
-          aria-label={`iyi source, ${sample.path}`}>{seed}</textarea
-        >
-      </div>
+      <pre
+        class="listing"
+        style={`--lines: ${lineCount}`}
+        tabindex="0"
+        aria-label={`iyi source, ${sample.path}`}
+        set:html={seedInk}
+      />
     </figure>
 
     <div class="console pane-output" data-role="output">
@@ -173,10 +153,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     </div>
   </div>
 
-  <p class="foot" data-role="staleness">
+  <p class="foot">
     {
       supports("run")
-        ? `Run executes ${sample.wasm}, the module the compiler built from this file. Nothing on this page compiles what you type.`
+        ? `Run executes ${sample.wasm}, the module the compiler built from this file, in your browser.`
         : "The active engine cannot run, so nothing here executes."
     }{" "}
     <a href={`${base}playground/evidence/`}>How this works</a>
@@ -203,82 +183,27 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   (() => {
     const engine = activeEngine();
     const caps = engine.capabilities();
-    const supports = (cap: Capability) => caps.supported.includes(cap);
 
-    const pick = <T extends HTMLElement>(role: string) =>
-      document.querySelector<T>(`[data-role="${role}"]`);
+    const runBtn = document.querySelector<HTMLButtonElement>("button[data-control=run]");
+    const listing = document.querySelector<HTMLPreElement>(".listing");
+    const output = document.querySelector<HTMLDivElement>('[data-role="output"]');
+    const cancelBtn = document.querySelector<HTMLButtonElement>('[data-role="cancel"]');
 
-    const source = pick<HTMLTextAreaElement>("source");
-    const ink = pick<HTMLPreElement>("ink");
-    const output = pick<HTMLDivElement>("output");
-    const inkState = pick<HTMLElement>("ink-state");
-    const staleness = pick<HTMLElement>("staleness");
-    const resetBtn = pick<HTMLButtonElement>("reset");
-    const cancelBtn = pick<HTMLButtonElement>("cancel");
-
-    if (!source || !ink || !output || !inkState || !staleness) return;
-    if (!resetBtn || !cancelBtn) return;
+    if (!runBtn || !listing || !output || !cancelBtn) return;
     if (caps.supported.length === 0) return;
 
-    /* The recorded program and its recorded colouring, taken from the page the
-     * build produced rather than shipped a second time in this bundle. */
-    const recorded = ink.textContent ?? "";
-    const recordedInk = ink.innerHTML;
-    const entry = source.dataset.path ?? "main.iyi";
-    const wasm = `${entry.replace(/^.*\//, "").replace(/\.iyi$/, "")}.wasm`;
-    const detail = staleness.querySelector("a");
-
-    const buttons = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("button[data-control]"),
-    );
-
-    const encoder = new TextEncoder();
-    const withinBudget = () =>
-      caps.maxSourceBytes > 0 &&
-      encoder.encode(source.value).length <= caps.maxSourceBytes;
-    /* A textarea normalises its own line endings, so comparing raw would report
-     * an edit the visitor did not make. */
-    const edited = () =>
-      source.value.replace(/\r\n/g, "\n") !== recorded.replace(/\r\n/g, "\n");
+    /* The program, taken from the page the build produced rather than shipped
+     * a second time in this bundle. The engine reads none of it, since it
+     * runs the recorded module, but the contract hands a file over and the
+     * file handed over is the one on screen. */
+    const entry = runBtn.dataset.path ?? "main.iyi";
+    const text = listing.textContent ?? "";
 
     let running = false;
 
     const refreshDisabled = () => {
-      for (const btn of buttons) {
-        const cap = btn.dataset.control as Capability;
-        btn.disabled = !supports(cap) || !withinBudget() || running;
-      }
+      runBtn.disabled = running;
       cancelBtn.hidden = !running;
-    };
-
-    /* The honest treatment of a stale edit. The colouring is withdrawn,
-     * because the tokens came from the compiler's lexer and there is no lexer
-     * in this page; the run control renames itself; and the line under the
-     * panes says which bytes will execute. */
-    const refreshStaleness = () => {
-      const stale = edited();
-
-      ink.hidden = stale;
-      source.classList.toggle("plain", stale);
-      resetBtn.hidden = !stale;
-      inkState.textContent = stale ? "edited" : wasm;
-
-      if (supports("run")) {
-        staleness.firstChild!.textContent = stale
-          ? `Run executes the recorded ${wasm}, not what you typed: nothing on this page compiles iyi. `
-          : `Run executes ${wasm}, the module the compiler built from this file. Nothing on this page compiles what you type. `;
-        if (detail) staleness.appendChild(detail);
-      }
-
-      for (const btn of buttons) {
-        const stalest = btn.dataset.labelStale;
-        const plain = btn.dataset.label;
-        if (stalest === undefined || plain === undefined) continue;
-        /* The name goes on the label element, not on the button, so the chord
-         * beside it survives. */
-        const label = btn.querySelector<HTMLElement>(".run-label") ?? btn;
-        label.textContent = stale ? stalest : plain;
-      }
     };
 
     /* Runtime nodes cannot carry Astro's scoped attributes, so they use the
@@ -359,16 +284,8 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       }
     };
 
-    const doRun = async (want: Capability) => {
+    const doRun = async () => {
       if (running) return;
-      if (!withinBudget()) {
-        output.querySelectorAll("pre, .diagnostic").forEach((n) => n.remove());
-        appendBlock(
-          "gap",
-          `this engine accepts ${caps.maxSourceBytes} bytes of source and the pane holds ${encoder.encode(source.value).length}, so nothing ran`,
-        );
-        return;
-      }
       running = true;
       refreshDisabled();
       output.querySelectorAll("pre, .diagnostic").forEach((n) => n.remove());
@@ -378,10 +295,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       try {
         await engine.ready();
         let first = true;
-        for await (const event of engine.run(
-          [{ path: entry, text: source.value }],
-          { entry, want },
-        )) {
+        for await (const event of engine.run([{ path: entry, text }], {
+          entry,
+          want: "run" as Capability,
+        })) {
           if (first) {
             waiting.remove();
             first = false;
@@ -392,7 +309,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
           waiting.remove();
           appendBlock(
             "gap",
-            `the engine finished ${want} without reporting anything at all, which the contract does not allow`,
+            "the engine finished without reporting anything at all, which the contract does not allow",
           );
         }
       } catch (error) {
@@ -409,49 +326,17 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       }
     };
 
-    for (const btn of buttons) {
-      btn.addEventListener("click", () =>
-        doRun(btn.dataset.control as Capability),
-      );
-    }
-
+    runBtn.addEventListener("click", () => void doRun());
     cancelBtn.addEventListener("click", () => engine.cancel());
 
-    resetBtn.addEventListener("click", () => {
-      source.value = recorded;
-      ink.innerHTML = recordedInk;
-      refreshStaleness();
-      refreshDisabled();
-      source.focus();
-      source.setSelectionRange(0, 0);
-      source.scrollTop = 0;
-      source.scrollLeft = 0;
-      ink.scrollTop = 0;
-      ink.scrollLeft = 0;
-    });
-
-    /* The colouring sits behind the text, so the two have to scroll together or
-     * the emphasis slides off the tokens it belongs to. */
-    source.addEventListener("scroll", () => {
-      ink.scrollTop = source.scrollTop;
-      ink.scrollLeft = source.scrollLeft;
-    });
-
-    source.addEventListener("input", () => {
-      refreshStaleness();
-      refreshDisabled();
-    });
-
     /* Cmd or Ctrl and Enter runs, from anywhere on the page. */
-    const chord = (event: KeyboardEvent) => {
+    document.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.key !== "Enter") return;
       if (!event.metaKey && !event.ctrlKey) return;
       event.preventDefault();
-      void doRun("run");
-    };
-    document.addEventListener("keydown", chord);
+      void doRun();
+    });
 
-    refreshStaleness();
     refreshDisabled();
   })();
 </script>
@@ -574,7 +459,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     font-weight: 600;
   }
 
-  /* THE PANES. Editor first in source order, so the stacked order below the
+  /* THE PANES. Listing first in source order, so the stacked order below the
    * breakpoint is program then output with no reordering. */
   .panes {
     display: grid;
@@ -589,72 +474,20 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     }
   }
 
-  .pane-editor {
+  .pane-listing {
     margin: 0;
     border-radius: var(--radius);
     background: var(--paper);
-  }
-
-  /* Two layers in one grid cell: the recorded colouring behind, the editable
-   * text in front with its glyphs made transparent so the layer underneath shows
-   * through. Every metric that affects where a glyph lands is declared on both,
-   * because one difference in padding or line height slides the emphasis off the
-   * tokens it belongs to.
-   *
-   * Selectors are two classes deep so they beat `.source pre` from code.css,
-   * which sets `overflow: visible` and would otherwise stop the two layers
-   * scrolling as one. */
-  .editor {
-    display: grid;
-    height: clamp(12rem, calc(var(--lines) * 1.58 * var(--step--1) + 2.2rem), 44rem);
-  }
-
-  .editor .editor-ink,
-  .editor .editor-text {
-    grid-area: 1 / 1;
-    margin: 0;
-    padding: 0.95rem 1.1rem;
-    border: 0;
-    background: none;
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    font-variant-ligatures: none;
-    line-height: 1.58;
-    letter-spacing: normal;
-    word-spacing: normal;
-    tab-size: 2;
-    white-space: pre;
-  }
-
-  .editor .editor-ink {
-    color: var(--ink);
     overflow: hidden;
-    pointer-events: none;
   }
 
-  .editor .editor-text {
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    caret-color: var(--ink);
+  /* Two classes deep to beat `.source pre` from code.css, which sets
+   * `overflow: visible` and would otherwise let a long line spill. */
+  .pane-listing .listing {
+    height: clamp(12rem, calc(var(--lines) * 1.58 * var(--step--1) + 2.2rem), 44rem);
     overflow: auto;
-    resize: none;
-  }
-
-  .editor .editor-text.plain {
-    color: var(--ink);
-    -webkit-text-fill-color: var(--ink);
-  }
-
-  .editor .editor-text::selection {
-    background: var(--track);
-  }
-
-  .editor .editor-text:focus {
-    outline: none;
-  }
-
-  .pane-editor:focus-within {
-    border-color: var(--graphite);
+    white-space: pre;
+    tab-size: 2;
   }
 
   .pane-output {

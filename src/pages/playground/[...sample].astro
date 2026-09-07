@@ -48,77 +48,27 @@ const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 
 <Page
   title={`Playground: ${sample.id} | iyi`}
-  summary={`${sample.path}, cross-compiled to wasm32-wasi by the iyi compiler and executed on this page against a WASI host written in TypeScript. It does not compile, and it says so.`}
+  summary={`${sample.path}, cross-compiled to wasm32-wasi by the iyi compiler and executed on this page.`}
 >
   <Playground sample={sample} />
 
-  <section class="spread">
-    <div class="to-wide honest">
-      <hr class="rule" />
-      <h2>What is not here</h2>
-      <p>
-        Three sentences, because two of these are structural and will not be
-        fixed by finishing something.
-      </p>
-      <ul>
-        <li>
-          <strong>Nothing in this page compiles iyi.</strong> A browser has no
-          linker, and producing a program out of a module shells out to a linker
-          driver, which a page cannot do because it has no subprocesses. So the
-          module this page runs was built elsewhere and editing the pane cannot
-          change it, which the pane says the moment you type. A compile service
-          would have closed that gap and was refused: compiling somewhere else
-          proves only that somewhere else has a compiler.
-        </li>
-        <li>
-          <strong>There are no threads, and there cannot be.</strong> GitHub
-          Pages cannot set HTTP response headers, so{" "}
-          <code>Cross-Origin-Opener-Policy</code> and{" "}
-          <code>Cross-Origin-Embedder-Policy</code> cannot be sent, so this
-          document is never cross-origin isolated and{" "}
-          <code>SharedArrayBuffer</code> does not exist here. That rules out wasm
-          threads and synchronous standard input through{" "}
-          <code>Atomics.wait</code>. It is also why output arrives in the chunks
-          the program wrote but only once <code>_start</code> returns: a wasm
-          call in this page cannot be suspended.
-        </li>
-        <li>
-          <strong>There is no standard input and no filesystem.</strong> Reads
-          from descriptor zero succeed and report end of file, and no directory
-          is preopened, so every path call fails the way it would under a host
-          that granted no capabilities. One sample fails on purpose for exactly
-          that reason and the recording marks it, because a target that cannot
-          open a file is a thing worth knowing about the target.
-        </li>
-      </ul>
-      <p>
-        <a href={`${base}playground/evidence/`}>The recordings behind this</a>{" "}
-        say which bytes ran and what checked them.
-      </p>
-    </div>
+  <section class="wrap honest">
+    <p>
+      This page runs the module the compiler built from the file above; it does
+      not compile what you type, because a browser has no linker. There is no
+      standard input, no filesystem and no threads on this target, and one
+      sample fails on purpose for exactly that reason.{" "}
+      <a href={`${base}playground/evidence/`}>The recordings behind this</a>{" "}
+      say which bytes ran and what checked them.
+    </p>
   </section>
 </Page>
 
 <style>
-  .honest {
-    margin-block: 1rem 3rem;
-  }
-
-  .honest h2 {
-    margin-block: 1.6rem 0.7rem;
-  }
-
   .honest p {
     max-width: var(--measure);
-  }
-
-  .honest ul {
-    padding-inline-start: 1.1rem;
-    margin-block: 0 1.05em;
-    max-width: var(--measure);
-  }
-
-  .honest li {
-    margin-block: 0.65em;
+    color: var(--graphite);
+    font-size: var(--step--1);
+    margin: 0;
   }
 </style>

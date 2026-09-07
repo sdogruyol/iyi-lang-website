@@ -63,14 +63,19 @@ const out = resolve(site, "records", "wasm");
 // describes a sample that now matches, so this table cannot go stale quietly.
 // A sample that does not compile for wasm32-wasi at all, and the sentence
 // saying why: recorded as native only, with the compiler's refusal kept as
-// the evidence, and given no page. The script fails if a sample listed here
-// now compiles, so this table cannot go stale quietly either.
+// the evidence and, for a tour step, what the native run printed, so the page
+// can show the program and its output without offering a Run it cannot do.
+// The script fails if a sample listed here now compiles, so this table cannot
+// go stale quietly either.
+const TASKS_ON_WASM =
+  "Tasks and channels run on Linux and macOS arm64 and nowhere else yet: a " +
+  "program that names `group` or `Channel` on wasm32 does not compile, " +
+  "because src/iyi/concurrency.iyi refuses to ship a spelling without the " +
+  "feature (SPEC.md III.4.8).";
 const NATIVE_ONLY = {
-  "iyi/workers":
-    "III.4's scheduler runs on Linux and darwin arm64, through each platform's " +
-    "own doorway, and nowhere else yet: a program that names `group` or " +
-    "`Channel` on wasm32 does not compile, which src/iyi/concurrency.iyi " +
-    "calls honest - III.4.8 refused shipping a spelling without the feature.",
+  "iyi/workers": TASKS_ON_WASM,
+  tasks: TASKS_ON_WASM,
+  channels: TASKS_ON_WASM,
 };
 
 const NOTES = {
@@ -201,24 +206,36 @@ for (const [key, value] of Object.entries(recorded)) {
 // ---------------------------------------------------------------------------
 
 // Two families. The tour is this site's own: short programs in the order a
-// first reader meets them, listed here so the order is a decision and a file
-// the list does not name is an error rather than a surprise. The repository's
-// samples are discovered, not listed, so adding one to the tree adds it to
-// the record; each stands behind `iyi/` so a lesson's program stays runnable
-// without sharing a name with the tour's.
-const TOUR = ["hello", "variables", "loops", "lists", "functions", "structs"];
+// first reader meets them, sectioned in samples/tour/tour.json so the order
+// is a decision, and a file that list does not name is an error rather than
+// a surprise. The repository's samples are discovered, not listed, so adding
+// one to the tree adds it to the record; each stands behind `iyi/` so a
+// lesson's program stays runnable without sharing a name with the tour's.
+const toc = JSON.parse(readFileSync(join(tourDir, "tour.json"), "utf8"));
+if (!Array.isArray(toc.sections) || toc.sections.length === 0) {
+  throw new Error(`${tourDir}/tour.json has no sections`);
+}
+const TOUR = toc.sections.flatMap((section) => {
+  if (typeof section.title !== "string" || !Array.isArray(section.steps) || section.steps.length === 0) {
+    throw new Error(`${tourDir}/tour.json: a section needs a title and at least one step`);
+  }
+  return section.steps;
+});
+if (new Set(TOUR).size !== TOUR.length) {
+  throw new Error(`${tourDir}/tour.json names a step twice`);
+}
 const tourFiles = readdirSync(tourDir)
   .filter((name) => name.endsWith(".iyi"))
   .map((name) => name.slice(0, -".iyi".length))
   .sort();
 for (const id of tourFiles) {
   if (!TOUR.includes(id)) {
-    throw new Error(`${tourDir}/${id}.iyi is not in TOUR, so it has no place in the tour`);
+    throw new Error(`${tourDir}/${id}.iyi is not in tour.json, so it has no place in the tour`);
   }
 }
 for (const id of TOUR) {
   if (!tourFiles.includes(id)) {
-    throw new Error(`TOUR names ${id}, and ${tourDir} has no ${id}.iyi`);
+    throw new Error(`tour.json names ${id}, and ${tourDir} has no ${id}.iyi`);
   }
 }
 const repoIds = readdirSync(samplesDir)
@@ -320,6 +337,21 @@ for (const { id, slug, set, relative, source } of order) {
       .map((line) => line.trim())
       .filter((line) => line.startsWith("Error:"))
       .pop();
+    // What it prints when it does run. Same directory, same empty stdin as
+    // the runs below, so the record is of the program and not of a terminal.
+    const nativeRun = spawnSync(iyi, ["run", source], {
+      cwd: dir,
+      encoding: "utf8",
+      env,
+      input: "",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    if (nativeRun.status !== 0) {
+      throw new Error(
+        `${relative} does not run natively either (exit ${nativeRun.status}), ` +
+          `so there is nothing to record for it:\n${nativeRun.stderr}`,
+      );
+    }
     nativeOnly.push({
       id,
       set,
@@ -327,6 +359,8 @@ for (const { id, slug, set, relative, source } of order) {
       sourceSha256: createHash("sha256").update(readFileSync(source)).digest("hex"),
       refusal: refusal ?? null,
       reason,
+      exitCode: nativeRun.status,
+      nativeStdout: nativeRun.stdout,
     });
     continue;
   }

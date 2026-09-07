@@ -159,6 +159,7 @@ Captured from the running site in a browser.
 | `screenshots/42-learn.png` | The path's entrance and one step of it. |
 | `screenshots/43-sample-run.png` | A sample route after Run: the program on the left, its output on the right, the module and exit status on one line under it. |
 | `screenshots/44-spec.png` | The generated specification index with its generated-from banner. |
+| `screenshots/45-tour.png` | The playground's table of contents: the tour in sections, each step a page. |
 
 ## Prohibitions
 

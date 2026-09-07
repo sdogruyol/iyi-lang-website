@@ -24,8 +24,9 @@ compete with it.
 ## The mascot
 
 `public/mascot.webp`, cut out of its background so it sits on the page ground
-in either scheme. It appears in three places and no more: large in the hero,
-small beside the wordmark in the header, and at the foot of every page. It is
+in either scheme. It appears in four places and no more: large in the hero,
+small beside the wordmark in the header, at the foot of every page, and as
+the favicon, cropped to the face. It is
 never used as a bullet, a spinner, a badge or a reaction. The `i` on each
 cheek is the tittle, the dot that in Turkish orthography separates `i` from
 dotless `ı`; the same dot terminates every section rule on the site.

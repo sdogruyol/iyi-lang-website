@@ -93,7 +93,11 @@ const current = (path: string) => here.startsWith(href(path));
     <title>{fullTitle}</title>
     {summary && <meta name="description" content={summary} />}
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href={href("favicon.svg")} type="image/svg+xml" />
+    <link rel="icon" href={href("favicon.ico")} sizes="48x48" />
+    <link rel="icon" href={href("favicon-32.png")} type="image/png" sizes="32x32" />
+    <link rel="icon" href={href("favicon-192.png")} type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href={href("apple-touch-icon.png")} sizes="180x180" />
+    <link rel="manifest" href={href("site.webmanifest")} />
     <link rel="sitemap" href={href("sitemap-index.xml")} />
     <meta name="theme-color" content="#d1333d" />
     <meta property="og:type" content="website" />

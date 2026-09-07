@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Records what the real compiler says when a real program breaks a real rule.
 //
-// The programs under site/records/break/ are committed, deliberately broken,
+// The programs under records/break/ are committed, deliberately broken,
 // and minimal: each one breaks exactly one rule so the message it draws is
 // about that rule and nothing else. This script compiles each of them and
 // records the compiler's output byte for byte, with the command and the exit
@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
-const repo = resolve(site, "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
 const breakDir = resolve(site, "records", "break");
 const out = resolve(site, "records", "diagnostics.json");
 
@@ -173,7 +173,7 @@ const claimed = new Set(CASES.map((entry) => entry.file));
 for (const name of programs) {
   if (!claimed.has(name)) {
     throw new Error(
-      `site/records/break/${name} is a broken program with no case in this ` +
+      `records/break/${name} is a broken program with no case in this ` +
         `script, so nothing renders it and nothing checks it`,
     );
   }
@@ -181,7 +181,7 @@ for (const name of programs) {
 for (const entry of CASES) {
   if (!programs.includes(entry.file)) {
     throw new Error(
-      `case "${entry.id}" names site/records/break/${entry.file}, which is ` +
+      `case "${entry.id}" names records/break/${entry.file}, which is ` +
         `not there`,
     );
   }
@@ -201,16 +201,18 @@ for (const entry of CASES) {
 const cases = [];
 
 for (const entry of CASES) {
-  const relative = `site/records/break/${entry.file}`;
+  const relative = `records/break/${entry.file}`;
   const args = ["build", "--no-codegen", "--no-color", relative];
 
   // The compiler is written by name rather than by path: the path is per
   // machine and `recorded.compiler` already pins the exact build. Everything
   // else in this string is the argument list that ran, in order.
-  const command = `IYI_PATH=src iyi ${args.join(" ")}`;
+  const command = `IYI_PATH=<iyi>/src iyi ${args.join(" ")}`;
 
+  // Run from this repository, where the broken programs are, so the path
+  // the diagnostic prints is the one the lessons name.
   const run = spawnSync(iyi, args, {
-    cwd: repo,
+    cwd: site,
     encoding: "utf8",
     env,
     maxBuffer: 32 * 1024 * 1024,

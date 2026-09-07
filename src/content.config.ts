@@ -25,7 +25,7 @@ import { glob } from "astro/loaders";
  * the build naming the lesson that asked for it, and it is looked up in the
  * wasm record to decide whether the step can offer to run it.
  *
- * `breaks` names the case in site/records/diagnostics.json whose recorded
+ * `breaks` names the case in records/diagnostics.json whose recorded
  * compiler output the step shows. Existence is checked by src/lib/lessons.ts
  * against that record, so a step cannot claim a diagnostic nobody ran.
  */
@@ -51,7 +51,7 @@ const learn = defineCollection({
       .string()
       .regex(
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "breaks is a case id in site/records/diagnostics.json, such as `r2b-using-missing`",
+        "breaks is a case id in records/diagnostics.json, such as `r2b-using-missing`",
       ),
     // Files the break exercise has to show beside the rejected program: the two
     // modules that close an import cycle, say. Repository relative paths,

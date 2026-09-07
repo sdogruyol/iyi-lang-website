@@ -14,7 +14,7 @@ export type Lesson = CollectionEntry<"learn">;
  */
 export type Rule = { id: string; premise: string; cite: string };
 
-/** The provenance every record under site/records/ carries. */
+/** The provenance every record under records/ carries. */
 export type Recorded = {
   compiler: string;
   commit: string;
@@ -105,7 +105,7 @@ export function rulesOf(lesson: Lesson): Rule[] {
  *
  * The file's provenance is attached to the case, because a recording is only
  * evidence with the compiler and the commit that produced it, and the two are
- * rendered in the same frame as the output. See doc/website/ART-DIRECTION.md.
+ * rendered in the same frame as the output. See doc/ART-DIRECTION.md.
  */
 export function breakCase(id: string): BreakCase {
   const record = diagnostics as DiagnosticsRecord;
@@ -113,7 +113,7 @@ export function breakCase(id: string): BreakCase {
 
   if (!found) {
     throw new Error(
-      `site/records/diagnostics.json has no case "${id}". It records ` +
+      `records/diagnostics.json has no case "${id}". It records ` +
         `${record.cases.map((c) => c.id).join(", ")}. A diagnostic on this ` +
         `site is a recording of a real run, so a missing case is a build ` +
         `failure: record it with the command in that file's provenance rather ` +

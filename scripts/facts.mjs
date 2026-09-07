@@ -10,12 +10,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, "..", "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(here, "..", "..", "iyi");
 const out = resolve(here, "..", "src", "generated");
 
 let raw;
 try {
-  raw = execFileSync("python3", [resolve(repo, "bench", "site_facts.py")], {
+  raw = execFileSync("python3", [resolve(here, "..", "bench", "site_facts.py")], {
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
   });

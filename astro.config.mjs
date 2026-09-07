@@ -1,10 +1,11 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 
-// GitHub Pages serves this repo's site under /iyi, so the base is part of the
-// deployment rather than a preference. Override both for a custom domain.
-const site = process.env.SITE_ORIGIN ?? "https://jwaldrip.github.io";
-const base = process.env.SITE_BASE ?? "/iyi";
+// GitHub Pages serves this repository at its own name, `iyi-lang.sdogruyol.io`
+// (the CNAME under public/), so the site is at the root. Override both to
+// preview under another origin or path.
+const site = process.env.SITE_ORIGIN ?? "https://iyi-lang.sdogruyol.io";
+const base = process.env.SITE_BASE ?? "/";
 
 export default defineConfig({
   site,

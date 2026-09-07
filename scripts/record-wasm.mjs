@@ -22,7 +22,7 @@
 // recorded or something they changed, because an unedited curated sample can
 // run straight from its recorded module while edited text has to go to the
 // compile service. The only copy of the recorded text the client can reach is
-// site/records/highlight.json, which is roughly a quarter of a megabyte of
+// records/highlight.json, which is roughly a quarter of a megabyte of
 // listings; importing that into an engine to answer one yes-or-no question
 // would ship all of it to every visitor. A digest is a few dozen bytes and
 // answers the same question. It doubles as a staleness gate: a sample edited
@@ -52,7 +52,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
-const repo = resolve(site, "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
 const samplesDir = resolve(repo, "samples", "iyi");
 const out = resolve(site, "records", "wasm");
 

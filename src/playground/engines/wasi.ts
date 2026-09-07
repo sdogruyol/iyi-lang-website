@@ -2,7 +2,7 @@
  * The engine that runs iyi in the page, and the precise account of what that
  * sentence does and does not mean.
  *
- * WHAT IT DOES. Every curated sample in `site/records/wasm/manifest.json` was
+ * WHAT IT DOES. Every curated sample in `records/wasm/manifest.json` was
  * compiled by the iyi compiler for `wasm32-wasi` and linked by wasi-sdk on the
  * machine the record names. Those modules ship with the site. This engine
  * fetches the one the visitor selected, checks its SHA-256 against the record,
@@ -28,7 +28,7 @@
  * the whole reason, and it is a property of this engine rather than of the
  * target. The engine that will check what you type is the compiler itself
  * running as wasm in this page, which is what
- * `doc/website/PLAYGROUND-SERVICE.md` specifies and why the playground is
+ * `doc/PLAYGROUND-SERVICE.md` specifies and why the playground is
  * parked rather than shipped. Sending source to a backend was refused on
  * purpose: it would prove a machine somewhere has a compiler, which is not
  * the claim this site is making.
@@ -36,7 +36,7 @@
  * An earlier version of this comment gave a different reason, that a compiler
  * built for `wasm32` could not report a diagnostic at all. That was true when
  * it was written and is not now: the exception wall is cleared, `rescue` works
- * on `wasm32`, and section 11 of `doc/website/PLAYGROUND-FEASIBILITY.md` has
+ * on `wasm32`, and section 11 of `doc/PLAYGROUND-FEASIBILITY.md` has
  * the measurement. Left recorded rather than quietly deleted, because a
  * comment that was load bearing and stopped being true is worth one sentence
  * of history.
@@ -75,8 +75,8 @@ const MAX_SOURCE_BYTES = 64 * 1024;
  */
 const NOTES: string[] = [
   "this engine runs precompiled modules and does not compile: there is no iyi compiler in this page, so the text in the editor is never the program that runs",
-  `each module was compiled and linked on ${wasmProvenance.machine} by ${wasmProvenance.compiler} at commit ${wasmProvenance.commit.slice(0, 12)}, and its sha256 is checked against site/records/wasm/manifest.json before it is instantiated`,
-  "diagnostics here are recorded, not live: this engine runs modules the compiler already produced and never compiles anything, so the only compiler output it can show is output that was captured when they were produced (doc/website/PLAYGROUND-SERVICE.md)",
+  `each module was compiled and linked on ${wasmProvenance.machine} by ${wasmProvenance.compiler} at commit ${wasmProvenance.commit.slice(0, 12)}, and its sha256 is checked against records/wasm/manifest.json before it is instantiated`,
+  "diagnostics here are recorded, not live: this engine runs modules the compiler already produced and never compiles anything, so the only compiler output it can show is output that was captured when they were produced (doc/PLAYGROUND-SERVICE.md)",
   "stdout arrives in the exact chunks fd_write produced, in that order, but after _start returns: suspending a wasm call needs Atomics.wait on a SharedArrayBuffer, and GitHub Pages cannot send the headers that would make this document cross-origin isolated",
   "there is no stdin: reads from fd 0 succeed and report end of file, which is what a program sees when it is run with its input redirected from nothing",
   "there is no filesystem: no directory is preopened, so every path call fails the way it would under a real host with no capabilities granted",
@@ -103,7 +103,7 @@ const CAPABILITIES: Capabilities = {
 /**
  * Where the modules are served from.
  *
- * `site/scripts/records.mjs` copies them out of the record into `public/wasm/`
+ * `scripts/records.mjs` copies them out of the record into `public/wasm/`
  * at build time, so they are static assets under the site's base path. The base
  * is read rather than written because it is `/iyi` on Pages and `/` on a custom
  * domain.
@@ -274,7 +274,7 @@ export const wasiEngine: PlaygroundEngine = {
           reason:
             `${url} could not be fetched, so there are no bytes to run: ` +
             `${error instanceof Error ? error.message : String(error)}. The ` +
-            `modules are copied into public/wasm/ by site/scripts/records.mjs ` +
+            `modules are copied into public/wasm/ by scripts/records.mjs ` +
             `at build time.`,
         };
         return;
@@ -286,7 +286,7 @@ export const wasiEngine: PlaygroundEngine = {
           reason:
             `${url} answered ${response.status} ${response.statusText}, so ` +
             `there are no bytes to run. The modules are copied into ` +
-            `public/wasm/ by site/scripts/records.mjs at build time.`,
+            `public/wasm/ by scripts/records.mjs at build time.`,
         };
         return;
       }

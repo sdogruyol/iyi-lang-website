@@ -14,7 +14,7 @@
  * string. It escapes everything it emits, so assigning it is not a way for
  * compiler output to become markup.
  *
- * The treatment is the one `site/src/styles/code.css` defines for
+ * The treatment is the one `src/styles/code.css` defines for
  * `.diagnostic`, and the classification is the same as `Quote.astro` applies to
  * a diagnostic quoted from README.md, because a compiler error should not look
  * like two different things on two pages of the same site:

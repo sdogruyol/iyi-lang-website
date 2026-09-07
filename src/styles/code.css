@@ -57,7 +57,7 @@
 
 /* The token classes are the COMPILER'S, not this site's. They come out of
  * `Crystal::SyntaxHighlighter::HTML` running inside the iyi fork's own
- * compiler, recorded into `site/records/highlight.json`, so the tokens on the
+ * compiler, recorded into `records/highlight.json`, so the tokens on the
  * page are the tokens the compiler saw. There is no second grammar in this
  * repository and there must never be one: a hand written scanner drifts from
  * the real lexer silently, and the drift reads as a keyword the site does not
@@ -80,7 +80,7 @@
  * `impl`, `forall`, `derive`, `type` and `abstract` are the entire delta
  * between iyi and Crystal, and they are what a reader is here to see. The
  * lexer cannot make that distinction, because to a lexer they are all just
- * keywords, so `site/scripts/record-highlight.mjs` adds this class to those
+ * keywords, so `scripts/record-highlight.mjs` adds this class to those
  * spans AFTER the lexer has decided where the tokens are. The split touches a
  * class attribute and never a token boundary, so the emphasis cannot invent a
  * token the compiler did not see.

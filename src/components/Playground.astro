@@ -4,7 +4,7 @@
  *
  * WHAT THIS IS AND IS NOT. It is not the playground. The playground is parked at
  * `/playground/` until iyi's own compiler runs in the browser, and
- * `doc/website/PLAYGROUND-SERVICE.md` specifies what it will be. This is the
+ * `doc/PLAYGROUND-SERVICE.md` specifies what it will be. This is the
  * part that honestly works today: the module the compiler built from this file,
  * fetched, digest checked against the record, and executed in the visitor's own
  * tab against the WASI host in `src/playground/engines/wasi-preview1.ts`.
@@ -69,7 +69,7 @@ const supports = (cap: Capability) => caps.supported.includes(cap);
 
 /* The program and its colouring, both out of the records and both read here at
  * build time, which keeps the quarter of a megabyte of listings in
- * `site/records/highlight.json` out of the client bundle. */
+ * `records/highlight.json` out of the client bundle. */
 const source = recordedText(sample.path);
 const inkLines = highlightedLines(sample.path);
 
@@ -278,7 +278,7 @@ const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
       <dd>
         {sample.wasm}, compiled by {wasmProvenance.compiler} at commit{" "}
         {wasmProvenance.commit.slice(0, 12)} on {wasmProvenance.machine}, digest
-        checked against site/records/wasm/manifest.json before it is
+        checked against records/wasm/manifest.json before it is
         instantiated
       </dd>
       {
@@ -474,7 +474,7 @@ const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
           appendStamp(
             `${event.name}, ${event.bytes} bytes, executed in this tab`,
             event.data !== null
-              ? "the engine handed these bytes to the page and checked their sha256 against site/records/wasm/manifest.json before instantiating them, so this is the recorded module and not a module like it"
+              ? "the engine handed these bytes to the page and checked their sha256 against records/wasm/manifest.json before instantiating them, so this is the recorded module and not a module like it"
               : "the engine reported this size without delivering the bytes, so it is the engine's word and not this page's measurement",
           );
           break;

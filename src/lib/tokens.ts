@@ -4,7 +4,7 @@
  * WHY THIS FILE EXISTS SEPARATELY FROM `highlight.ts`. There are now two places
  * a token stream can come from, and they have to be painted by the same code.
  *
- *   1. The recording. `site/records/highlight.json` holds one HTML string per
+ *   1. The recording. `records/highlight.json` holds one HTML string per
  *      file, produced by `Crystal::SyntaxHighlighter::HTML` running inside the
  *      iyi fork's own compiler. `highlight.ts` owns that file.
  *   2. A live lexer. When iyi's own compiler runs as wasm in the page it can
@@ -56,14 +56,14 @@ export interface Token {
 /**
  * iyi's own keywords, the ones the art direction sets heavier than Crystal's.
  *
- * `site/src/lib/rule-words.json` owns the list for everything in `src`, and its
+ * `src/lib/rule-words.json` owns the list for everything in `src`, and its
  * `why` field carries the reasoning, because JSON has nowhere to put a comment.
  * Every path through this module reads it, so the recorded listings and the
  * live editor cannot emphasise different words.
  *
  * KNOWN DUPLICATION, deliberately left for a separate change:
- * `site/scripts/record-highlight.mjs` still declares its own array of the same
- * words, and that copy is the one stamped into `site/records/highlight.json`.
+ * `scripts/record-highlight.mjs` still declares its own array of the same
+ * words, and that copy is the one stamped into `records/highlight.json`.
  * Until the recorder is pointed at the JSON, the two lists agree only because
  * someone keeps them in step, and nothing in the build says so. Anyone adding
  * or removing a rule word has to edit both.
@@ -83,7 +83,7 @@ export const RULE_WORDS: readonly string[] = ruleWords.words;
  */
 if (RULE_WORDS.length === 0) {
   throw new Error(
-    `tokens: site/src/lib/rule-words.json lists no words, so the rule-word ` +
+    `tokens: src/lib/rule-words.json lists no words, so the rule-word ` +
       `emphasis would be applied to nothing. That emphasis is what the site's ` +
       `listings argue with, so an empty list is a build failure rather than a ` +
       `page that quietly stops making the argument.`,
@@ -92,7 +92,7 @@ if (RULE_WORDS.length === 0) {
 for (const word of RULE_WORDS) {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(word)) {
     throw new Error(
-      `tokens: site/src/lib/rule-words.json lists "${word}", which is not an ` +
+      `tokens: src/lib/rule-words.json lists "${word}", which is not an ` +
         `identifier. The words are joined into a regular expression, so a ` +
         `metacharacter here would change what that expression matches instead ` +
         `of adding a keyword to it.`,

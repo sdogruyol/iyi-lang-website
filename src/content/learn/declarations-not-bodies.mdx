@@ -6,8 +6,8 @@ rule: R-1
 sample: samples/iyi/modules.iyi
 breaks: r1-import-cycle
 breaksAlso:
-  - site/records/break/dep/loop_a.iyi
-  - site/records/break/dep/loop_b.iyi
+  - records/break/dep/loop_a.iyi
+  - records/break/dep/loop_b.iyi
 bought: >-
   A change inside a module cannot reach past that module's exported signatures,
   so what has to be rebuilt is bounded by the import graph instead of by the size

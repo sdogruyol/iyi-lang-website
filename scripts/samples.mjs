@@ -28,7 +28,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, "..", "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(here, "..", "..", "iyi");
 const lessonsDir = resolve(here, "..", "src", "content", "learn");
 const out = resolve(here, "..", "src", "generated");
 
@@ -127,7 +127,7 @@ if (Object.keys(samples).length === 0) {
 // The break programs -------------------------------------------------------
 
 // A lesson's break-this-rule exercise shows a program written to be rejected,
-// and the compiler's verdict on it is recorded under site/records/. Those
+// and the compiler's verdict on it is recorded under records/. Those
 // programs are repository text like any other listing, so they are indexed here
 // and render through the same component and the same token pass as the samples.
 // The index key is the repository relative path, which is also the key the
@@ -142,7 +142,9 @@ let breakPrograms = 0;
 
 if (existsSync(breakRoot)) {
   for (const file of walk(breakRoot)) {
-    const path = relative(repo, file).split("\\").join("/");
+    // Keyed by its path in this repository, as the lessons name it and as
+    // the highlight record keys it.
+    const path = relative(resolve(here, ".."), file).split("\\").join("/");
     const text = readFileSync(file, "utf8");
 
     samples[path] = {
@@ -368,7 +370,7 @@ if (missing.length > 0) {
 }
 
 const absentSources = [...claimedSources]
-  .filter(([path]) => !existsSync(resolve(repo, path)))
+  .filter(([path]) => !existsSync(resolve(path.startsWith("records/") ? resolve(here, "..") : repo, path)))
   .map(([path, where]) => `${path} (cited by ${[...where].join(", ")})`);
 if (absentSources.length > 0) {
   die(

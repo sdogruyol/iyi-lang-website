@@ -27,9 +27,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, "..", "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(here, "..", "..", "iyi");
 const out = resolve(here, "..", "src", "generated", "reference");
-const GENERATOR = "site/scripts/reference.mjs";
+const GENERATOR = "scripts/reference.mjs";
 
 function fail(message) {
   console.error(`reference: ${message}`);

@@ -214,14 +214,14 @@ const differing = curatedSamples.filter((sample) => !sample.identical);
           machine stamped below, then a link step, because for this target the
           fork prints a <code>cc --target=wasm32-wasi</code> command rather than
           calling <code>wasm-ld</code>. Both are recorded in{" "}
-          <code>site/records/wasm/manifest.json</code>, and{" "}
-          <code>site/scripts/records.mjs</code> fails the build if a module's
+          <code>records/wasm/manifest.json</code>, and{" "}
+          <code>scripts/records.mjs</code> fails the build if a module's
           digest does not match the bytes on disk or if a sample's source has
           changed since the module was built from it.
         </li>
         <li>
           <strong>The execution is real, and it is in your tab.</strong> The host
-          in <code>site/src/playground/engines/wasi-preview1.ts</code> implements
+          in <code>src/playground/engines/wasi-preview1.ts</code> implements
           the WASI preview1 calls the modules import, and it grants what a page
           can honestly grant: standard output and standard error captured per
           write, standard input open and at end of file, an empty environment,
@@ -366,7 +366,7 @@ const differing = curatedSamples.filter((sample) => !sample.identical);
             has no linker and producing a program out of a module needs one. The
             programs
             below are real files under{" "}
-            <code>site/records/break/</code>, they are really wrong, and this is
+            <code>records/break/</code>, they are really wrong, and this is
             the real compiler's output on them, captured verbatim, caret line
             included. Where the compiler cited the rule it was enforcing, the
             citation is pulled into the footer, because iyi's errors naming their

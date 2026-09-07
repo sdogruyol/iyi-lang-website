@@ -37,11 +37,11 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
-const repo = resolve(site, "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
 const out = resolve(site, "records", "highlight.json");
 
 // The words that are iyi's and not Crystal's, read from the one place that
-// holds them. `site/src/lib/rule-words.json` is imported by the browser's
+// holds them. `src/lib/rule-words.json` is imported by the browser's
 // renderer and read here by the recorder, so the recorded listings and the
 // live editor emphasise the same set by construction rather than by two lists
 // agreeing today and drifting later. That file's `why` field owns the
@@ -56,7 +56,7 @@ const RULE_WORDS = ruleWords.words;
 
 if (!Array.isArray(RULE_WORDS) || RULE_WORDS.length === 0) {
   throw new Error(
-    `site/src/lib/rule-words.json has no "words" array, so this recorder ` +
+    `src/lib/rule-words.json has no "words" array, so this recorder ` +
       `cannot know which spans carry iyi's own keywords. That file is the one ` +
       `list; the browser's renderer reads it too.`,
   );
@@ -64,7 +64,7 @@ if (!Array.isArray(RULE_WORDS) || RULE_WORDS.length === 0) {
 
 if (typeof ruleWords.why !== "string" || ruleWords.why.trim() === "") {
   throw new Error(
-    `site/src/lib/rule-words.json has no "why", and that field is where the ` +
+    `src/lib/rule-words.json has no "why", and that field is where the ` +
       `reason for this list lives. A list of ten words with no account of ` +
       `why they are the ten is the shape that gets edited by guess.`,
   );
@@ -161,9 +161,14 @@ for (const root of [samplesRoot, breakRoot]) {
   }
 }
 
-const files = [...walk(samplesRoot), ...walk(breakRoot)].map((file) =>
-  relative(repo, file).split("\\").join("/"),
-);
+// A listing's key is its path: a sample's in the iyi repository, a break
+// program's in this one. The two never collide because the iyi tree has no
+// `records/` at its top, and the key is what the lessons name.
+const keyOf = (file) =>
+  relative(file.startsWith(breakRoot) ? site : repo, file).split("\\").join("/");
+const fileOf = (key) =>
+  key.startsWith("records/") ? resolve(site, key) : resolve(repo, key);
+const files = [...walk(samplesRoot), ...walk(breakRoot)].map(keyOf);
 if (files.length === 0) {
   throw new Error(
     `found no .iyi files under ${samplesRoot} or ${breakRoot}`,
@@ -180,10 +185,10 @@ if (files.length === 0) {
 const PASS = `require "json"
 require "crystal/syntax_highlighter/html"
 
-paths = Array(String).from_json(File.read(ARGV[0]))
+paths = Hash(String, String).from_json(File.read(ARGV[0]))
 result = {} of String => String
-paths.each do |path|
-  result[path] = Crystal::SyntaxHighlighter::HTML.highlight(File.read(path))
+paths.each do |key, path|
+  result[key] = Crystal::SyntaxHighlighter::HTML.highlight(File.read(path))
 end
 print result.to_json
 `;
@@ -192,7 +197,11 @@ const work = mkdtempSync(join(tmpdir(), "iyi-record-highlight-"));
 const pass = join(work, "highlight_pass.cr");
 const list = join(work, "paths.json");
 writeFileSync(pass, PASS, "utf8");
-writeFileSync(list, JSON.stringify(files), "utf8");
+writeFileSync(
+  list,
+  JSON.stringify(Object.fromEntries(files.map((key) => [key, fileOf(key)]))),
+  "utf8",
+);
 
 const run = spawnSync(crystal, ["run", "--no-color", pass, "--", list], {
   cwd: repo,
@@ -253,7 +262,7 @@ for (const path of files) {
   }
 
   const before = textOf(html);
-  const source = readFileSync(resolve(repo, path), "utf8");
+  const source = readFileSync(fileOf(path), "utf8");
   if (before !== source) {
     throw new Error(
       `${path}: the highlighter's output does not encode the file. The ` +

@@ -20,7 +20,7 @@
  *
  * THE TOKENS ARE THE COMPILER'S. This component used to carry a hand written
  * scanner, and it does not any more: token classes come from
- * `site/records/highlight.json`, which is `Crystal::SyntaxHighlighter::HTML`
+ * `records/highlight.json`, which is `Crystal::SyntaxHighlighter::HTML`
  * run inside the iyi fork's own compiler over every file this site lists. So
  * the tokens on the page are the tokens the compiler saw, there is exactly one
  * grammar in this repository, and a keyword the site did not know about cannot
@@ -176,7 +176,7 @@ if (must !== undefined && !selected.includes(must)) {
 const recorded = recordedText(sample.path);
 if (recorded !== sample.text) {
   throw new Error(
-    `Sample: ${sample.path} has changed since site/records/highlight.json was ` +
+    `Sample: ${sample.path} has changed since records/highlight.json was ` +
       `recorded, so the recorded tokens describe a different program than the ` +
       `text on disk. Rendering it would paint one program's tokens over ` +
       `another program's characters. Regenerate the record.`,

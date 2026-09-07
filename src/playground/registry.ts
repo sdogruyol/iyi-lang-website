@@ -92,7 +92,7 @@ export function activeEngine(): PlaygroundEngine {
  * the tab, and a service that compiles elsewhere proves nothing about that.
  * So the architecture was overruled in favour of the harder thing, and the
  * engine that fills this slot next is a local wasm build of the compiler with
- * no handoff to a backend of any kind. `doc/website/PLAYGROUND-SERVICE.md` now
+ * no handoff to a backend of any kind. `doc/PLAYGROUND-SERVICE.md` now
  * holds the specification for what the page around it has to be.
  *
  * Until that lands, this slot holds exactly what honestly works, which is why

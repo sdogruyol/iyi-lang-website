@@ -52,7 +52,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
-const repo = resolve(site, "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
 
 /** The falsifier. Its presence in the tree is the trigger for this gate. */
 const FALSIFIER = "bench/wasm_exceptions.sh";
@@ -61,7 +61,7 @@ const FALSIFIER = "bench/wasm_exceptions.sh";
  * The record a machine with the toolchain writes so a machine without one can
  * still be held to the answer.
  *
- * Shaped like every other record under `site/records/`: a `recorded` block
+ * Shaped like every other record under `records/`: a `recorded` block
  * naming the compiler, the commit, the box and the command, and the result. The
  * compiler workstream emits it; this build only ever verifies it.
  *
@@ -74,7 +74,7 @@ const FALSIFIER = "bench/wasm_exceptions.sh";
  *     "imports": ["wasi_snapshot_preview1"]
  *   }
  */
-const RECORD = "site/records/wasm-exceptions.json";
+const RECORD = "records/wasm-exceptions.json";
 
 /**
  * The claim, as the pages actually write it.
@@ -264,13 +264,13 @@ if (answer.verdict === "cleared") {
   );
 } else if (script.verdict === "absent") {
   /* No falsifier in the tree and no record. The claim's citation is
-   * `doc/website/PLAYGROUND-FEASIBILITY.md` and there is nothing here that can
+   * `doc/PLAYGROUND-FEASIBILITY.md` and there is nothing here that can
    * check it, which the gate says rather than passing quietly. */
   console.log(
     `blocker: ${FALSIFIER} is not in this tree and ${RECORD} is not either, so ` +
       `nothing here can check the playground's ${sites.length} statements ` +
       `that raise does not unwind on wasm32. They stand on ` +
-      `doc/website/PLAYGROUND-FEASIBILITY.md. This gate starts answering the ` +
+      `doc/PLAYGROUND-FEASIBILITY.md. This gate starts answering the ` +
       `moment either one lands.`,
   );
 } else {

@@ -3,7 +3,7 @@
  *
  * Two components render one: `Quote`, which quotes a session out of README.md,
  * and `BreakRule`, which renders a compiler verdict out of
- * `site/records/diagnostics.json`. They are two sources of the same kind of
+ * `records/diagnostics.json`. They are two sources of the same kind of
  * evidence, so they share this one classifier rather than each carrying its own
  * idea of what a caret line looks like.
  *

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // The build-time gate over the committed records.
 //
-// The three records under site/records/ are produced by scripts that need the
+// The three records under records/ are produced by scripts that need the
 // iyi compiler and wasi-sdk. The Pages build has neither, so it cannot make
 // them and must not pretend to: this script only verifies what is committed,
 // and fails the build naming the file when a record is missing, stale by
 // checksum, or short of provenance. Then it copies the linked modules into
-// site/public/wasm/ so the site can serve them.
+// public/wasm/ so the site can serve them.
 //
 // Every check here is a check the good records pass and a corrupted record
 // fails. A gate that cannot fail is not a gate, and this pipeline is the
@@ -26,7 +26,11 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
-const repo = resolve(site, "..");
+const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
+// A recorded path is a sample's in the iyi repository or a break program's
+// in this one; the iyi tree has no `records/` at its top, so the prefix says
+// which.
+const sourceOf = (path) => resolve(path.startsWith("records/") ? site : repo, path);
 const records = resolve(site, "records");
 const publicWasm = resolve(site, "public", "wasm");
 
@@ -43,7 +47,7 @@ function load(file) {
   const path = join(records, file);
   if (!existsSync(path)) {
     problem(
-      `site/records/${file}`,
+      `records/${file}`,
       `is not there. Regenerate it on a machine with the toolchain; the ` +
         `Pages build cannot make it.`,
     );
@@ -53,7 +57,7 @@ function load(file) {
   try {
     parsed = JSON.parse(readFileSync(path, "utf8"));
   } catch (error) {
-    problem(`site/records/${file}`, `is not valid JSON: ${error.message}`);
+    problem(`records/${file}`, `is not valid JSON: ${error.message}`);
     return null;
   }
   return parsed;
@@ -65,14 +69,14 @@ function load(file) {
 function checkProvenance(file, record) {
   const recorded = record.recorded;
   if (!recorded || typeof recorded !== "object") {
-    problem(`site/records/${file}`, `has no "recorded" provenance object`);
+    problem(`records/${file}`, `has no "recorded" provenance object`);
     return;
   }
   for (const field of PROVENANCE) {
     const value = recorded[field];
     if (typeof value !== "string" || value.trim() === "") {
       problem(
-        `site/records/${file}`,
+        `records/${file}`,
         `provenance field "${field}" is empty, so the record cannot say ` +
           `where it came from`,
       );
@@ -88,7 +92,7 @@ const manifest = load(join("wasm", "manifest.json"));
 const wasmFiles = [];
 
 if (manifest) {
-  const file = "site/records/wasm/manifest.json";
+  const file = "records/wasm/manifest.json";
   checkProvenance(join("wasm", "manifest.json"), manifest);
 
   if (!Array.isArray(manifest.samples) || manifest.samples.length === 0) {
@@ -148,7 +152,7 @@ if (manifest) {
       // name the record gives it, or the page would cite a file nobody can
       // open.
       if (typeof sample.path === "string" && sample.path !== "") {
-        if (!existsSync(resolve(repo, sample.path))) {
+        if (!existsSync(sourceOf(sample.path))) {
           problem(file, `sample "${id}" cites ${sample.path}, which is gone`);
         }
       }
@@ -175,9 +179,9 @@ if (manifest) {
       } else if (
         typeof sample.path === "string" &&
         sample.path !== "" &&
-        existsSync(resolve(repo, sample.path))
+        existsSync(sourceOf(sample.path))
       ) {
-        const source = readFileSync(resolve(repo, sample.path));
+        const source = readFileSync(sourceOf(sample.path));
         const digest = createHash("sha256").update(source).digest("hex");
         if (digest !== sample.sourceSha256) {
           problem(
@@ -194,7 +198,7 @@ if (manifest) {
       const module = join(records, "wasm", sample.wasm);
       if (!existsSync(module)) {
         problem(
-          `site/records/wasm/${sample.wasm}`,
+          `records/wasm/${sample.wasm}`,
           `is named by the manifest and is not there`,
         );
         continue;
@@ -202,14 +206,14 @@ if (manifest) {
       const bytes = readFileSync(module);
       if (bytes.length !== sample.bytes) {
         problem(
-          `site/records/wasm/${sample.wasm}`,
+          `records/wasm/${sample.wasm}`,
           `is ${bytes.length} bytes where the manifest says ${sample.bytes}`,
         );
       }
       const sha256 = createHash("sha256").update(bytes).digest("hex");
       if (sha256 !== sample.sha256) {
         problem(
-          `site/records/wasm/${sample.wasm}`,
+          `records/wasm/${sample.wasm}`,
           `hashes to ${sha256} where the manifest says ${sample.sha256}`,
         );
       }
@@ -223,7 +227,7 @@ if (manifest) {
     for (const name of readdirSync(join(records, "wasm"))) {
       if (name.endsWith(".wasm") && !named.has(name)) {
         problem(
-          `site/records/wasm/${name}`,
+          `records/wasm/${name}`,
           `is not named by the manifest, so nothing recorded it`,
         );
       }
@@ -238,7 +242,7 @@ if (manifest) {
 const diagnostics = load("diagnostics.json");
 
 if (diagnostics) {
-  const file = "site/records/diagnostics.json";
+  const file = "records/diagnostics.json";
   checkProvenance("diagnostics.json", diagnostics);
 
   if (!Array.isArray(diagnostics.cases) || diagnostics.cases.length === 0) {
@@ -278,7 +282,7 @@ if (diagnostics) {
         );
       }
       if (typeof entry.path === "string" && entry.path !== "") {
-        if (!existsSync(resolve(repo, entry.path))) {
+        if (!existsSync(sourceOf(entry.path))) {
           problem(file, `case "${id}" cites ${entry.path}, which is gone`);
         }
       }
@@ -308,7 +312,7 @@ function textOf(html) {
 const highlight = load("highlight.json");
 
 if (highlight) {
-  const file = "site/records/highlight.json";
+  const file = "records/highlight.json";
   checkProvenance("highlight.json", highlight);
 
   const listings = highlight.files;
@@ -322,7 +326,7 @@ if (highlight) {
         problem(file, `${path} has no markup`);
         continue;
       }
-      const source = resolve(repo, path);
+      const source = sourceOf(path);
       if (!existsSync(source)) {
         problem(file, `records ${path}, which is gone from the tree`);
         continue;

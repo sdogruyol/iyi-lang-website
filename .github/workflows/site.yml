@@ -1,0 +1,82 @@
+name: site
+
+# The site restates the iyi repository: every number and listing on it is
+# generated at build time from that tree (README.md, SPEC.md, CHANGELOG.md,
+# `samples/`, `bench/doc_numbers.py`). So the build checks iyi out beside this
+# repository - the sibling `iyi/` the scripts look for by default - and runs
+# the same generators a developer runs locally.
+#
+# The records under `records/` (wasm modules, diagnostics, highlighting) are
+# committed, produced on a machine with the compiler and wasi-sdk by
+# `npm run record`; the build only checks that they still describe the
+# iyi tree it was given, and refuses to publish if they do not.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: iyi-lang.sdogruyol.io
+
+      # Full history, not a shallow clone: bench/site_facts.py counts commits
+      # and authors for the contribution section, and it refuses to publish a
+      # count taken from a truncated history rather than printing a smaller
+      # number with the same confidence as a true one.
+      - uses: actions/checkout@v4
+        with:
+          repository: sdogruyol/iyi
+          path: iyi
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: iyi-lang.sdogruyol.io/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: The paths the documents cite
+        working-directory: iyi-lang.sdogruyol.io
+        run: python3 bench/website_citations.py
+
+      - name: Install site dependencies
+        working-directory: iyi-lang.sdogruyol.io
+        run: npm ci
+
+      - name: Generate facts, reference and samples, then build
+        working-directory: iyi-lang.sdogruyol.io
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: iyi-lang.sdogruyol.io/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

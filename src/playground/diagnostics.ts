@@ -11,19 +11,19 @@
  * subprocesses, so the playground is parked rather than shipped. Sending the
  * source to a service instead was refused on purpose, because compiling
  * elsewhere proves the elsewhere has a compiler.
- * `doc/website/PLAYGROUND-SERVICE.md` carries the specification and the
+ * `doc/PLAYGROUND-SERVICE.md` carries the specification and the
  * refusal.
  *
  * The older reason, that the compiler could not report a diagnostic from wasm
  * at all, no longer holds: the exception wall is cleared and `rescue` works on
  * `wasm32`, which is section 11 of
- * `doc/website/PLAYGROUND-FEASIBILITY.md`. A checker in the page is reachable
+ * `doc/PLAYGROUND-FEASIBILITY.md`. A checker in the page is reachable
  * now, and when one lands it feeds this same event path.
  *
- * WHAT IS HERE INSTEAD. `site/records/break/*.iyi` are real programs that are
+ * WHAT IS HERE INSTEAD. `records/break/*.iyi` are real programs that are
  * really wrong, committed to this repository. The recorder runs the real
  * compiler on each one and stores the exit status and the standard error
- * verbatim in `site/records/diagnostics.json`. This module reads that record
+ * verbatim in `records/diagnostics.json`. This module reads that record
  * and emits it as `diagnostic` events on the engine's normal stream, so the
  * pane that renders them is fed by the same path a checking engine would feed,
  * and wiring one in replaces the engine and nothing else.
@@ -78,7 +78,7 @@ for (const field of [
 ] as const) {
   if (!diagnosticsProvenance?.[field]) {
     throw new Error(
-      `playground: site/records/diagnostics.json has no ` +
+      `playground: records/diagnostics.json has no ` +
         `"recorded.${field}". Compiler output with no record of which ` +
         `compiler produced it is an anecdote. Regenerate the record.`,
     );
@@ -87,7 +87,7 @@ for (const field of [
 
 if (!Array.isArray(diagnostics.cases) || diagnostics.cases.length === 0) {
   throw new Error(
-    "playground: site/records/diagnostics.json records no cases, so the " +
+    "playground: records/diagnostics.json records no cases, so the " +
       "diagnostics pane would render empty and the page would imply that " +
       "nothing in samples/ can be got wrong.",
   );

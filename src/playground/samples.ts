@@ -1,7 +1,7 @@
 /**
  * The curated set the playground can run, read out of the recording.
  *
- * `site/records/wasm/manifest.json` is produced on a machine that has the iyi
+ * `records/wasm/manifest.json` is produced on a machine that has the iyi
  * compiler and wasi-sdk on it. The Pages build has neither, so the build
  * VERIFIES that record and copies the modules beside it into `public/wasm/`; it
  * never compiles anything. Which samples the playground offers is therefore a
@@ -122,7 +122,7 @@ for (const field of [
 ] as const) {
   if (!wasmProvenance?.[field]) {
     throw new Error(
-      `playground: site/records/wasm/manifest.json has no ` +
+      `playground: records/wasm/manifest.json has no ` +
         `"recorded.${field}". A byte count without the machine that produced ` +
         `it is not a measurement, and this site has no component that can ` +
         `render one. Regenerate the record.`,
@@ -132,7 +132,7 @@ for (const field of [
 
 if (!Array.isArray(record.samples) || record.samples.length === 0) {
   throw new Error(
-    "playground: site/records/wasm/manifest.json records no samples, so " +
+    "playground: records/wasm/manifest.json records no samples, so " +
       "there is nothing the playground can run. An empty picker rendered " +
       "without complaint is how a broken recorder ships unnoticed.",
   );

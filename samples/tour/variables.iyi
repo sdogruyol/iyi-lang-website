@@ -1,0 +1,13 @@
+# Variables, numbers and text.
+
+name = "iyi"
+year = 2026
+pi = 3.14
+
+puts "The language is #{name}."
+puts "The year is #{year}, and next year is #{year + 1}."
+puts "Half of pi is #{pi / 2}."
+
+# Types are inferred. name is a String, year is an Int32, pi is a Float64.
+puts name.upcase
+puts name.size

@@ -1,0 +1,32 @@
+# Functions, with their types written down.
+
+def greet(name : String) : String
+  "Merhaba, #{name}!"
+end
+
+def add(a : Int32, b : Int32) : Int32
+  a + b
+end
+
+# The last expression is the return value.
+def sign(n : Int32) : String
+  if n > 0
+    "positive"
+  elsif n < 0
+    "negative"
+  else
+    "zero"
+  end
+end
+
+puts greet("dünya")
+puts add(2, 3)
+puts sign(-7)
+
+# A function can take a block.
+def twice(&block)
+  yield
+  yield
+end
+
+twice { puts "again" }

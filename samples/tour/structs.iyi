@@ -1,0 +1,26 @@
+# A struct is a type with fields and methods.
+
+struct Point
+  getter x : Int32
+  getter y : Int32
+
+  def initialize(@x : Int32, @y : Int32)
+  end
+
+  def +(other : Point) : Point
+    Point.new(x + other.x, y + other.y)
+  end
+
+  def to_s : String
+    "(#{x}, #{y})"
+  end
+end
+
+a = Point.new(1, 2)
+b = Point.new(3, 4)
+
+puts a.x
+puts (a + b).to_s
+
+points = [a, b, Point.new(5, 6)]
+puts points.map { |p| p.to_s }.join(" ")

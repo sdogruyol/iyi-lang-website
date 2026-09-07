@@ -1,0 +1,26 @@
+# Ranges, loops and conditions.
+
+# Count from 1 to 5.
+(1..5).each do |i|
+  puts i
+end
+
+# FizzBuzz, up to 15.
+(1..15).each do |i|
+  if i % 15 == 0
+    puts "FizzBuzz"
+  elsif i % 3 == 0
+    puts "Fizz"
+  elsif i % 5 == 0
+    puts "Buzz"
+  else
+    puts i
+  end
+end
+
+# A while loop.
+n = 1
+while n < 100
+  n = n * 2
+end
+puts n

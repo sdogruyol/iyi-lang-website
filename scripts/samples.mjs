@@ -203,6 +203,8 @@ const WANTED = {
   orphan_rule: { lang: "console", anchor: "an impl must live in the module" },
   kemal_site: { lang: "crystal", anchor: '"Hello from an iyi program"' },
   kemal_run: { lang: "console", anchor: "curl localhost:3000/json" },
+  mod_diff: { lang: "console", anchor: "Consumers have to be rebuilt" },
+  bad_body: { lang: "console", anchor: "does not implement Kemal::Router::IntoBody" },
 };
 
 const blocks = fencedBlocks(readmeLines);

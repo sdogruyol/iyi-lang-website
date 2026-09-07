@@ -195,6 +195,16 @@ RECORDED_PATTERNS: list[tuple[str, str, tuple[str, ...]]] = [
         r"([\d,]+) lines of Crystal's standard library instead of ([\d,]+)",
         ("crystal", "iyi"),
     ),
+    (
+        "context_pack",
+        r"at \*\*(\d+)–(\d+)%\*\* of the sources' size",
+        ("size_low", "size_high"),
+    ),
+    (
+        "context_tokens",
+        r"\*\*(\d+)–(\d+)% fewer prompt tokens\*\* over (\w+) measured runs",
+        ("low", "high", "runs"),
+    ),
 ]
 
 # Which command prints each recorded group, quoted from README.md's own
@@ -212,6 +222,8 @@ COMMANDS: dict[str, str] = {
     "runtime_hash": "python3 bench/runtime.py",
     "runtime_array": "python3 bench/runtime.py",
     "runtime_arithmetic": "python3 bench/runtime.py",
+    "context_pack": "python3 bench/context_pack.py",
+    "context_tokens": "python3 bench/context_pack.py",
 }
 
 # Binary sizes and start times are quoted against a different machine from the
@@ -349,6 +361,28 @@ def build() -> tuple[dict, list[str]]:
                 "machine": None,
                 "command": "python3 bench/doc_numbers.py",
                 "subject": "what a program has",
+            },
+            "front_end": {
+                "seconds": float(raw["front_end"]["seconds"]),
+                "unit": "s",
+                "machine": default_machine,
+                "command": COMMANDS["front_end"],
+                "subject": "the front end answering hello, before any code is generated",
+            },
+            # Counted, not timed: bytes of grounding pack against bytes of
+            # source, and prompt tokens spent by a model writing against it.
+            # README.md names no machine for either, because neither is a
+            # duration, so the stamp says so rather than borrowing one.
+            "context_pack": {
+                "size_low": int(raw["context_pack"]["size_low"]),
+                "size_high": int(raw["context_pack"]["size_high"]),
+                "tokens_low": int(raw["context_tokens"]["low"]),
+                "tokens_high": int(raw["context_tokens"]["high"]),
+                "runs": raw["context_tokens"]["runs"],
+                "unit": "%",
+                "machine": None,
+                "command": COMMANDS["context_pack"],
+                "subject": "an edit grounded by iyi mod context, against the sources it replaces",
             },
         },
         "provenance": {

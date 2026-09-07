@@ -1,7 +1,7 @@
-# iyi-lang.sdogruyol.io
+# iyi-lang.com
 
 The website for [iyi](https://github.com/sdogruyol/iyi), published at
-https://iyi-lang.sdogruyol.io.
+https://iyi-lang.com from this repository.
 
 The site restates the iyi repository rather than describing it: every number,
 listing and reference page is generated at build time from that tree - its

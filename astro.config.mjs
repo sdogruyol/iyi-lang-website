@@ -1,10 +1,11 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 
-// GitHub Pages serves this repository at its own name, `iyi-lang.sdogruyol.io`
-// (the CNAME under public/), so the site is at the root. Override both to
-// preview under another origin or path.
-const site = process.env.SITE_ORIGIN ?? "https://iyi-lang.sdogruyol.io";
+// GitHub Pages serves this repository at `iyi-lang.com` (the CNAME under
+// public/, which the build copies into dist/ - so the domain is this file's
+// and a deploy carries it), at the root. Override both to preview under
+// another origin or path.
+const site = process.env.SITE_ORIGIN ?? "https://iyi-lang.com";
 const base = process.env.SITE_BASE ?? "/";
 
 export default defineConfig({

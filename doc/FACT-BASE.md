@@ -634,7 +634,7 @@ From README.md, line 7:
 The repository shows:
 - Owner: github.com/sdogruyol (Serdar Dogruyol)
 - Remote: git@github.com:sdogruyol/iyi.git
-- This website: github.com/sdogruyol/iyi-lang.sdogruyol.io, published at https://iyi-lang.sdogruyol.io
+- This website: github.com/sdogruyol/iyi-lang.sdogruyol.io, published at https://iyi-lang.com
 
 ### License
 

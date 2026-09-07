@@ -53,9 +53,13 @@ export interface Provenance {
 
 /** One curated sample, exactly as the recorder wrote it. */
 export interface CuratedSample {
-  /** Stable id, the sample's basename. Also the module's file name and the
-   * value the playground accepts in its `?sample=` query. */
+  /** Stable id: a tour program's basename, or `iyi/` and a repository
+   * sample's basename. The route under /playground/ and, with any slash
+   * folded to a dash, the module's file name. */
   id: string;
+  /** Which family: `tour`, this site's own short programs, or `iyi`, the
+   * repository's samples, which stand behind `iyi/` in their ids. */
+  set: "tour" | "iyi";
   /** Repository relative path of the source. The key into the highlight
    * record, and the module's own name in iyi, since a module's path is its
    * file's path. */
@@ -154,8 +158,13 @@ if (!Array.isArray(record.samples) || record.samples.length === 0) {
   );
 }
 
-/** The curated set, in the recorder's order. */
+/** The curated set, in the recorder's order: the tour first, then the rest. */
 export const curatedSamples: readonly CuratedSample[] = record.samples;
+
+/** The tour alone, which is what the playground's picker offers. */
+export const tourSamples: readonly CuratedSample[] = curatedSamples.filter(
+  (sample) => sample.set === "tour",
+);
 
 /** The samples the recorder found this target cannot run, and why. */
 export const nativeOnlySamples: readonly NativeOnlySample[] = record.nativeOnly ?? [];
@@ -203,7 +212,7 @@ export function playgroundHref(pathOrId: string): string | null {
   const sample = findSample(pathOrId);
   if (sample === null) return null;
   const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
-  return `${base}playground/${encodeURIComponent(sample.id)}/`;
+  return `${base}playground/${sample.id}/`;
 }
 
 /**

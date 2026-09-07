@@ -31,7 +31,7 @@
 import { activeEngine } from "../playground/registry";
 import type { Capability } from "../playground/types";
 import type { CuratedSample } from "../playground/samples";
-import { curatedSamples, playgroundHref } from "../playground/samples";
+import { playgroundHref, tourSamples } from "../playground/samples";
 import { highlightedLines, recordedText } from "../lib/highlight";
 
 interface Props {
@@ -64,20 +64,28 @@ const seed = source.startsWith("\n") ? `\n${source}` : source;
 const ink = inkLines.join("\n");
 const seedInk = ink.startsWith("\n") ? `\n${ink}` : ink;
 
+/* The pane is as tall as the program, within reason: a three-line hello does
+ * not sit in a page of white, and a long sample scrolls. */
+const lineCount = inkLines.length;
+
 const editable = caps.maxSourceBytes > 0;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 
-/* Previous and next in the recorder's order, so the samples read as a tour. */
-const at = curatedSamples.findIndex((entry) => entry.id === sample.id);
-const prev = at > 0 ? curatedSamples[at - 1] : null;
-const next = at < curatedSamples.length - 1 ? curatedSamples[at + 1] : null;
+/* Previous and next through the tour, in the recorder's order. A repository
+ * sample reached from a lesson is not on the walk, so it gets neither. */
+const at = tourSamples.findIndex((entry) => entry.id === sample.id);
+const prev = at > 0 ? tourSamples[at - 1] : null;
+const next = at >= 0 && at < tourSamples.length - 1 ? tourSamples[at + 1] : null;
+const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
 ---
 
 <section class="bench wrap" aria-label="Run a recorded program">
   <div class="bench-head">
     <div class="bench-title">
-      <p class="label"><a href={`${base}playground/`}>Playground</a></p>
-      <h1>{sample.id}</h1>
+      <p class="label">
+        <a href={`${base}playground/`}>Playground</a>{step && `, ${step}`}
+      </p>
+      <h1>{sample.set === "tour" ? sample.id : sample.path}</h1>
       <p class="pitch">{blurb}.</p>
     </div>
 
@@ -107,7 +115,7 @@ const next = at < curatedSamples.length - 1 ? curatedSamples[at + 1] : null;
         <summary class="cta ghost">Samples</summary>
         <ul class="menu-body">
           {
-            curatedSamples.map((entry) => (
+            tourSamples.map((entry) => (
               <li>
                 <a
                   href={playgroundHref(entry.id)}
@@ -133,7 +141,7 @@ const next = at < curatedSamples.length - 1 ? curatedSamples[at + 1] : null;
         <span data-role="ink-state">{sample.wasm}</span>
       </figcaption>
 
-      <div class="editor">
+      <div class="editor" style={`--lines: ${lineCount}`}>
         <pre
           class="editor-ink"
           data-role="ink"
@@ -598,7 +606,7 @@ const next = at < curatedSamples.length - 1 ? curatedSamples[at + 1] : null;
    * scrolling as one. */
   .editor {
     display: grid;
-    height: clamp(22rem, 62vh, 44rem);
+    height: clamp(12rem, calc(var(--lines) * 1.58 * var(--step--1) + 2.2rem), 44rem);
   }
 
   .editor .editor-ink,

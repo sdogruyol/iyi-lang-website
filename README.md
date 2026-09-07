@@ -6,9 +6,11 @@ https://iyi-lang.com from this repository.
 The site restates the iyi repository rather than describing it: every number,
 listing and reference page is generated at build time from that tree - its
 README.md, SPEC.md, CHANGELOG.md, the programs under `samples/`, and the
-measurements `bench/doc_numbers.py` already gates there. Nothing on a page is
-typed by hand, and `scripts/no-transcription.mjs` fails the build if a figure
-is.
+measurements `bench/doc_numbers.py` already gates there. The one thing this
+repository authors in iyi is the playground's tour, six short programs under
+`samples/tour/`, and those go through the same recorders as the repository's
+own. Nothing on a page is typed by hand, and `scripts/no-transcription.mjs`
+fails the build if a figure is.
 
 ## Building
 
@@ -38,6 +40,7 @@ Regenerate them after the samples or the compiler change:
 
     doc/          the art direction, the stack, the fact base, the playground
                   feasibility and service notes, and screenshots
+    samples/tour/ the playground's tour: short programs, this site's own
     scripts/      the generators: facts, reference, samples, records, and
                   the gates on the built output
     records/      committed recordings (see above)

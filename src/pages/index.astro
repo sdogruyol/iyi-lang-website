@@ -6,6 +6,14 @@ import DurationChart from "../components/DurationChart.astro";
 import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
 import facts from "../generated/facts.json";
+import { findSample } from "../playground/samples";
+
+/* The tour's first program and what it printed, out of the wasm record. The
+ * build refuses a home page whose hello the recorder did not run. */
+const hello = findSample("samples/tour/hello.iyi");
+if (hello === null) {
+  throw new Error("samples/tour/hello.iyi is not in records/wasm/manifest.json");
+}
 
 const base = import.meta.env.BASE_URL;
 const loop = facts.recorded.edit_loop;
@@ -81,27 +89,21 @@ const starts = [
         <h2>Try iyi</h2>
         <p>
           Looks like Crystal, reads like Ruby, builds like a systems language.
-          This listing comes out of <code>samples/iyi/hello.iyi</code> at build
-          time, and the output beside it is a run of the compiler against that
-          file.
+          This is the first program of the tour, and the output beside it is
+          what the compiler's build of it printed.
         </p>
         <p>
           <a href={`${base}playground/hello/`}>Run it in the playground</a>
         </p>
       </div>
       <div class="try-run">
-        <Sample path="samples/iyi/hello.iyi" lines="110-118" must="puts announce" />
+        <Sample path="samples/tour/hello.iyi" />
         <div class="console">
           <div class="console-chrome" aria-hidden="true">
             <i></i><i></i><i></i>
-            <span class="caption">iyi run samples/iyi/hello.iyi</span>
+            <span class="caption">iyi run samples/tour/hello.iyi</span>
           </div>
-          <pre><span class="out">Hello, iyi!
-HELLO, IYI!
-BEEP 42
-Hello, crystal!
-BEEP 7
--&gt; BEEP 9</span></pre>
+          <pre><span class="out">{hello.nativeStdout}</span></pre>
         </div>
       </div>
     </div>

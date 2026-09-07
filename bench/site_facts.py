@@ -246,13 +246,23 @@ def sessions(raw: dict) -> list[dict[str, float]]:
 
     The spread is the point. README.md prints three readings and says to read
     the columns against each other because they pay the same machine together,
-    so the site draws all three and leads with the ratio they agree on.
+    so the site draws all of them and leads with the ratio they agree on.
+
+    README.md prints a third column, another compiler's, on the same row. The
+    site publishes iyi against the compiler it forked and nothing else, so that
+    column is parsed, because a drift in the row is still a drift, and then
+    dropped.
     """
     rows = []
     for slot in ("a", "b", "tired"):
-        iyi, crystal, go = (float(v) for v in raw[slot].split(" / "))
-        rows.append({"iyi": iyi, "crystal": crystal, "go": go})
+        iyi, crystal, _ = (float(v) for v in raw[slot].split(" / "))
+        rows.append({"iyi": iyi, "crystal": crystal})
     return rows
+
+
+def machine(name: str) -> str:
+    """The box, without the toolchain of the column the site does not draw."""
+    return re.sub(r",\s*Go [\d.]+", "", name)
 
 
 def build() -> tuple[dict, list[str]]:
@@ -261,7 +271,7 @@ def build() -> tuple[dict, list[str]]:
     if missing:
         return {}, missing
 
-    default_machine = raw["machine"]["name"]
+    default_machine = machine(raw["machine"]["name"])
     loop = sessions(raw["edit_loop_sessions"])
     ratios = [round(s["crystal"] / s["iyi"], 2) for s in loop]
 
@@ -280,7 +290,9 @@ def build() -> tuple[dict, list[str]]:
                     "against": "crystal",
                     "sense": "less",
                 },
-                "best": {k: float(v) for k, v in raw["edit_loop"].items()},
+                "best": {
+                    k: float(v) for k, v in raw["edit_loop"].items() if k != "go"
+                },
                 "sessions": loop,
                 "ratios": ratios,
                 # The commands as bench/incremental.py runs them, so the chart
@@ -291,7 +303,6 @@ def build() -> tuple[dict, list[str]]:
                 "series": [
                     {"key": "iyi", "label": "iyi build … -o app main.iyi"},
                     {"key": "crystal", "label": "crystal build -o app main.cr"},
-                    {"key": "go", "label": "go build -o app ."},
                 ],
                 "unit": "s",
                 "machine": default_machine,
@@ -310,15 +321,6 @@ def build() -> tuple[dict, list[str]]:
                 "machine": MACHINES["hello_binary"],
                 "command": COMMANDS["hello_binary"],
                 "subject": 'puts "hello"',
-            },
-            "full_build": {
-                "lines": int(raw["full_build"]["lines"].replace(",", "")),
-                "iyi": float(raw["full_build"]["iyi"]),
-                "go": float(raw["full_build"]["go"]),
-                "unit": "s",
-                "machine": default_machine,
-                "command": COMMANDS["full_build"],
-                "subject": "a full build from scratch, the row iyi loses",
             },
             "runtime": {
                 "rows": [

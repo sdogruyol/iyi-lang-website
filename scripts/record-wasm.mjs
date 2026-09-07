@@ -54,6 +54,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
 const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
 const samplesDir = resolve(repo, "samples", "iyi");
+const tourDir = resolve(site, "samples", "tour");
 const out = resolve(site, "records", "wasm");
 
 // A sample whose wasm run does not match its native run needs a sentence
@@ -65,7 +66,7 @@ const out = resolve(site, "records", "wasm");
 // the evidence, and given no page. The script fails if a sample listed here
 // now compiles, so this table cannot go stale quietly either.
 const NATIVE_ONLY = {
-  workers:
+  "iyi/workers":
     "III.4's scheduler runs on Linux and darwin arm64, through each platform's " +
     "own doorway, and nowhere else yet: a program that names `group` or " +
     "`Channel` on wasm32 does not compile, which src/iyi/concurrency.iyi " +
@@ -73,7 +74,7 @@ const NATIVE_ONLY = {
 };
 
 const NOTES = {
-  files:
+  "iyi/files":
     "The wasm build refuses File at run time by design: src/iyi/prelude.iyi " +
     "panics with \"File is not available on wasm32-wasi: path_open needs a " +
     "preopened directory fd\", because a WASI module reaches the filesystem " +
@@ -199,18 +200,53 @@ for (const [key, value] of Object.entries(recorded)) {
 // The curated set
 // ---------------------------------------------------------------------------
 
-// Discovered, not listed, so adding a sample to the repository adds it to the
-// record. `hello` leads because it is the one a reader meets first; the rest
-// sort so the manifest has a stable order.
-const ids = readdirSync(samplesDir)
+// Two families. The tour is this site's own: short programs in the order a
+// first reader meets them, listed here so the order is a decision and a file
+// the list does not name is an error rather than a surprise. The repository's
+// samples are discovered, not listed, so adding one to the tree adds it to
+// the record; each stands behind `iyi/` so a lesson's program stays runnable
+// without sharing a name with the tour's.
+const TOUR = ["hello", "variables", "loops", "lists", "functions", "structs"];
+const tourFiles = readdirSync(tourDir)
   .filter((name) => name.endsWith(".iyi"))
   .map((name) => name.slice(0, -".iyi".length))
   .sort();
-if (!ids.includes("hello")) {
-  throw new Error(`${samplesDir} has no hello.iyi, so the set is not the`
-    + ` curated set`);
+for (const id of tourFiles) {
+  if (!TOUR.includes(id)) {
+    throw new Error(`${tourDir}/${id}.iyi is not in TOUR, so it has no place in the tour`);
+  }
 }
-const order = ["hello", ...ids.filter((id) => id !== "hello")];
+for (const id of TOUR) {
+  if (!tourFiles.includes(id)) {
+    throw new Error(`TOUR names ${id}, and ${tourDir} has no ${id}.iyi`);
+  }
+}
+const repoIds = readdirSync(samplesDir)
+  .filter((name) => name.endsWith(".iyi"))
+  .map((name) => name.slice(0, -".iyi".length))
+  .sort();
+if (repoIds.length === 0) {
+  throw new Error(`${samplesDir} has no .iyi files, so the set is not the curated set`);
+}
+
+// `slug` is the id with its slash folded, for the file names a module and its
+// work directory take.
+const order = [
+  ...TOUR.map((id) => ({
+    id,
+    slug: id,
+    set: "tour",
+    relative: `samples/tour/${id}.iyi`,
+    source: resolve(tourDir, `${id}.iyi`),
+  })),
+  ...repoIds.map((id) => ({
+    id: `iyi/${id}`,
+    slug: `iyi-${id}`,
+    set: "iyi",
+    relative: `samples/iyi/${id}.iyi`,
+    source: resolve(samplesDir, `${id}.iyi`),
+  })),
+];
 
 // ---------------------------------------------------------------------------
 // The runner, written where it runs
@@ -248,10 +284,8 @@ writeFileSync(runner, RUNNER, "utf8");
 const samples = [];
 const nativeOnly = [];
 
-for (const id of order) {
-  const relative = `samples/iyi/${id}.iyi`;
-  const source = resolve(repo, relative);
-  const dir = join(work, id);
+for (const { id, slug, set, relative, source } of order) {
+  const dir = join(work, slug);
   mkdirSync(dir, { recursive: true });
 
   // Step 1: cross-compile. The compiler writes an unlinked module and prints
@@ -266,7 +300,7 @@ for (const id of order) {
       "--target",
       "wasm32-wasi",
       "-o",
-      `${id}.obj`,
+      `${slug}.obj`,
       source,
     ],
     { cwd: dir, encoding: "utf8", env, maxBuffer: 32 * 1024 * 1024 },
@@ -288,6 +322,7 @@ for (const id of order) {
       .pop();
     nativeOnly.push({
       id,
+      set,
       path: relative,
       sourceSha256: createHash("sha256").update(readFileSync(source)).digest("hex"),
       refusal: refusal ?? null,
@@ -335,7 +370,7 @@ for (const id of order) {
   // The linked module's own name is the only thing about it that depends on
   // where it was built, so it is linked straight to the name the record uses
   // and the recorded bytes are the bytes on disk.
-  linkArgs[dashO] = `${id}.wasm`;
+  linkArgs[dashO] = `${slug}.wasm`;
   const link = spawnSync(clang, linkArgs, {
     cwd: dir,
     encoding: "utf8",
@@ -347,9 +382,9 @@ for (const id of order) {
         `${link.status}):\n${link.stderr || link.stdout}`,
     );
   }
-  const linked = join(dir, `${id}.wasm`);
+  const linked = join(dir, `${slug}.wasm`);
   if (!existsSync(linked)) {
-    throw new Error(`${relative} linked without producing ${id}.wasm`);
+    throw new Error(`${relative} linked without producing ${slug}.wasm`);
   }
 
   // Step 3: run the module. A run that never reached the module at all, a
@@ -363,7 +398,7 @@ for (const id of order) {
   const codePath = join(dir, "exit-code");
   const wasmRun = spawnSync(
     process.execPath,
-    [runner, linked, id, codePath],
+    [runner, linked, slug, codePath],
     {
       cwd: dir,
       encoding: "utf8",
@@ -373,7 +408,7 @@ for (const id of order) {
   );
   if (wasmRun.status !== 0) {
     throw new Error(
-      `${relative}: node could not run ${id}.wasm under node:wasi (exit ` +
+      `${relative}: node could not run ${slug}.wasm under node:wasi (exit ` +
         `${wasmRun.status}):\n${wasmRun.stderr}`,
     );
   }
@@ -433,9 +468,10 @@ for (const id of order) {
   const sourceBytes = readFileSync(source);
   samples.push({
     id,
+    set,
     path: relative,
     sourceSha256: createHash("sha256").update(sourceBytes).digest("hex"),
-    wasm: `${id}.wasm`,
+    wasm: `${slug}.wasm`,
     bytes: bytes.length,
     sha256: createHash("sha256").update(bytes).digest("hex"),
     exitCode,
@@ -470,7 +506,7 @@ for (const name of readdirSync(out)) {
 }
 
 for (const sample of samples) {
-  const from = join(work, sample.id, sample.wasm);
+  const from = join(work, sample.wasm.slice(0, -".wasm".length), sample.wasm);
   copyFileSync(from, join(out, sample.wasm));
   const written = statSync(join(out, sample.wasm)).size;
   if (written !== sample.bytes) {

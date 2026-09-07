@@ -2,7 +2,8 @@
 // Transcludes the repository's own text into JSON the site imports. Nothing a
 // lesson shows as code is typed into the lesson. Two kinds of text arrive here:
 //
-//   1. The sample programs under `samples/iyi`. A lesson names a file, a named
+//   1. The sample programs under `samples/iyi` in the iyi repository, and the
+//      tour under `samples/tour` in this one. A lesson names a file, a named
 //      top-level declaration in it, or a content-anchored span of it, and the
 //      build reads that text out of the file at that moment. A sample that
 //      changes in the repository changes on the site. A sample that is renamed
@@ -38,7 +39,9 @@ const die = (message) => {
 
 // Samples ------------------------------------------------------------------
 
+const site = resolve(here, "..");
 const samplesRoot = resolve(repo, "samples", "iyi");
+const tourRoot = resolve(site, "samples", "tour");
 
 function walk(dir) {
   const found = [];
@@ -105,23 +108,25 @@ function regionsOf(lines) {
 }
 
 const samples = {};
-for (const file of walk(samplesRoot)) {
-  const path = relative(resolve(repo, "samples"), file).split("\\").join("/");
-  const text = readFileSync(file, "utf8");
-  const lines = text.replace(/\n$/, "").split("\n");
-  const { regions, ambiguous } = regionsOf(lines);
+for (const [root, tree] of [[samplesRoot, repo], [tourRoot, site]]) {
+  for (const file of walk(root)) {
+    const path = relative(resolve(tree, "samples"), file).split("\\").join("/");
+    const text = readFileSync(file, "utf8");
+    const lines = text.replace(/\n$/, "").split("\n");
+    const { regions, ambiguous } = regionsOf(lines);
 
-  samples[path] = {
-    path: `samples/${path}`,
-    text,
-    lines: lines.length,
-    regions,
-    ambiguous,
-  };
+    samples[path] = {
+      path: `samples/${path}`,
+      text,
+      lines: lines.length,
+      regions,
+      ambiguous,
+    };
+  }
 }
 
 if (Object.keys(samples).length === 0) {
-  die(`no samples found under ${samplesRoot}`);
+  die(`no samples found under ${samplesRoot} or ${tourRoot}`);
 }
 
 // The break programs -------------------------------------------------------

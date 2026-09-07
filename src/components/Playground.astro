@@ -74,6 +74,9 @@ const seedInk = ink.startsWith("\n") ? `\n${ink}` : ink;
  * not sit in a page of white, and a long sample scrolls. */
 const lineCount = inkLines.length;
 
+/* The file a reader would save the program as, on their own machine. */
+const basename = sample.path.replace(/^.*\//, "");
+
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 const hrefOf = (id: string) => `${base}playground/${id}/`;
 
@@ -149,6 +152,9 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       <figcaption class="source-head">
         <span class="path">{sample.path}</span>
         <span>{runnable(sample) ? sample.wasm : "native only"}</span>
+        <button type="button" class="copy" data-copy={source} aria-label="Copy the program">
+          Copy
+        </button>
       </figcaption>
       <pre
         class="listing"
@@ -189,6 +195,24 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     <a href={`${base}playground/evidence/`}>How this works</a>
   </p>
 
+  <div class="local">
+    <p class="foot">
+      <strong>Try it on your machine.</strong> Copy the program into{" "}
+      <code>{basename}</code>, change something, and run it. The listing here
+      cannot be edited, but your copy can.
+    </p>
+    <div class="console local-run">
+      <div class="console-chrome">
+        <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
+        <span class="caption">in a shell, after <a href={`${base}install/`}>installing</a></span>
+        <button type="button" class="copy" data-copy={`iyi run ${basename}`} aria-label="Copy the command">
+          Copy
+        </button>
+      </div>
+      <pre><span class="prompt">$ </span><span class="cmd">iyi run {basename}</span></pre>
+    </div>
+  </div>
+
   <nav class="tour" aria-label="Samples">
     {prev ? <a href={hrefOf(prev.id)}>&larr; {prev.id}</a> : <span />}
     {next ? <a href={hrefOf(next.id)}>{next.id} &rarr;</a> : <span />}
@@ -206,6 +230,9 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   import type { Capability, RunEvent } from "../playground/types";
   import { CAPABILITY_LABEL } from "../playground/types";
   import { diagnosticHtml } from "../playground/render";
+  import { wireCopyButtons } from "../lib/copy";
+
+  wireCopyButtons();
 
   (() => {
     const engine = activeEngine();
@@ -552,6 +579,19 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     margin: 0.9rem 0 0;
     font-size: var(--step--1);
     color: var(--graphite);
+  }
+
+  .local {
+    margin-block-start: 1.5rem;
+    max-width: 60rem;
+  }
+
+  .local .foot {
+    margin-block-end: 0.6rem;
+  }
+
+  .local-run pre {
+    padding-block: 0.7rem;
   }
 
   .tour {

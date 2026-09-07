@@ -59,6 +59,14 @@ for Type\` lives with the trait or the type (R-3).
   ${bin.iyi.kb} KB and starts in ${bin.iyi.ms} ms, against ${bin.crystal.kb.toLocaleString("en-GB")} KB and ${bin.crystal.ms} ms with Crystal's
   library (\`${bin.command}\` on ${bin.machine}).
 
+## Install
+
+    curl -fsSL https://raw.githubusercontent.com/sdogruyol/iyi/master/install.sh | sh
+    ~/.local/bin/iyi run ~/.local/share/iyi/samples/hello.iyi
+
+The latest release into ~/.local, on Linux x86-64 or macOS arm64, with both
+libraries and the samples. Details: ${origin}/install/
+
 ## Crystal compatibility
 
 The same compiler builds .cr files unchanged. \`iyi build --crystal\` gives an
@@ -73,6 +81,7 @@ an iyi module; iyi consumes Crystal, not the other way round.
 - [Learn](${origin}/learn/): five lessons on the rule, each running a real program.
 - [Spec](${origin}/spec/): SPEC.md, generated verbatim, one page per section.
 - [Changelog](${origin}/changelog/): CHANGELOG.md, verbatim.
+- [Install](${origin}/install/): the one-line installer, the by-hand version, and from source.
 - [Playground](${origin}/playground/): the tour, ${tourSections.reduce((n, x) => n + x.steps.length, 0)} short programs that run in the browser.
 - [Playground evidence](${origin}/playground/evidence/): what ran, what checked it.
 

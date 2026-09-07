@@ -45,9 +45,9 @@ const starts = [
   },
   {
     title: "Install it",
-    body: "Clone the repository, build the compiler, and run a sample. The README walks through it and names every command.",
-    href: "https://github.com/sdogruyol/iyi#readme",
-    cta: "Get the compiler",
+    body: "One command installs the latest release into ~/.local on Linux or macOS, with both libraries and the samples. The second command runs hello.",
+    href: "install/",
+    cta: "Install iyi",
   },
 ];
 ---
@@ -68,7 +68,7 @@ const starts = [
         </p>
         <div class="hero-cta">
           <a class="cta" href={`${base}playground/`}>Take the tour</a>
-          <a class="cta ghost" href={`${base}playground/hello/`}>Run hello in your browser</a>
+          <a class="cta ghost" href={`${base}install/`}>Install</a>
         </div>
       </div>
       <div class="hero-art">
@@ -148,6 +148,20 @@ const starts = [
         <Quote id="kemal_site" as="source" caption="site.iyi" />
         <Quote id="kemal_run" as="console" caption="a Kemal server, from an iyi program" />
       </div>
+    </div>
+  </section>
+
+  <section class="install">
+    <div class="wrap install-inner">
+      <div>
+        <h2>Install in one line</h2>
+        <p class="section-sub">
+          The latest release into <code>~/.local</code>, on Linux x86-64 or
+          macOS arm64, with both libraries and the samples. Then hello.
+        </p>
+        <p><a href={`${base}install/`}>What the installer does, and the by-hand version</a></p>
+      </div>
+      <Quote id="install" as="console" caption="install, then run hello" />
     </div>
   </section>
 
@@ -428,6 +442,30 @@ const starts = [
 
     .crystal-run :global(.console) {
       margin-block-start: 0.9rem;
+    }
+
+    /* Install ---------------------------------------------------------- */
+
+    .install {
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .install-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+      gap: clamp(1.5rem, 4vw, 3.5rem);
+      align-items: center;
+    }
+
+    @media (max-width: 52rem) {
+      .install-inner {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .install :global(.console pre) {
+      white-space: pre;
+      overflow-x: auto;
     }
 
     /* Cards ------------------------------------------------------------ */

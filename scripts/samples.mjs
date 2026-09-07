@@ -205,6 +205,8 @@ const WANTED = {
   kemal_run: { lang: "console", anchor: "curl localhost:3000/json" },
   mod_diff: { lang: "console", anchor: "Consumers have to be rebuilt" },
   bad_body: { lang: "console", anchor: "does not implement Kemal::Router::IntoBody" },
+  install: { lang: "console", anchor: "install.sh | sh" },
+  install_manual: { lang: "console", anchor: "tar -xzf iyi-" },
 };
 
 const blocks = fencedBlocks(readmeLines);

@@ -1,0 +1,189 @@
+---
+import Page from "../layouts/Page.astro";
+import Measure from "../components/Measure.astro";
+import Quote from "../components/Quote.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Page
+  title="Install iyi"
+  summary="Install iyi with one command: the latest release into ~/.local, on Linux x86-64 or macOS arm64, then run hello. Or unpack the tarball by hand, or build from source."
+>
+  <section class="wrap head">
+    <p class="label">Install</p>
+    <h1>One command, then hello.</h1>
+    <p class="lede">
+      The installer is a POSIX shell script over <code>curl</code> and{" "}
+      <code>tar</code>. It picks the release for your machine, unpacks it into{" "}
+      <code>~/.local</code>, and checks that the binary starts. The second line
+      runs the first sample it shipped with.
+    </p>
+    <Quote id="install" as="console" caption="install, then run hello" />
+  </section>
+
+  <section class="wrap">
+    <div class="cols">
+      <div>
+        <h2>What it does</h2>
+        <ul class="points">
+          <li>
+            <strong>Picks the tarball for <code>uname</code>:</strong>{" "}
+            <code>linux-x86_64</code> or <code>darwin-arm64</code>. Anything
+            else is refused by name, with a pointer to building from source.
+          </li>
+          <li>
+            <strong>Follows the latest release</strong> on GitHub, without the
+            API. <code>IYI_VERSION=0.10.0</code> pins one.
+          </li>
+          <li>
+            <strong>Unpacks into <code>~/.local</code>.</strong>{" "}
+            <code>IYI_PREFIX</code> moves it; the tarball is relocatable.
+          </li>
+          <li>
+            <strong>Nothing to configure.</strong> <code>bin/iyi</code> finds
+            its libraries beside itself. No <code>IYI_PATH</code>, no LLVM to
+            install: LLVM is inside the binary.
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2>What you get</h2>
+        <ul class="points">
+          <li>
+            <strong>The compiler</strong>, and the same binary under Crystal's
+            name for <code>.cr</code> files.
+          </li>
+          <li>
+            <strong>Both libraries:</strong> iyi's own,{" "}
+            <Measure of="prelude_kb" unit="KB" /> on disk, and Crystal's
+            standard library for <code>iyi build --crystal</code>, so your
+            shards work from the first minute.
+          </li>
+          <li>
+            <strong>The samples</strong> under <code>share/iyi/samples</code>,
+            the programs the <a href={`${base}learn/`}>lessons</a> are built on.
+          </li>
+          <li>
+            <strong>The tools:</strong> <code>iyi check</code>, <code>fix</code>,{" "}
+            <code>test</code>, <code>doc</code>, <code>mod</code>,{" "}
+            <code>lsp</code> and <code>mcp</code>, all one binary.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>By hand</h2>
+    <p class="sub">
+      The installer does two things you can do yourself. Download the tarball
+      for your machine from the{" "}
+      <a href="https://github.com/sdogruyol/iyi/releases/latest">latest release</a>,
+      then:
+    </p>
+    <Quote id="install_manual" as="console" caption="the same two lines, by hand" />
+  </section>
+
+  <section class="wrap">
+    <h2>From source</h2>
+    <p class="sub">
+      Other platforms, or the current tree rather than a release: clone the
+      repository and <code>make</code>. It needs a Crystal compiler to
+      bootstrap from and LLVM; the README's{" "}
+      <a href="https://github.com/sdogruyol/iyi#getting-it">Getting it</a>{" "}
+      section names the versions and every command.
+    </p>
+  </section>
+
+  <section class="wrap next">
+    <h2>Then</h2>
+    <div class="hero-cta">
+      <a class="cta" href={`${base}playground/`}>Take the tour</a>
+      <a class="cta ghost" href={`${base}learn/`}>Learn the rule</a>
+      <a class="cta ghost" href={`${base}#crystal`}>Coming from Crystal</a>
+    </div>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.5rem, 3vw, 2.5rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 60ch;
+      font-size: var(--step-0);
+      margin-block-end: 1.4rem;
+    }
+
+    .head :global(.console) {
+      max-width: 60rem;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.6rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1rem;
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: clamp(1.5rem, 4vw, 3.5rem);
+    }
+
+    .points {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .points li {
+      position: relative;
+      padding-inline-start: 1.6rem;
+      color: var(--graphite);
+    }
+
+    .points li::before {
+      content: "";
+      position: absolute;
+      left: 0.1rem;
+      top: 0.55em;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: var(--brand);
+    }
+
+    .points strong {
+      color: var(--ink);
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</Page>

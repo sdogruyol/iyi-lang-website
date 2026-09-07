@@ -60,6 +60,18 @@ const out = resolve(site, "records", "wasm");
 // saying why, and the sentence is prose so it is written here rather than
 // guessed at. The script fails if a mismatch has no note, and fails if a note
 // describes a sample that now matches, so this table cannot go stale quietly.
+// A sample that does not compile for wasm32-wasi at all, and the sentence
+// saying why: recorded as native only, with the compiler's refusal kept as
+// the evidence, and given no page. The script fails if a sample listed here
+// now compiles, so this table cannot go stale quietly either.
+const NATIVE_ONLY = {
+  workers:
+    "III.4's scheduler runs on Linux and darwin arm64, through each platform's " +
+    "own doorway, and nowhere else yet: a program that names `group` or " +
+    "`Channel` on wasm32 does not compile, which src/iyi/concurrency.iyi " +
+    "calls honest - III.4.8 refused shipping a spelling without the feature.",
+};
+
 const NOTES = {
   files:
     "The wasm build refuses File at run time by design: src/iyi/prelude.iyi " +
@@ -234,6 +246,7 @@ writeFileSync(runner, RUNNER, "utf8");
 // ---------------------------------------------------------------------------
 
 const samples = [];
+const nativeOnly = [];
 
 for (const id of order) {
   const relative = `samples/iyi/${id}.iyi`;
@@ -259,9 +272,33 @@ for (const id of order) {
     { cwd: dir, encoding: "utf8", env, maxBuffer: 32 * 1024 * 1024 },
   );
   if (cross.status !== 0) {
+    const reason = NATIVE_ONLY[id];
+    if (!reason) {
+      throw new Error(
+        `${relative} does not cross-compile for wasm32-wasi (exit ` +
+          `${cross.status}):\n${cross.stderr || cross.stdout}`,
+      );
+    }
+    // The compiler's own last line is the evidence: the sentence above says
+    // why, the refusal says that it happened.
+    const refusal = (cross.stderr || cross.stdout)
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("Error:"))
+      .pop();
+    nativeOnly.push({
+      id,
+      path: relative,
+      sourceSha256: createHash("sha256").update(readFileSync(source)).digest("hex"),
+      refusal: refusal ?? null,
+      reason,
+    });
+    continue;
+  }
+  if (NATIVE_ONLY[id]) {
     throw new Error(
-      `${relative} does not cross-compile for wasm32-wasi (exit ` +
-        `${cross.status}):\n${cross.stderr || cross.stdout}`,
+      `${relative} cross-compiles for wasm32-wasi now, so it is not native ` +
+        `only. Remove it from NATIVE_ONLY.`,
     );
   }
   const printed = cross.stdout.trim();
@@ -409,10 +446,11 @@ for (const id of order) {
   });
 }
 
-if (samples.length !== order.length) {
+if (samples.length + nativeOnly.length !== order.length) {
   throw new Error(
-    `recorded ${samples.length} samples of ${order.length}, which cannot ` +
-      `happen without a hole in this script`,
+    `recorded ${samples.length} samples and ${nativeOnly.length} native ` +
+      `only of ${order.length}, which cannot happen without a hole in this ` +
+      `script`,
   );
 }
 
@@ -445,7 +483,7 @@ for (const sample of samples) {
 
 writeFileSync(
   join(out, "manifest.json"),
-  `${JSON.stringify({ recorded, samples }, null, 2)}\n`,
+  `${JSON.stringify({ recorded, samples, nativeOnly }, null, 2)}\n`,
   "utf8",
 );
 
@@ -458,6 +496,9 @@ console.log(
     `${differing.length} differing from native` +
     (differing.length
       ? ` (${differing.map((sample) => sample.id).join(", ")})`
+      : "") +
+    (nativeOnly.length
+      ? `, ${nativeOnly.length} native only (${nativeOnly.map((sample) => sample.id).join(", ")})`
       : "") +
     `, ${clang}, at ${commit.slice(0, 9)}`,
 );

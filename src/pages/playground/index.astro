@@ -25,7 +25,7 @@
  * element anywhere in it. It is a plan, and it reads as a plan.
  */
 import Page from "../../layouts/Page.astro";
-import { curatedSamples } from "../../playground/samples";
+import { curatedSamples, nativeOnlySamples } from "../../playground/samples";
 import { SPELLED, lessonHref, sequence } from "../../lib/lessons";
 
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
@@ -120,6 +120,14 @@ const runnable = curatedSamples.filter((sample) => sample.identical).length;
         {runnable} programs from <code>samples/iyi/</code> are cross-compiled
         to <code>wasm32-wasi</code>{" "}by the iyi compiler and execute in this
         page, printing the same bytes as a native run.
+        {nativeOnlySamples.length > 0 && (
+          <>
+            {" "}
+            {nativeOnlySamples.length === 1 ? "One" : nativeOnlySamples.length} more
+            ({nativeOnlySamples.map((sample) => sample.id).join(", ")}) runs
+            natively only, and the <a href={`${base}playground/evidence/`}>evidence page</a> says why.
+          </>
+        )}
       </p>
       <ul class="ways">
         <li>

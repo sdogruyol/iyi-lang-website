@@ -104,9 +104,25 @@ export interface CuratedSample {
   note: string | null;
 }
 
+/**
+ * A sample the compiler refused for wasm32-wasi, so the playground has no
+ * module for it and no page: what a reader gets is the reason, and the
+ * refusal the recorder kept as its evidence.
+ */
+export interface NativeOnlySample {
+  id: string;
+  path: string;
+  sourceSha256: string;
+  /** The compiler's own last line, or null if it printed none. */
+  refusal: string | null;
+  /** One sentence, the recorder's, saying why this target does not have it. */
+  reason: string;
+}
+
 interface WasmManifest {
   recorded: Provenance;
   samples: CuratedSample[];
+  nativeOnly?: NativeOnlySample[];
 }
 
 const record = manifest as WasmManifest;
@@ -140,6 +156,9 @@ if (!Array.isArray(record.samples) || record.samples.length === 0) {
 
 /** The curated set, in the recorder's order. */
 export const curatedSamples: readonly CuratedSample[] = record.samples;
+
+/** The samples the recorder found this target cannot run, and why. */
+export const nativeOnlySamples: readonly NativeOnlySample[] = record.nativeOnly ?? [];
 
 /**
  * Lookup by id or by repository relative path, because callers hold one or the

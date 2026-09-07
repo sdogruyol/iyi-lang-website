@@ -37,6 +37,7 @@ import type { Capability, RunEvent } from "../../playground/types";
 import { CAPABILITY_LABEL } from "../../playground/types";
 import {
   curatedSamples,
+  nativeOnlySamples,
   playgroundHref,
   wasmProvenance,
 } from "../../playground/samples";
@@ -285,6 +286,18 @@ const differing = curatedSamples.filter((sample) => !sample.identical);
           about the target, and hiding them would make the other{" "}
           {identical.length} less believable.
         </li>
+        {nativeOnlySamples.length > 0 && (
+          <li>
+            <strong>
+              {nativeOnlySamples.length === 1
+                ? "One sample does not compile for this target at all."
+                : `${nativeOnlySamples.length} samples do not compile for this target at all.`}
+            </strong>{" "}
+            It has no module and no page here; the recorder kept the compiler's
+            refusal and the reason, below, so the absence is recorded rather
+            than quiet.
+          </li>
+        )}
       </ul>
     </div>
   </section>
@@ -336,6 +349,28 @@ const differing = curatedSamples.filter((sample) => !sample.identical);
                   <dd>{sample.note}</dd>
                 </div>
               )}
+            </dl>
+          </Stamped>
+        ))
+      }
+      {
+        nativeOnlySamples.map((sample) => (
+          <Stamped
+            claim="The compiler refused this sample for wasm32-wasi, so there is no module"
+            subject={sample.path}
+            machine={wasmProvenance.machine}
+            command={wasmProvenance.command}
+            outcome="loss"
+          >
+            <dl class="recording">
+              <div>
+                <dt>the refusal</dt>
+                <dd>{sample.refusal ?? "the compiler printed no error line"}</dd>
+              </div>
+              <div class="lesson">
+                <dt>the lesson</dt>
+                <dd>{sample.reason}</dd>
+              </div>
             </dl>
           </Stamped>
         ))

@@ -232,6 +232,33 @@ if (manifest) {
         );
       }
     }
+
+    // A sample the recorder found does not compile for wasm32-wasi: it has
+    // no module and no page, and its record is the reason, the compiler's
+    // refusal, and the digest of the source that was refused - stale the
+    // same way a module goes stale.
+    for (const sample of manifest.nativeOnly ?? []) {
+      const id = sample?.id ?? "?";
+      for (const field of ["path", "sourceSha256", "reason"]) {
+        if (typeof sample?.[field] !== "string" || sample[field] === "") {
+          problem(file, `native-only sample "${id}" has no ${field}`);
+        }
+      }
+      if (typeof sample?.path === "string" && sample.path !== "") {
+        if (!existsSync(sourceOf(sample.path))) {
+          problem(file, `native-only sample "${id}" cites ${sample.path}, which is gone`);
+        } else {
+          const digest = createHash("sha256").update(readFileSync(sourceOf(sample.path))).digest("hex");
+          if (digest !== sample.sourceSha256) {
+            problem(
+              file,
+              `native-only sample "${id}" is stale: ${sample.path} hashes to ${digest} ` +
+                `where the manifest says ${sample.sourceSha256}. Regenerate with: npm run record:wasm`,
+            );
+          }
+        }
+      }
+    }
   }
 }
 

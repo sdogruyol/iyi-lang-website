@@ -6,133 +6,168 @@ import DurationChart from "../components/DurationChart.astro";
 import Sample from "../components/Sample.astro";
 import facts from "../generated/facts.json";
 
+const base = import.meta.env.BASE_URL;
 const loop = facts.recorded.edit_loop;
 const bin = facts.recorded.hello_binary;
-const full = facts.recorded.full_build;
-const runtime = facts.recorded.runtime;
 
 const ratios = loop.ratios as number[];
 const loopClaim = `About ${loop.claim.value}x less than Crystal, on the line you just changed.`;
 const loopBand = `${Math.min(...ratios).toFixed(2)}x to ${Math.max(...ratios).toFixed(2)}x across ${loop.sessions.length} published sessions.`;
+const massRatio = Math.round(bin.crystal.kb / bin.iyi.kb);
 
-const massRatio = bin.crystal.kb / bin.iyi.kb;
-const crystalSide = 216;
-const iyiSide = crystalSide / Math.sqrt(massRatio);
-
-const fullLoss = full.iyi / full.go;
-const stringRow = runtime.rows.find((r) => r.workload === "string building")!;
+const starts = [
+  {
+    title: "Learn iyi",
+    body: "Five short lessons, each one a real program from the repository that runs, and each one ending in a mistake so you meet the compiler's own error on purpose.",
+    href: "learn/",
+    cta: "Start the tour",
+  },
+  {
+    title: "Try it in the browser",
+    body: "The samples are compiled to wasm and run on the page. Edit them, run them, share a link. Nothing is faked and nothing needs installing.",
+    href: "playground/",
+    cta: "Open the playground",
+  },
+  {
+    title: "Read the spec",
+    body: "The design record, generated verbatim from SPEC.md: what was measured, what was thrown away, and why.",
+    href: "spec/",
+    cta: "Read the spec",
+  },
+  {
+    title: "Install it",
+    body: "Clone the repository, build the compiler, and run a sample. The README walks through it and names every command.",
+    href: "https://github.com/sdogruyol/iyi#readme",
+    cta: "Get the compiler",
+  },
+];
 ---
 
 <Page
-  title="iyi, a language whose modules compile against declarations"
-  summary="A fork of the Crystal compiler with one rule: a module compiles against its dependencies' declarations, never their bodies."
+  title="iyi, a friendly, fast language for people and their agents"
+  summary="iyi is a friendly, fast programming language for people and their agents. Modules compile against declarations, so builds are quick, binaries are small, and a tool can read an interface without a repository."
 >
-  <section class="spread hero">
-    <div class="hero-copy">
-      <p class="label">iyi is Turkish for good</p>
-      <h1>
-        A friendly, fast language for people and their agents.
-      </h1>
-      <p class="lede">
-        iyi is a fork of the Crystal compiler with one governing rule: a module
-        is the unit of compilation, and it compiles against its dependencies'
-        declarations, never their bodies. A build reads less, a program carries
-        less, a tool can read an interface without a repository, and a person
-        waits less.
-      </p>
-      <div class="hero-cta">
-        <a class="cta" href={`${import.meta.env.BASE_URL}learn/`}>Learn iyi</a>
-        <a class="cta ghost" href={`${import.meta.env.BASE_URL}playground/`}>
-          Run it in the browser
-        </a>
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <h1>A friendly, fast language for people and their agents.</h1>
+        <p class="lede">
+          iyi is a compiled language with a simple rule at its heart: a module
+          builds against its dependencies' declarations, never their bodies. So
+          builds are quick, programs are small, and an agent can read exactly
+          the interface it needs.
+        </p>
+        <div class="hero-cta">
+          <a class="cta" href={`${base}learn/`}>Get started</a>
+          <a class="cta ghost" href={`${base}playground/`}>Try in the playground</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img
+          src={`${base}mascot.webp`}
+          alt="The iyi mascot: a smiling red heart with yellow gloves, waving"
+          width="480"
+          height="450"
+          fetchpriority="high"
+        />
       </div>
     </div>
+  </section>
 
-    <div class="hero-run">
-      <Sample path="samples/iyi/hello.iyi" lines="110-118" must="puts announce" />
-      <div class="console">
-        <div class="console-chrome" aria-hidden="true">
-          <i></i><i></i><i></i>
-          <span class="caption">iyi run samples/iyi/hello.iyi</span>
-        </div>
-        <pre><span class="out">Hello, iyi!
+  <section class="try">
+    <div class="wrap try-inner">
+      <div class="try-copy">
+        <h2>Try iyi</h2>
+        <p>
+          Looks like Crystal, reads like Ruby, builds like a systems language.
+          This listing comes out of <code>samples/iyi/hello.iyi</code> at build
+          time, and the output beside it is a run of the compiler against that
+          file.
+        </p>
+        <p>
+          <a href={`${base}playground/`}>Run and edit it in the playground</a>
+        </p>
+      </div>
+      <div class="try-run">
+        <Sample path="samples/iyi/hello.iyi" lines="110-118" must="puts announce" />
+        <div class="console">
+          <div class="console-chrome" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span class="caption">iyi run samples/iyi/hello.iyi</span>
+          </div>
+          <pre><span class="out">Hello, iyi!
 HELLO, IYI!
 BEEP 42
 Hello, crystal!
 BEEP 7
 -&gt; BEEP 9</span></pre>
+        </div>
       </div>
-      <p class="hero-run-note">
-        The listing is read out of <code>samples/iyi/hello.iyi</code> at build
-        time, and the output is a run of the compiler against that file.
-      </p>
     </div>
   </section>
 
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">Start here</h2>
+  <section class="features">
+    <div class="wrap">
+      <h2>What iyi is for</h2>
       <p class="section-sub">
-        Three ways in, sorted by what you came for rather than by what kind of
-        document each one is.
+        Four things, and they are one design decision seen from four sides.
       </p>
+      <ul class="cards">
+        <li class="card">
+          <p class="card-figure">{loop.claim.value}x</p>
+          <h3>Quick to rebuild</h3>
+          <p>
+            Change one line in one module and build again. iyi reads the
+            declarations of everything else and none of the bodies, so the edit
+            loop is about {loop.claim.value}x shorter than the same compiler
+            without the rule.
+          </p>
+          <a href={`${base}why/`}>Why it is fast</a>
+        </li>
+        <li class="card">
+          <p class="card-figure mono">iyi mod context</p>
+          <h3>Made for agents</h3>
+          <p>
+            A module's interface is a file, not a convention. One command
+            grounds an edit in every import's exact surface, <code>iyi check</code>
+            answers as data with suggested edits, and <code>iyi mcp</code>
+            serves it all over the protocol agents speak.
+          </p>
+          <a href={`${base}learn/declarations-not-bodies/`}>Declarations, not bodies</a>
+        </li>
+        <li class="card">
+          <p class="card-figure"><Measure of="targets" /></p>
+          <h3>Portable</h3>
+          <p>
+            An iyi program compiles for <Measure of="targets" /> targets, and is
+            run on four of them on every build: two flavours of x86-64, aarch64
+            under emulation, and wasm32-wasi, which is what the playground on
+            this site uses.
+          </p>
+          <a href={`${base}playground/evidence/`}>How the playground runs</a>
+        </li>
+        <li class="card">
+          <p class="card-figure">{massRatio}x</p>
+          <h3>Small and quick to start</h3>
+          <p>
+            Native code through LLVM, and a program links only what it uses. A
+            hello world is about {massRatio}x smaller than the same program
+            with Crystal's library, and starts in a fraction of the time.
+          </p>
+          <a href={`${base}why/`}>The numbers, with the machine they ran on</a>
+        </li>
+      </ul>
     </div>
-    <ol class="entries">
-      <li>
-        <span class="entry-index">01</span>
-        <div>
-          <h3><a href={`${import.meta.env.BASE_URL}learn/`}>Walk the language</a></h3>
-          <p>
-            For a reader who wants to write iyi. Five steps in the order the
-            rules depend on each other, each one a program from this repository
-            that runs, and each one ending in a deliberate mistake so you meet
-            the compiler's own error before you meet it by accident.
-          </p>
-        </div>
-        <span class="entry-kind">the tour</span>
-      </li>
-      <li>
-        <span class="entry-index">02</span>
-        <div>
-          <h3><a href={`${import.meta.env.BASE_URL}playground/`}>Run it without installing it</a></h3>
-          <p>
-            For a reader who is evaluating. The samples are cross-compiled to
-            wasm32-wasi and executed on this page, printing the same bytes as a
-            native run. No server, nothing faked, and what it cannot do is
-            printed beside what it can.
-          </p>
-        </div>
-        <span class="entry-kind">hands on</span>
-      </li>
-      <li>
-        <span class="entry-index">03</span>
-        <div>
-          <h3><a href={`${import.meta.env.BASE_URL}spec/`}>Read the design record</a></h3>
-          <p>
-            For a reader deciding whether the argument holds. SPEC.md records
-            what was measured, what was thrown away and why, generated verbatim
-            with the commit it came from, including the{" "}
-            <Measure of="spec_proposed" /> sections still marked PROPOSED.
-          </p>
-        </div>
-        <span class="entry-kind">the record</span>
-      </li>
-    </ol>
   </section>
 
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">What the rule buys</h2>
+  <section class="measured">
+    <div class="wrap">
+      <h2>Measured, not promised</h2>
       <p class="section-sub">
-        One line changed in one of 30 modules, <Measure of="generated" /> lines,
-        built three ways by one generator that refuses to start the clock until
-        all three print the same total.
+        One line changed in one of 30 modules, <Measure of="generated" /> lines
+        in all, built three ways by a generator that refuses to start the clock
+        until all three print the same total. The bars run at real speed.
       </p>
-    </div>
-
-    <div class="to-wide">
       <Stamped
         claim={loopClaim}
         band={loopBand}
@@ -143,191 +178,86 @@ BEEP 7
       >
         <DurationChart />
       </Stamped>
-    </div>
-
-    <div class="to-wide note-pair">
-      <p>
-        The Crystal column is no straw man: it is this compiler, under the rule
-        iyi drops. A Crystal class is open until the last line of the last file,
-        so every rebuild reads all <Measure of="generated" /> lines again.
-      </p>
-      <p>
-        Go is in the table because Go is good at exactly this, and is the bar
-        worth clearing.
+      <p class="section-sub">
+        Where iyi loses is published too, on the <a href={`${base}why/`}>why page</a>,
+        with the same machine named beside it.
       </p>
     </div>
   </section>
 
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">Where it loses</h2>
-      <p class="section-sub">
-        Said here rather than left to be found, because a tagline that outruns
-        its evidence is worth less than no tagline.
-      </p>
-    </div>
-
-    <div class="to-wide losses">
-      <Stamped
-        claim={`${fullLoss.toFixed(2)}x slower than go build from scratch.`}
-        subject={full.subject}
-        machine={full.machine}
-        command={full.command}
-        outcome="loss"
-      >
-        <p class="loss-body">
-          A full build of a {full.lines.toLocaleString("en-GB")} line program is{" "}
-          {full.iyi.toFixed(2)} s against <code>go build</code>'s{" "}
-          {full.go.toFixed(2)} s. iyi is quick where fixed costs are the whole
-          bill and quick on the loop. It is not quick at compiling a lot of code
-          it has never seen.
-        </p>
-      </Stamped>
-
-      <Stamped
-        claim={`${stringRow.gc_off.toFixed(2)}x slower at building strings, with the collector off.`}
-        subject={runtime.subject}
-        machine={runtime.machine}
-        command={runtime.command}
-        outcome="loss"
-      >
-        <p class="loss-body">
-          As it runs, the same workload is {stringRow.as_it_runs.toFixed(2)}x,
-          within noise. The collector is masking a slower builder, the same
-          confound an earlier reading published upside down as a twenty times
-          win.
-        </p>
-      </Stamped>
-    </div>
-  </section>
-
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">The interface is a file</h2>
-      <p class="section-sub">
-        R-1 is what a <code>.iyimod</code> is: a module's declarations, the
-        bodies a consumer has to compile for itself, and its machine code, in
-        one file. So the source of a module you import need not exist on the
-        machine at all.
-      </p>
-    </div>
-
-    <div class="to-wide">
-      <div class="console">
-        <div class="console-chrome" aria-hidden="true">
-          <i></i><i></i><i></i>
-          <span class="caption">the second build never sees polite's body</span>
-        </div>
-        <pre><span class="prompt">$ </span><span class="cmd">iyi build --emit-iyimod mods -o hello main.iyi</span>
-<span class="prompt">$ </span><span class="cmd">rm -r app</span><span class="out">                                     # the library, gone</span>
-<span class="prompt">$ </span><span class="cmd">iyi build --use-iyimod mods -o hello main.iyi</span>
-<span class="prompt">$ </span><span class="cmd">./hello</span>
-<span class="out">Hello, world.</span></pre>
-      </div>
-      <dl class="evidence wide-evidence">
-        <dt>quoted from</dt>
-        <dd>README.md, "Your first module, and then the rule that matters"</dd>
-        <dt>checked by</dt>
-        <dd>bash bench/samples_roundtrip.sh, on every push</dd>
-      </dl>
-    </div>
-  </section>
-
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">What is undecided, and who decides it</h2>
-      <p class="section-sub">
-        Other language sites put a community here. iyi does not have one yet,
-        so this is the honest version of that section: what the project stands
-        on, what it has built itself, and the parts of the design that are
-        still somebody's call to make.
-      </p>
-    </div>
-
-    <div class="to-wide wall">
-      <div class="wall-cell">
-        <p class="wall-figure"><Measure of="spec_awaiting" /></p>
-        <h3>decisions awaiting a call</h3>
-        <p>
-          SPEC.md's Appendix B is a numbered table of them, each with a
-          recommendation and the reasoning behind it. A reader who disagrees
-          with one has somewhere concrete to say so.
-        </p>
-        <p class="wall-link">
-          <a href={`${import.meta.env.BASE_URL}spec/appendix-b-decisions-awaiting-your-call/`}
-            >read Appendix B</a
-          >
-        </p>
-      </div>
-
-      <div class="wall-cell">
-        <p class="wall-figure"><Measure of="spec_proposed" /></p>
-        <h3>sections still marked PROPOSED</h3>
-        <p>
-          Concurrency, packaging, tooling, Crystal interoperation. These are
-          badged in the signal colour wherever the site renders them, because
-          they are exactly the parts that will move.
-        </p>
-        <p class="wall-link">
-          <a href={`${import.meta.env.BASE_URL}spec/`}>read the specification</a>
-        </p>
-      </div>
-
-      <div class="wall-cell">
-        <p class="wall-figure"><Measure of="fork_commits" /></p>
-        <h3>commits on the fork's own surface</h3>
-        <p>
-          Counted across <code>src/iyi</code>, <code>src/compiler/iyi</code> and{" "}
-          <code>SPEC.md</code>. Everything else here is Crystal's:{" "}
-          <Measure of="inherited_commits" /> commits by{" "}
-          <Measure of="inherited_authors" /> authors, inherited rather than
-          earned, and never added to the figure on the left.
-        </p>
-        <p class="wall-link">
-          <a href="https://github.com/sdogruyol/iyi">the repository</a>
-        </p>
-      </div>
+  <section class="starts">
+    <div class="wrap">
+      <h2>Get started</h2>
+      <ul class="cards starts-cards">
+        {
+          starts.map((s) => (
+            <li class="card">
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+              <a href={s.href.startsWith("http") ? s.href : `${base}${s.href}`}>{s.cta}</a>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </section>
 
   <style>
-    .hero {
-      padding-block: clamp(2.5rem, 6vw, 4.5rem) 1rem;
-      align-items: start;
+    section {
+      padding-block: clamp(2.5rem, 5vw, 4.5rem);
     }
 
-    @media (min-width: 62rem) {
-      .hero {
-        grid-template-columns:
-          [full-start] minmax(var(--edge), 1fr)
-          [copy-start] minmax(0, 1fr)
-          [copy-end] var(--gutter)
-          [run-start] minmax(0, 34rem)
-          [run-end] minmax(var(--edge), 1fr)
-          [full-end];
+    section h2 {
+      font-size: var(--step-3);
+      margin-block-end: 0.6rem;
+    }
+
+    .section-sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1.6rem;
+      font-size: var(--step-0);
+    }
+
+    /* Hero ------------------------------------------------------------- */
+
+    .hero {
+      padding-block: clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 4vw, 3rem);
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: clamp(1.5rem, 5vw, 4rem);
+      align-items: center;
+    }
+
+    @media (max-width: 52rem) {
+      .hero-inner {
+        grid-template-columns: 1fr;
       }
-      .hero-copy { grid-column: copy; }
-      .hero-run { grid-column: run; }
+      .hero-art {
+        order: -1;
+      }
+      .hero-art img {
+        max-width: 14rem;
+      }
     }
 
     .hero h1 {
-      font-size: var(--step-4);
-      font-variation-settings: "opsz" 72;
-      font-weight: 600;
-      letter-spacing: -0.022em;
-      max-width: 22ch;
-      margin-block: 0.7rem 1.1rem;
+      font-size: var(--step-5);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      max-width: 16ch;
+      margin-block-end: 1.1rem;
     }
 
     .lede {
-      font-size: var(--step-0);
-      line-height: 1.6;
+      font-size: var(--step-1);
+      line-height: 1.5;
       color: var(--graphite);
-      max-width: 46ch;
-      margin: 0 0 1.6rem;
+      max-width: 48ch;
+      margin: 0 0 1.8rem;
     }
 
     .hero-cta {
@@ -336,170 +266,125 @@ BEEP 7
       flex-wrap: wrap;
     }
 
-    .cta {
-      font-family: var(--font-mono);
-      font-size: var(--step--1);
-      letter-spacing: 0.04em;
-      text-decoration: none;
-      color: var(--paper);
-      background: var(--ink);
-      padding: 0.55rem 1.1rem;
-      border: var(--hair) solid var(--ink);
-      border-radius: 2px;
+    .hero-art {
+      display: flex;
+      justify-content: center;
     }
 
-    .cta.ghost {
-      color: var(--ink);
-      background: none;
+    .hero-art img {
+      width: 100%;
+      max-width: 26rem;
+      height: auto;
     }
 
-    .cta:hover {
-      border-color: var(--signal);
+    /* Try -------------------------------------------------------------- */
+
+    .try {
+      background: var(--raise);
+      border-block: var(--hair) solid var(--hairline);
     }
 
-    .hero-run-note {
-      font-family: var(--font-mono);
-      font-size: var(--step--2);
-      color: var(--mute);
-      margin-block-start: 0.7rem;
+    .try-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+      gap: clamp(1.5rem, 4vw, 3.5rem);
+      align-items: start;
     }
 
-    .band {
-      padding-block-start: 2.6rem;
+    @media (max-width: 52rem) {
+      .try-inner {
+        grid-template-columns: 1fr;
+      }
     }
 
-    .section-head {
-      margin-block: 1.1rem 0.5rem;
-      font-variation-settings: "opsz" 48;
-    }
-
-    .section-sub {
+    .try-copy p {
       color: var(--graphite);
-      max-width: 62ch;
-      margin-block-end: 1.4rem;
+      max-width: 40ch;
     }
 
-    .entries {
+    .try-run :global(.source) {
+      background: var(--paper);
+    }
+
+    .try-run .console {
+      margin-block-start: 0.9rem;
+    }
+
+    /* Cards ------------------------------------------------------------ */
+
+    .cards {
       list-style: none;
       margin: 0;
       padding: 0;
-    }
-
-    .entries li {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 1.4rem;
-      align-items: start;
-      padding-block: 1.3rem;
-      border-block-start: var(--hair) solid var(--hairline);
+      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     }
 
-    .entries li:last-child {
-      border-block-end: var(--hair) solid var(--hairline);
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 1.5rem;
+      border: var(--hair) solid var(--hairline);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
     }
 
-    .entry-index {
-      font-family: var(--font-mono);
-      font-size: var(--step--1);
-      color: var(--mute);
-      padding-block-start: 0.35rem;
-    }
-
-    .entries h3 {
-      margin: 0 0 0.35rem;
+    .card h3 {
       font-size: var(--step-1);
     }
 
-    .entries h3 a {
-      text-decoration: none;
-      color: var(--ink);
-    }
-
-    .entries h3 a:hover {
-      text-decoration: underline;
-      text-decoration-color: var(--signal);
-    }
-
-    .entries p {
+    .card p {
       margin: 0;
       color: var(--graphite);
-      max-width: 58ch;
+      font-size: var(--step--1);
+      flex: 1;
     }
 
-    .entry-kind {
-      font-family: var(--font-mono);
-      font-size: var(--step--2);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--mute);
-      padding-block-start: 0.45rem;
-    }
-
-    .note-pair {
-      display: grid;
-      gap: 0 var(--gutter);
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 30ch), 1fr));
-      color: var(--graphite);
+    .card > a {
+      font-weight: 600;
       font-size: var(--step--1);
       margin-block-start: 0.4rem;
     }
 
-    .losses {
-      display: grid;
-      gap: var(--gutter);
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 34ch), 1fr));
-    }
-
-    .loss-body {
-      font-size: var(--step--1);
-      color: var(--graphite);
-      margin: 0;
-      max-width: 46ch;
-    }
-
-    .wide-evidence {
-      margin-block-start: 1rem;
-      max-width: 62ch;
-    }
-
-    /* The contribution wall. Three cells, hairline separated, no cards and no
-     * shadows: it is a table of counts, and it should read as one. */
-    .wall {
-      display: grid;
-      gap: 0 var(--gutter);
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 26ch), 1fr));
-      border-block-start: var(--hair) solid var(--hairline);
-    }
-
-    .wall-cell {
-      padding-block: 1.4rem;
-      border-block-end: var(--hair) solid var(--hairline);
-    }
-
-    .wall-figure {
-      margin: 0;
-      font-size: var(--step-3);
+    .card .card-figure {
+      font-size: var(--step-4);
+      font-weight: 800;
+      letter-spacing: -0.03em;
       line-height: 1;
+      color: var(--brand);
+      flex: 0 !important;
     }
 
-    .wall-cell h3 {
-      margin: 0.5rem 0 0.6rem;
-      font-size: var(--step-0);
-      font-weight: 600;
-    }
-
-    .wall-cell p {
-      color: var(--graphite);
-      font-size: var(--step--1);
-      margin: 0;
-      max-width: 40ch;
-    }
-
-    .wall-link {
-      margin-block-start: 0.7rem !important;
+    .card .card-figure.mono {
       font-family: var(--font-mono);
-      font-size: var(--step--2);
+      font-size: var(--step-1);
+      font-weight: 600;
+      letter-spacing: 0;
+      padding-block: 0.4em;
     }
 
+    .card-figure :global(.measure-value) {
+      color: inherit;
+      font-family: inherit;
+      font-weight: inherit;
+    }
+
+    /* Measured --------------------------------------------------------- */
+
+    .measured {
+      background: var(--raise);
+      border-block: var(--hair) solid var(--hairline);
+    }
+
+    .measured :global(.stamped) {
+      margin-block: 0.5rem 1.4rem;
+    }
+
+    .starts-cards .card {
+      background: var(--raise);
+      border-color: transparent;
+    }
   </style>
 </Page>

@@ -16,12 +16,62 @@ import facts from "../generated/facts.json";
 interface Props {
   title: string;
   summary?: string;
+  /** Schema.org type of the page's main content; WebPage unless a page says. */
+  kind?: "WebPage" | "TechArticle" | "CollectionPage";
 }
 
-const { title, summary } = Astro.props;
+const { title, summary, kind = "WebPage" } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const href = (p: string) => `${base.replace(/\/$/, "")}/${p.replace(/^\//, "")}`;
 const here = Astro.url.pathname;
+
+/* One title pattern for the whole site: the page, then the site, unless the
+ * page is the site. */
+const siteName = "iyi";
+const isHome = here === base || here === href("/");
+const fullTitle = isHome || title.endsWith(`| ${siteName}`) ? title : `${title} | ${siteName}`;
+const canonical = new URL(here, Astro.site).href;
+const ogImage = new URL(href("og.png"), Astro.site).href;
+
+/* Structured data. The site and its subject on every page; the page itself
+ * typed by what it is. Search engines and answer engines read this before
+ * they read prose. */
+const ld = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${Astro.site}#website`,
+      url: Astro.site,
+      name: siteName,
+      description:
+        "iyi is a friendly, fast programming language for people and their agents, compatible with Crystal.",
+      inLanguage: "en",
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": `${Astro.site}#iyi`,
+      name: "iyi",
+      description:
+        "A compiled programming language whose modules compile against their dependencies' declarations, never their bodies. Compatible with Crystal: the same compiler builds .cr files, and iyi build --crystal gives a program Crystal's standard library and shards.",
+      programmingLanguage: "iyi",
+      codeRepository: "https://github.com/sdogruyol/iyi",
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+      url: Astro.site,
+      image: ogImage,
+    },
+    {
+      "@type": kind,
+      "@id": `${canonical}#page`,
+      url: canonical,
+      name: fullTitle,
+      description: summary,
+      isPartOf: { "@id": `${Astro.site}#website` },
+      about: { "@id": `${Astro.site}#iyi` },
+      inLanguage: "en",
+    },
+  ],
+};
 
 const nav = [
   ["Why iyi", "why/"],
@@ -39,12 +89,27 @@ const current = (path: string) => here.startsWith(href(path));
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{fullTitle}</title>
     {summary && <meta name="description" content={summary} />}
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href={href("favicon.svg")} type="image/svg+xml" />
-    <meta property="og:title" content={title} />
+    <link rel="sitemap" href={href("sitemap-index.xml")} />
+    <meta name="theme-color" content="#d1333d" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={fullTitle} />
     {summary && <meta property="og:description" content={summary} />}
-    <meta property="og:image" content={new URL(href("mascot.webp"), Astro.site)} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The iyi mascot, a waving red heart, beside the line: a friendly, fast language for people and their agents." />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    {summary && <meta name="twitter:description" content={summary} />}
+    <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

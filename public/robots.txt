@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://iyi-lang.com/sitemap-index.xml

@@ -52,21 +52,14 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
       <h1>{count} steps, one rule each</h1>
       <p class="lede">
         iyi is Crystal with one rule added, and that rule changes enough that
-        starting from the syntax would teach you the wrong thing. So the path
-        starts from the rule, takes the rules in the order they depend on each
-        other, and spends one step on each.
+        starting from the syntax would teach you the wrong thing. So these
+        steps start from the rule, in the order the rules depend on each other.
       </p>
       <p>
-        Every step is set the same way. It opens with what the rule says in the
-        specification's own words, shows the program in this repository it is
-        grounded in, teaches the rule from that program, then breaks the rule on
-        purpose and prints what a real compiler said about it. It closes with
-        what the rule bought. Nothing on these pages is a recollection of
-        something that once worked: the listings are read out of the files when
-        the page is built, the terminal sessions are quoted from README.md with
-        the lines they came from, and every compiler error is a recording of a
-        run, with the compiler and the commit that produced it stamped beside
-        it.
+        Each step opens with the rule in the specification's own words, shows
+        the program it is grounded in, breaks the rule on purpose, and prints
+        what the compiler said. Every listing is read out of the repository
+        when the page is built, and every error is a recording of a real run.
       </p>
       <p class="start">
         <a href={first.href}>Start at step one, {first.lesson.data.title}</a>

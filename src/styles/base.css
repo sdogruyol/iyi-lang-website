@@ -30,12 +30,13 @@ body {
 
 /* The spread. A main column for the argument and a rail for the evidence, as
  * named grid lines so a component can opt into either without knowing the
- * page. The README puts the command that prints a number beside the number;
- * this is that sentence expressed as a grid. */
+ * page. The left edge is the same edge `.wrap` has, so a reading page lines
+ * up under the header and the home page rather than floating in the middle;
+ * the rail takes what is left. */
 .spread {
   display: grid;
   grid-template-columns:
-    [full-start] minmax(var(--edge), 1fr)
+    [full-start] max(var(--edge), (100% - var(--page)) / 2)
     [main-start] min(var(--measure), 100% - 2 * var(--edge))
     [main-end] var(--gutter)
     [rail-start] minmax(0, var(--rail))
@@ -64,7 +65,7 @@ body {
 @media (max-width: 62rem) {
   .spread {
     grid-template-columns:
-      [full-start] minmax(var(--edge), 1fr)
+      [full-start] max(var(--edge), (100% - var(--page)) / 2)
       [main-start rail-start] min(var(--measure), 100% - 2 * var(--edge))
       [main-end rail-end] minmax(var(--edge), 1fr)
       [full-end];
@@ -190,6 +191,27 @@ samp,
   margin: 0;
   position: relative;
   overflow: visible;
+}
+
+/* A copy control, sitting in a block's header. */
+.copy {
+  margin-inline-start: auto;
+  font-family: var(--font-sans);
+  font-size: var(--step--2);
+  font-weight: 600;
+  color: var(--graphite);
+  background: var(--paper);
+  border: var(--hair) solid var(--hairline);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.copy:hover {
+  color: var(--ink);
+  border-color: var(--graphite);
 }
 
 .rule::after {

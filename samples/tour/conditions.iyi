@@ -1,0 +1,34 @@
+# Conditions: `if`, `elsif`, `else`, `unless`, and `if` as a value.
+
+temperature = 23
+
+if temperature > 30
+  puts "hot"
+elsif temperature > 20
+  puts "warm"
+else
+  puts "cold"
+end
+
+# `unless` is `if not`.
+unless temperature < 0
+  puts "above freezing"
+end
+
+# A one-line form goes after the statement.
+puts "nice day" if temperature == 23
+
+# `if` is an expression, so it can be assigned.
+label = if temperature > 20
+          "warm"
+        else
+          "cool"
+        end
+puts label
+
+# The short form: condition ? when true : when false.
+puts temperature.even? ? "even" : "odd"
+
+# `&&`, `||`, `!` combine conditions.
+puts temperature > 20 && temperature < 30
+puts !(temperature > 20)

@@ -195,6 +195,16 @@ RECORDED_PATTERNS: list[tuple[str, str, tuple[str, ...]]] = [
         r"([\d,]+) lines of Crystal's standard library instead of ([\d,]+)",
         ("crystal", "iyi"),
     ),
+    (
+        "context_pack",
+        r"at \*\*(\d+)–(\d+)%\*\* of the sources' size",
+        ("size_low", "size_high"),
+    ),
+    (
+        "context_tokens",
+        r"\*\*(\d+)–(\d+)% fewer prompt tokens\*\* over (\w+) measured runs",
+        ("low", "high", "runs"),
+    ),
 ]
 
 # Which command prints each recorded group, quoted from README.md's own
@@ -212,6 +222,8 @@ COMMANDS: dict[str, str] = {
     "runtime_hash": "python3 bench/runtime.py",
     "runtime_array": "python3 bench/runtime.py",
     "runtime_arithmetic": "python3 bench/runtime.py",
+    "context_pack": "python3 bench/context_pack.py",
+    "context_tokens": "python3 bench/context_pack.py",
 }
 
 # Binary sizes and start times are quoted against a different machine from the
@@ -246,13 +258,23 @@ def sessions(raw: dict) -> list[dict[str, float]]:
 
     The spread is the point. README.md prints three readings and says to read
     the columns against each other because they pay the same machine together,
-    so the site draws all three and leads with the ratio they agree on.
+    so the site draws all of them and leads with the ratio they agree on.
+
+    README.md prints a third column, another compiler's, on the same row. The
+    site publishes iyi against the compiler it forked and nothing else, so that
+    column is parsed, because a drift in the row is still a drift, and then
+    dropped.
     """
     rows = []
     for slot in ("a", "b", "tired"):
-        iyi, crystal, go = (float(v) for v in raw[slot].split(" / "))
-        rows.append({"iyi": iyi, "crystal": crystal, "go": go})
+        iyi, crystal, _ = (float(v) for v in raw[slot].split(" / "))
+        rows.append({"iyi": iyi, "crystal": crystal})
     return rows
+
+
+def machine(name: str) -> str:
+    """The box, without the toolchain of the column the site does not draw."""
+    return re.sub(r",\s*Go [\d.]+", "", name)
 
 
 def build() -> tuple[dict, list[str]]:
@@ -261,7 +283,7 @@ def build() -> tuple[dict, list[str]]:
     if missing:
         return {}, missing
 
-    default_machine = raw["machine"]["name"]
+    default_machine = machine(raw["machine"]["name"])
     loop = sessions(raw["edit_loop_sessions"])
     ratios = [round(s["crystal"] / s["iyi"], 2) for s in loop]
 
@@ -280,7 +302,9 @@ def build() -> tuple[dict, list[str]]:
                     "against": "crystal",
                     "sense": "less",
                 },
-                "best": {k: float(v) for k, v in raw["edit_loop"].items()},
+                "best": {
+                    k: float(v) for k, v in raw["edit_loop"].items() if k != "go"
+                },
                 "sessions": loop,
                 "ratios": ratios,
                 # The commands as bench/incremental.py runs them, so the chart
@@ -291,7 +315,6 @@ def build() -> tuple[dict, list[str]]:
                 "series": [
                     {"key": "iyi", "label": "iyi build … -o app main.iyi"},
                     {"key": "crystal", "label": "crystal build -o app main.cr"},
-                    {"key": "go", "label": "go build -o app ."},
                 ],
                 "unit": "s",
                 "machine": default_machine,
@@ -310,15 +333,6 @@ def build() -> tuple[dict, list[str]]:
                 "machine": MACHINES["hello_binary"],
                 "command": COMMANDS["hello_binary"],
                 "subject": 'puts "hello"',
-            },
-            "full_build": {
-                "lines": int(raw["full_build"]["lines"].replace(",", "")),
-                "iyi": float(raw["full_build"]["iyi"]),
-                "go": float(raw["full_build"]["go"]),
-                "unit": "s",
-                "machine": default_machine,
-                "command": COMMANDS["full_build"],
-                "subject": "a full build from scratch, the row iyi loses",
             },
             "runtime": {
                 "rows": [
@@ -347,6 +361,28 @@ def build() -> tuple[dict, list[str]]:
                 "machine": None,
                 "command": "python3 bench/doc_numbers.py",
                 "subject": "what a program has",
+            },
+            "front_end": {
+                "seconds": float(raw["front_end"]["seconds"]),
+                "unit": "s",
+                "machine": default_machine,
+                "command": COMMANDS["front_end"],
+                "subject": "the front end answering hello, before any code is generated",
+            },
+            # Counted, not timed: bytes of grounding pack against bytes of
+            # source, and prompt tokens spent by a model writing against it.
+            # README.md names no machine for either, because neither is a
+            # duration, so the stamp says so rather than borrowing one.
+            "context_pack": {
+                "size_low": int(raw["context_pack"]["size_low"]),
+                "size_high": int(raw["context_pack"]["size_high"]),
+                "tokens_low": int(raw["context_tokens"]["low"]),
+                "tokens_high": int(raw["context_tokens"]["high"]),
+                "runs": raw["context_tokens"]["runs"],
+                "unit": "%",
+                "machine": None,
+                "command": COMMANDS["context_pack"],
+                "subject": "an edit grounded by iyi mod context, against the sources it replaces",
             },
         },
         "provenance": {

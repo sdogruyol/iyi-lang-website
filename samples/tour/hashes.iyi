@@ -1,0 +1,23 @@
+# Hashes: keys to values, in insertion order.
+
+ages = {"Ayşe" => 31, "Mehmet" => 27}
+puts ages["Ayşe"]
+puts ages.size
+
+ages["Zeynep"] = 40
+puts ages.keys
+
+# `[]?` answers nil for a missing key instead of failing.
+puts ages["Ali"]?
+puts ages.has_key?("Ali")
+
+ages.each do |name, age|
+  puts "#{name} is #{age}"
+end
+
+# An empty hash needs both types written down.
+counts = {} of String => Int32
+["a", "b", "a"].each do |letter|
+  counts[letter] = (counts[letter]? || 0) + 1
+end
+puts counts

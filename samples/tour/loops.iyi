@@ -1,0 +1,22 @@
+# Loops: `each` over a collection, `times`, `while`, and `loop`.
+
+[1, 2, 3].each do |n|
+  puts n
+end
+
+3.times { |i| puts "round #{i}" }
+
+n = 1
+while n < 50
+  n = n * 2
+end
+puts n
+
+# `loop` runs until `break`. `next` skips to the next turn.
+count = 0
+loop do
+  count += 1
+  next if count == 2
+  puts "count #{count}"
+  break if count == 4
+end

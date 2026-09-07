@@ -1,0 +1,21 @@
+# The basic types, and what each literal is.
+
+i = 42            # Int32
+big = 4_000_000_000_i64  # Int64, with a suffix
+f = 3.14          # Float64
+b = true          # Bool
+c = 'a'           # Char
+s = "text"        # String
+
+puts typeof(i)
+puts typeof(big)
+puts typeof(f)
+puts typeof(b)
+puts typeof(c)
+puts typeof(s)
+
+# Integer arithmetic stays integer with `//`; `/` gives a Float64.
+puts 7 // 2
+puts 7 / 2
+puts 7 % 2
+puts 2 ** 10

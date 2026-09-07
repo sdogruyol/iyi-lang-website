@@ -1,0 +1,34 @@
+# Tasks: run work at the same time, inside a group that waits for it all.
+
+def slow_square(n : Int32) : Int32
+  sleep 10   # milliseconds
+  n * n
+end
+
+# `group` opens a scope. Every `spawn` inside it is a task, and the
+# group's `end` waits for every one of them: no task outlives its group.
+results = [] of Int32
+
+group do |g|
+  (1..4).each do |n|
+    g.spawn do
+      results << slow_square(n)
+      0
+    end
+  end
+end
+
+puts results.sorted
+
+# `end!` turns the group into a value: the tuple of what its tasks answered.
+def both : Tuple(String, String) | Panicked
+  group do |g|
+    a = g.spawn { "first" }
+    b = g.spawn { "second" }
+  end!
+end
+
+case both
+in Tuple(String, String) then puts it
+in Panicked              then puts "a task panicked"
+end

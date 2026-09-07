@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
 
 // GitHub Pages serves this repository at `iyi-lang.com` (the CNAME under
 // public/, which the build copies into dist/ - so the domain is this file's
@@ -13,7 +14,7 @@ export default defineConfig({
   base,
   output: "static",
   trailingSlash: "always",
-  integrations: [mdx()],
+  integrations: [mdx(), sitemap()],
 
   // SmartyPants is on by default and it rewrites the text it renders: straight
   // quotes become curly, `...` becomes an ellipsis, and prose `--` becomes an

@@ -1,0 +1,47 @@
+# Default methods: a trait can carry bodies of its own.
+
+trait Greet
+  abstract def name : String
+
+  # Not abstract: every implementer gets this one for free, written in
+  # terms of the requirement.
+  def greeting : String
+    "Merhaba, #{name}!"
+  end
+
+  def shout : String
+    greeting.upcase
+  end
+end
+
+struct Person
+  def initialize(@name : String)
+  end
+end
+
+impl Greet for Person
+  def name : String
+    @name
+  end
+end
+
+struct Robot
+  def initialize(@id : Int32)
+  end
+end
+
+impl Greet for Robot
+  def name : String
+    "unit #{@id}"
+  end
+
+  # An implementer may replace a default.
+  def greeting : String
+    "BEEP #{name}"
+  end
+end
+
+puts Person.new("Ada").greeting
+puts Person.new("Ada").shout
+puts Robot.new(7).greeting
+puts Robot.new(7).shout

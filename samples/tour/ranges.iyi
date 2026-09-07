@@ -1,0 +1,17 @@
+# Ranges: `..` includes the end, `...` stops before it.
+
+(1..5).each { |i| puts i }
+(1...5).each { |i| puts i }
+
+# A range is a collection: map, sum, select, to_a all work.
+puts (1..5).map { |i| i * i }
+puts (1..100).sum
+puts (1..10).select { |i| i % 3 == 0 }
+
+# Ranges also work in a `case`.
+age = 42
+case age
+when 0..12  then puts "child"
+when 13..19 then puts "teen"
+else             puts "adult"
+end

@@ -1,0 +1,46 @@
+# A trait is a type: one list, many kinds, one question.
+
+trait Speak
+  abstract def sound : String
+end
+
+struct Dog
+  def initialize(@name : String)
+  end
+
+  def name : String
+    @name
+  end
+end
+
+struct Cat
+  def initialize(@name : String)
+  end
+
+  def name : String
+    @name
+  end
+end
+
+impl Speak for Dog
+  def sound : String
+    "hav"
+  end
+end
+
+impl Speak for Cat
+  def sound : String
+    "miyav"
+  end
+end
+
+# `of Speak` types the array by the trait, so both fit.
+animals = [Dog.new("Karabaş"), Cat.new("Pamuk")] of Speak
+animals.each { |animal| puts animal.sound }
+
+# A function can ask for the trait rather than a particular type.
+def chorus(voices : Array(Speak)) : String
+  voices.map { |v| v.sound }.join(" ")
+end
+
+puts chorus(animals)

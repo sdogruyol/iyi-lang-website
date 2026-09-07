@@ -1,0 +1,41 @@
+# Errors are values. A function that can fail says so in its type.
+
+struct NotFound
+  def initialize(@key : String)
+  end
+
+  def key : String
+    @key
+  end
+end
+
+# `Error` is a trait the compiler knows. Implementing it makes a type an
+# error member wherever it appears in a union.
+impl Error for NotFound
+  def message : String
+    "no such key: #{key}"
+  end
+end
+
+STORE = {"name" => "iyi", "year" => "2026"}
+
+def fetch(key : String) : String | NotFound
+  STORE[key]? || NotFound.new(key)
+end
+
+# `!` propagates: a good value continues, an error returns from here.
+def year_plus_one : Int32 | NotFound
+  text = fetch("year")!
+  text.to_i + 1
+end
+
+puts year_plus_one
+
+# Handle with `case`, or fall back with `.or`, or insist with `.or_panic`.
+case fetch("missing")
+in String   then puts it
+in NotFound then puts it.message
+end
+
+puts fetch("missing").or("default")
+puts fetch("name").or_panic

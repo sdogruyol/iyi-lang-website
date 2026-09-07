@@ -1,0 +1,15 @@
+# `using`: bring a module's exported names into this file unqualified.
+
+import geometry/point
+
+# The whole surface, or a chosen few in braces. Either way it is this file
+# that asks: a library cannot put names into a file that did not.
+using geometry/point::{Point, distance}
+
+home = Point.new(0, 0)
+work = Point.new(3, 4)
+puts distance(home, work)
+
+# `secret` was declared without `pub`, so it is not there to be found.
+# Uncomment the next line to see the compiler say so:
+# puts Geometry::Point.secret

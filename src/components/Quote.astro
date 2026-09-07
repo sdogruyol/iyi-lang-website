@@ -7,7 +7,7 @@
  * came from. Nothing here retypes output. A page that invented a terminal
  * session would be the same failure as a page that invented a number.
  *
- * Two faces, both already styled in styles/code.css and both classified by
+ * Three faces. Two are already styled in styles/code.css and classified by
  * src/lib/recording.ts, which BreakRule shares so that a caret line means the
  * same thing wherever a recording is set:
  *
@@ -16,17 +16,24 @@
  *   diagnostic  a compiler error. iyi's errors name the rule they enforce,
  *               which is a feature, so this is a designed component rather
  *               than a red box, and the caret line is preserved exactly.
+ *   source      a listing README.md shows and this site has no recording of,
+ *               set in plain ink, because colouring comes from the compiler's
+ *               lexer or not at all. `caption` is the path the listing is of.
  */
 import readme from "../generated/readme.json";
 import { renderRecording } from "../lib/recording";
 
 interface Props {
   id: string;
-  as?: "console" | "diagnostic";
+  as?: "console" | "diagnostic" | "source";
   caption?: string;
+  /** On a console face: a control that copies the commands, without their
+   * prompts and without the output, so what lands in a shell is what the
+   * recording ran. */
+  copy?: boolean;
 }
 
-const { id, as = "console", caption } = Astro.props;
+const { id, as = "console", caption, copy = false } = Astro.props;
 
 type Block = { text: string; from: number; to: number; source: string; cite: string };
 
@@ -40,7 +47,15 @@ if (!block) {
   );
 }
 
-const body = renderRecording(block.text, as);
+const body = as === "source" ? null : renderRecording(block.text, as);
+
+/* The commands alone: the lines the recording ran, with the prompt stripped.
+ * Taken from the text, not the markup, so the copy cannot pick up a span. */
+const commands = block.text
+  .split("\n")
+  .filter((line) => line.startsWith("$ "))
+  .map((line) => line.slice(2))
+  .join("\n");
 ---
 
 {
@@ -51,15 +66,37 @@ const body = renderRecording(block.text, as);
         <i aria-hidden="true" />
         <i aria-hidden="true" />
         <span class="caption">{caption ?? `quoted from ${block.cite}`}</span>
+        {copy && (
+          <button type="button" class="copy" data-copy={commands} aria-label="Copy the commands">
+            Copy
+          </button>
+        )}
       </div>
       <pre set:html={body} />
     </div>
-  ) : (
+  ) : as === "diagnostic" ? (
     <div class="diagnostic">
       <pre set:html={body} />
       <span class="cites">
         {caption ? `${caption}. ` : ""}Quoted verbatim from {block.cite}.
       </span>
     </div>
+  ) : (
+    <figure class="source">
+      <figcaption class="source-head">
+        <span class="path">{caption}</span>
+        <span>quoted from {block.cite}</span>
+      </figcaption>
+      <pre><code>{block.text}</code></pre>
+    </figure>
+  )
+}
+
+{
+  copy && (
+    <script>
+      import { wireCopyButtons } from "../lib/copy";
+      wireCopyButtons();
+    </script>
   )
 }

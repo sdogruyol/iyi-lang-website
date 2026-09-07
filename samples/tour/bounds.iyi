@@ -1,0 +1,42 @@
+# Bounds: a generic that asks its type parameter for a trait.
+
+trait Priced
+  abstract def price : Int32
+end
+
+struct Book
+  def initialize(@price : Int32)
+  end
+end
+
+struct Coffee
+  def initialize(@price : Int32)
+  end
+end
+
+impl Priced for Book
+  def price : Int32
+    @price
+  end
+end
+
+impl Priced for Coffee
+  def price : Int32
+    @price
+  end
+end
+
+# `T : Priced` says: any T, as long as it implements Priced. The bound is
+# checked where the call is made, so `total([1, 2])` would not compile.
+def total(items : Array(T)) : Int32 forall T : Priced
+  items.sum { |item| item.price }
+end
+
+puts total([Book.new(120), Book.new(80)])
+puts total([Coffee.new(45)])
+
+def cheapest(items : Array(T)) : T forall T : Priced
+  items.min_by { |item| item.price }
+end
+
+puts cheapest([Coffee.new(45), Coffee.new(30)]).price

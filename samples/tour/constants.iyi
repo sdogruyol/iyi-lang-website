@@ -1,0 +1,13 @@
+# Constants: a capitalised name, assigned once.
+
+PI = 3.14159
+GREETING = "Merhaba"
+LIMIT = 100
+
+def circle_area(r : Float64) : Float64
+  PI * r * r
+end
+
+puts circle_area(2.0).round(2)
+puts "#{GREETING}, dünya"
+puts LIMIT > 99

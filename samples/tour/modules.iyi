@@ -1,0 +1,10 @@
+# Modules: every file is one, and `import` brings another in.
+
+# `geometry/point` is the file geometry/point.iyi. The path is the name.
+import geometry/point
+
+# After `import`, the module's exports are reachable under its qualified
+# name: the path with each segment capitalised, joined by `::`.
+a = Geometry::Point::Point.new(1, 2)
+b = Geometry::Point::Point.new(4, 6)
+puts Geometry::Point.distance(a, b)

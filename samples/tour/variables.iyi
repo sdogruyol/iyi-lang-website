@@ -1,0 +1,19 @@
+# Variables: assign a value and the type follows.
+
+name = "iyi"
+year = 2026
+ratio = 0.75
+ready = true
+
+puts name
+puts year
+puts ratio
+puts ready
+
+# A variable keeps its type. You can reassign, but not to a different kind.
+year = year + 1
+puts year
+
+# Write the type when you want to be explicit.
+count : Int32 = 10
+puts count

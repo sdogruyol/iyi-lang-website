@@ -21,14 +21,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* The page container: one width, centred, for headers and the wide marketing
+ * sections. The spread below is for reading pages. */
+.wrap {
+  width: min(var(--page), 100% - 2 * var(--edge));
+  margin-inline: auto;
+}
+
 /* The spread. A main column for the argument and a rail for the evidence, as
  * named grid lines so a component can opt into either without knowing the
- * page. The README puts the command that prints a number beside the number;
- * this is that sentence expressed as a grid. */
+ * page. The left edge is the same edge `.wrap` has, so a reading page lines
+ * up under the header and the home page rather than floating in the middle;
+ * the rail takes what is left. */
 .spread {
   display: grid;
   grid-template-columns:
-    [full-start] minmax(var(--edge), 1fr)
+    [full-start] max(var(--edge), (100% - var(--page)) / 2)
     [main-start] min(var(--measure), 100% - 2 * var(--edge))
     [main-end] var(--gutter)
     [rail-start] minmax(0, var(--rail))
@@ -57,7 +65,7 @@ body {
 @media (max-width: 62rem) {
   .spread {
     grid-template-columns:
-      [full-start] minmax(var(--edge), 1fr)
+      [full-start] max(var(--edge), (100% - var(--page)) / 2)
       [main-start rail-start] min(var(--measure), 100% - 2 * var(--edge))
       [main-end rail-end] minmax(var(--edge), 1fr)
       [full-end];
@@ -70,12 +78,11 @@ h1,
 h2,
 h3,
 h4 {
-  font-weight: 620;
+  font-weight: 700;
   line-height: var(--lead-tight);
-  letter-spacing: -0.012em;
+  letter-spacing: -0.015em;
   text-wrap: balance;
   margin: 0;
-  font-variation-settings: "opsz" 40;
 }
 
 h1 {
@@ -97,18 +104,17 @@ p {
 }
 
 a {
-  color: var(--ink);
-  text-decoration-color: var(--signal);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
+  color: var(--brand-deep);
+  text-decoration: none;
 }
 
 a:hover {
-  text-decoration-thickness: 2px;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
 }
 
 strong {
-  font-weight: 640;
+  font-weight: 650;
 }
 
 /* Anything a command printed is the machine talking, so it is set in mono. */
@@ -125,27 +131,59 @@ samp,
   background: var(--raise);
   border: var(--hair) solid var(--hairline);
   padding: 0.08em 0.32em;
-  border-radius: 2px;
+  border-radius: 4px;
   white-space: nowrap;
 }
 
-/* Small caps label, used for section eyebrows and rail headings. Mono, wide,
- * uppercase: this is an instrument label, not a badge. */
+/* Small caps label, used for section eyebrows and rail headings. */
 .label {
   font-family: var(--font-mono);
   font-size: var(--step--2);
-  letter-spacing: 0.13em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--mute);
   font-weight: 500;
+}
+
+/* Buttons ---------------------------------------------------------------- */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+  font-size: var(--step-0);
+  line-height: 1.2;
+  text-decoration: none;
+  border: var(--hair) solid transparent;
+  transition: background-color 120ms ease;
+}
+
+.cta:hover {
+  background: var(--brand-deep);
+  text-decoration: none;
+}
+
+.cta.ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+
+.cta.ghost:hover {
+  background: var(--raise);
+  border-color: var(--graphite);
 }
 
 /* Rules ------------------------------------------------------------------ */
 
 /* A section boundary is a hairline carrying a tittle: the dot on the i, which
  * in Turkish orthography is semantic rather than decorative (i and dotless ı
- * are different letters). It is the only ornament on the site and it marks the
- * grid, so it is doing structural work. */
+ * are different letters). It is the only ornament on the site. */
 .rule {
   border: 0;
   height: var(--hair);
@@ -153,6 +191,27 @@ samp,
   margin: 0;
   position: relative;
   overflow: visible;
+}
+
+/* A copy control, sitting in a block's header. */
+.copy {
+  margin-inline-start: auto;
+  font-family: var(--font-sans);
+  font-size: var(--step--2);
+  font-weight: 600;
+  color: var(--graphite);
+  background: var(--paper);
+  border: var(--hair) solid var(--hairline);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.copy:hover {
+  color: var(--ink);
+  border-color: var(--graphite);
 }
 
 .rule::after {
@@ -163,7 +222,7 @@ samp,
   width: var(--tittle);
   height: var(--tittle);
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--brand);
 }
 
 /* Evidence --------------------------------------------------------------- */
@@ -232,7 +291,7 @@ samp,
 }
 
 :focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -294,7 +353,7 @@ samp,
   padding: 0.95rem 1.1rem;
   background: var(--raise);
   border: var(--hair) solid var(--hairline);
-  border-radius: 2px;
+  border-radius: var(--radius);
   overflow-x: auto;
   font-family: var(--font-mono);
   font-size: var(--step--1);

@@ -1,0 +1,33 @@
+# A class is a reference: two names can point at one object.
+
+class Counter
+  # `property` makes a field readable and writable from outside.
+  property count : Int32
+
+  def initialize(@count : Int32)
+  end
+
+  def bump : Nil
+    @count += 1
+  end
+end
+
+a = Counter.new(0)
+b = a          # b is the same counter, not a copy
+b.bump
+b.bump
+puts a.count   # 2: the change is visible through a
+
+# A struct behaves differently: `b = a` would copy, and `a` stays at 0.
+# Use a struct for small values, a class for things that have identity.
+struct Cell
+  property value : Int32
+
+  def initialize(@value : Int32)
+  end
+end
+
+x = Cell.new(0)
+y = x
+y.value = 5
+puts x.value   # 0

@@ -1,8 +1,7 @@
 ---
 // Fonts are vendored, never fetched from a CDN. A site arguing that a program
-// should link what it uses does not get to pull two megabytes off a third party.
-import "@fontsource-variable/newsreader/opsz.css";
-import "@fontsource-variable/newsreader/opsz-italic.css";
+// should link what it uses does not get to pull webfonts off a third party.
+import "@fontsource-variable/figtree/wght.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "@fontsource/ibm-plex-mono/600.css";
@@ -17,19 +16,73 @@ import facts from "../generated/facts.json";
 interface Props {
   title: string;
   summary?: string;
+  /** Schema.org type of the page's main content; WebPage unless a page says. */
+  kind?: "WebPage" | "TechArticle" | "CollectionPage";
 }
 
-const { title, summary } = Astro.props;
+const { title, summary, kind = "WebPage" } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const href = (p: string) => `${base.replace(/\/$/, "")}/${p.replace(/^\//, "")}`;
+const here = Astro.url.pathname;
+
+/* One title pattern for the whole site: the page, then the site, unless the
+ * page is the site. */
+const siteName = "iyi";
+const isHome = here === base || here === href("/");
+const fullTitle = isHome || title.endsWith(`| ${siteName}`) ? title : `${title} | ${siteName}`;
+const canonical = new URL(here, Astro.site).href;
+const ogImage = new URL(href("og.png"), Astro.site).href;
+
+/* Structured data. The site and its subject on every page; the page itself
+ * typed by what it is. Search engines and answer engines read this before
+ * they read prose. */
+const ld = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${Astro.site}#website`,
+      url: Astro.site,
+      name: siteName,
+      description:
+        "iyi is a friendly, fast programming language for people and their agents, compatible with Crystal.",
+      inLanguage: "en",
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": `${Astro.site}#iyi`,
+      name: "iyi",
+      description:
+        "A compiled programming language whose modules compile against their dependencies' declarations, never their bodies. Compatible with Crystal: the same compiler builds .cr files, and iyi build --crystal gives a program Crystal's standard library and shards.",
+      programmingLanguage: "iyi",
+      codeRepository: "https://github.com/sdogruyol/iyi",
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+      url: Astro.site,
+      image: ogImage,
+    },
+    {
+      "@type": kind,
+      "@id": `${canonical}#page`,
+      url: canonical,
+      name: fullTitle,
+      description: summary,
+      isPartOf: { "@id": `${Astro.site}#website` },
+      about: { "@id": `${Astro.site}#iyi` },
+      inLanguage: "en",
+    },
+  ],
+};
 
 const nav = [
-  ["why", "why/"],
-  ["learn", "learn/"],
-  ["spec", "spec/"],
-  ["playground", "playground/"],
-  ["changelog", "changelog/"],
+  ["Why iyi", "why/"],
+  ["Learn", "learn/"],
+  ["Spec", "spec/"],
+  ["Playground", "playground/"],
+  ["Install", "install/"],
+  ["Changelog", "changelog/"],
 ];
+
+const current = (path: string) => here.startsWith(href(path));
 ---
 
 <!doctype html>
@@ -37,19 +90,95 @@ const nav = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{fullTitle}</title>
     {summary && <meta name="description" content={summary} />}
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href={href("favicon.svg")} type="image/svg+xml" />
+    <link rel="sitemap" href={href("sitemap-index.xml")} />
+    <meta name="theme-color" content="#d1333d" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={fullTitle} />
+    {summary && <meta property="og:description" content={summary} />}
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The iyi mascot, a waving red heart, beside the line: a friendly, fast language for people and their agents." />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    {summary && <meta name="twitter:description" content={summary} />}
+    <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
 
-    <header class="masthead spread">
-      <div class="masthead-inner to-wide">
+    <header class="masthead">
+      <div class="wrap masthead-inner">
         <a class="wordmark" href={href("/")} aria-label="iyi, home">
-          <span class="wordmark-text">iyi</span>
+          <img src={href("mascot.webp")} alt="" width="28" height="26" />
+          <span>iyi</span>
         </a>
-        <nav aria-label="Sections">
+        <button
+          type="button"
+          class="menu-toggle"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          aria-label="Menu"
+        >
+          <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        </button>
+        <nav id="site-nav" aria-label="Sections">
+          <ul>
+            {
+              nav.map(([label, path]) => (
+                <li>
+                  <a href={href(path)} aria-current={current(path) ? "page" : undefined}>
+                    {label}
+                  </a>
+                </li>
+              ))
+            }
+            <li class="nav-github">
+              <a href="https://github.com/sdogruyol/iyi">GitHub</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <script>
+      /* The menu folds only where a script can unfold it. Without one, the
+       * nav stays in the page as a plain list, which is the honest fallback. */
+      const header = document.querySelector<HTMLElement>(".masthead");
+      const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle");
+      if (header && toggle) {
+        header.dataset.js = "true";
+        toggle.addEventListener("click", () => {
+          const open = header.dataset.open !== "true";
+          header.dataset.open = String(open);
+          toggle.setAttribute("aria-expanded", String(open));
+        });
+      }
+    </script>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="colophon">
+      <div class="wrap colophon-inner">
+        <div class="colophon-brand">
+          <img src={href("mascot.webp")} alt="The iyi mascot, a waving heart" width="72" height="68" />
+          <p>
+            iyi is Turkish for good. The compiler is built on Crystal's and
+            carries its licence and copyright: Apache 2.0, Copyright 2012-2026
+            Manas Technology Solutions.
+          </p>
+        </div>
+        <nav class="colophon-links" aria-label="Footer">
           <ul>
             {
               nav.map(([label, path]) => (
@@ -58,33 +187,15 @@ const nav = [
                 </li>
               ))
             }
+            <li><a href="https://github.com/sdogruyol/iyi">Source on GitHub</a></li>
           </ul>
         </nav>
-      </div>
-    </header>
-
-    <main id="main">
-      <slot />
-    </main>
-
-    <footer class="colophon spread">
-      <div class="to-wide">
-        <hr class="rule" />
-        <div class="colophon-grid">
-          <p class="colophon-note">
-            iyi is Turkish for good. The compiler is built on Crystal's and
-            carries Crystal's licence and copyright, Apache 2.0, Copyright
-            2012-2026 Manas Technology Solutions.
-          </p>
-          <dl class="evidence">
-            <dt>numbers on this site</dt>
-            <dd>generated by {facts.provenance.generator}</dd>
-            <dt>measured at</dt>
-            <dd>{facts.provenance.commit}</dd>
-            <dt>structural source</dt>
-            <dd>{facts.provenance.structural_source}</dd>
-          </dl>
-        </div>
+        <dl class="evidence colophon-evidence">
+          <dt>numbers on this site</dt>
+          <dd>generated by {facts.provenance.generator}</dd>
+          <dt>measured at</dt>
+          <dd>{facts.provenance.commit}</dd>
+        </dl>
       </div>
     </footer>
 
@@ -104,84 +215,204 @@ const nav = [
 
       .masthead {
         border-bottom: var(--hair) solid var(--hairline);
+        background: var(--paper);
       }
 
       .masthead-inner {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 2rem;
-        padding-block: 0.85rem;
+        min-height: 3.75rem;
         flex-wrap: wrap;
       }
 
-      /* The wordmark is the word, set in the text face, with the tittles doing
-       * the work. In Turkish orthography the dot on the i is semantic: i and
-       * dotless i are different letters. So the dot is not decoration here, and
-       * the mark does not need a logo bolted onto it. */
+      /* The hamburger: three bars, shown only below the breakpoint and only
+       * once the script has claimed the header. */
+      .menu-toggle {
+        display: none;
+        background: none;
+        border: var(--hair) solid var(--hairline);
+        border-radius: 6px;
+        padding: 0.5rem 0.55rem;
+        cursor: pointer;
+        color: var(--ink);
+      }
+
+      .menu-toggle:hover {
+        border-color: var(--graphite);
+      }
+
+      .bars {
+        display: grid;
+        gap: 4px;
+        width: 18px;
+      }
+
+      .bars i {
+        display: block;
+        height: 2px;
+        background: currentColor;
+        border-radius: 1px;
+        transition: transform var(--quick), opacity var(--quick);
+      }
+
+      .masthead[data-open="true"] .bars i:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+      }
+      .masthead[data-open="true"] .bars i:nth-child(2) {
+        opacity: 0;
+      }
+      .masthead[data-open="true"] .bars i:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+      }
+
+      @media (max-width: 52rem) {
+        .masthead[data-js="true"] .menu-toggle {
+          display: inline-flex;
+        }
+
+        .masthead[data-js="true"] nav {
+          display: none;
+          flex-basis: 100%;
+          padding-block: 0.25rem 0.75rem;
+        }
+
+        .masthead[data-open="true"] nav {
+          display: block;
+        }
+
+        .masthead nav ul {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.1rem;
+        }
+
+        .masthead nav a {
+          display: block;
+          padding: 0.6rem 0.7rem;
+          font-size: var(--step-0);
+        }
+
+        .nav-github {
+          margin-inline-start: 0;
+          margin-block-start: 0.3rem;
+        }
+      }
+
       .wordmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
         text-decoration: none;
-        font-family: var(--font-text);
-        font-size: var(--step-2);
-        font-weight: 620;
-        letter-spacing: -0.02em;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
         line-height: 1;
         color: var(--ink);
       }
 
-      .wordmark-text {
-        font-variation-settings: "opsz" 60;
+      .wordmark:hover {
+        text-decoration: none;
+      }
+
+      .wordmark img {
+        display: block;
+        height: 1.65rem;
+        width: auto;
       }
 
       nav ul {
         display: flex;
-        gap: 1.15rem;
+        gap: 0.25rem;
         list-style: none;
         margin: 0;
         padding: 0;
         flex-wrap: wrap;
+        align-items: center;
       }
 
-      nav a {
-        font-family: var(--font-mono);
+      .masthead nav a {
+        display: inline-block;
+        padding: 0.45rem 0.7rem;
+        border-radius: 6px;
         font-size: var(--step--1);
+        font-weight: 500;
         color: var(--graphite);
         text-decoration: none;
-        border-bottom: var(--hair) solid transparent;
-        padding-block-end: 2px;
       }
 
-      nav a:hover {
+      .masthead nav a:hover {
         color: var(--ink);
-        border-bottom-color: var(--signal);
+        background: var(--raise);
+      }
+
+      .masthead nav a[aria-current="page"] {
+        color: var(--brand-deep);
+      }
+
+      .nav-github {
+        margin-inline-start: 0.5rem;
+      }
+
+      .nav-github a {
+        border: var(--hair) solid var(--hairline);
       }
 
       .colophon {
-        margin-block-start: 4.5rem;
-        padding-block-end: 3rem;
+        margin-block-start: 5rem;
+        padding-block: 2.5rem 3rem;
+        border-top: var(--hair) solid var(--hairline);
+        background: var(--raise);
       }
 
-      .colophon-grid {
+      .colophon-inner {
         display: grid;
-        gap: var(--gutter);
-        grid-template-columns: minmax(0, 1fr) minmax(0, var(--rail));
-        padding-block-start: 1.2rem;
+        gap: 2.5rem;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1fr);
+        align-items: start;
       }
 
-      @media (max-width: 62rem) {
-        .colophon-grid {
+      @media (max-width: 52rem) {
+        .colophon-inner {
           grid-template-columns: 1fr;
         }
       }
 
-      .colophon-note {
+      .colophon-brand {
+        display: flex;
+        gap: 1.1rem;
+        align-items: flex-start;
+      }
+
+      .colophon-brand img {
+        flex: none;
+        width: 4.5rem;
+        height: auto;
+      }
+
+      .colophon-brand p {
         font-size: var(--step--1);
         color: var(--graphite);
-        max-width: 52ch;
+        max-width: 42ch;
         margin: 0;
       }
 
-      .colophon .evidence {
+      .colophon-links ul {
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .colophon-links a {
+        font-size: var(--step--1);
+        color: var(--graphite);
+      }
+
+      .colophon-links a:hover {
+        color: var(--ink);
+      }
+
+      .colophon-evidence {
         margin: 0;
       }
     </style>

@@ -27,10 +27,10 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
 const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
-// A recorded path is a sample's in the iyi repository or a break program's
-// in this one; the iyi tree has no `records/` at its top, so the prefix says
-// which.
-const sourceOf = (path) => resolve(path.startsWith("records/") ? site : repo, path);
+// A recorded path is a sample's in the iyi repository, `samples/iyi/...`, or
+// this site's own: a tour program under `samples/tour/` or a break program
+// under `records/`. The one prefix that is the iyi tree's says so.
+const sourceOf = (path) => resolve(path.startsWith("samples/iyi/") ? repo : site, path);
 const records = resolve(site, "records");
 const publicWasm = resolve(site, "public", "wasm");
 

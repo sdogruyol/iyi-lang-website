@@ -1,0 +1,22 @@
+# A module other files can import. Its path is its name.
+module geometry/point
+
+# `pub` makes a declaration part of the module's surface. An exported
+# declaration writes its types down, so a file that imports this one
+# never has to read the body.
+pub struct Point
+  getter x : Int32
+  getter y : Int32
+
+  def initialize(@x : Int32, @y : Int32)
+  end
+end
+
+pub def distance(a : Point, b : Point) : Int32
+  (a.x - b.x).abs + (a.y - b.y).abs
+end
+
+# No `pub`: this name is the module's own and cannot be reached from outside.
+def secret : String
+  "only here"
+end

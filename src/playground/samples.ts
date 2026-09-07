@@ -33,6 +33,7 @@
  * source text is read from `src/lib/highlight.ts` by the build only.
  */
 import manifest from "../../records/wasm/manifest.json";
+import toc from "../../samples/tour/tour.json";
 
 /**
  * The machine stamp every record carries. Identical in shape across all three
@@ -53,9 +54,13 @@ export interface Provenance {
 
 /** One curated sample, exactly as the recorder wrote it. */
 export interface CuratedSample {
-  /** Stable id, the sample's basename. Also the module's file name and the
-   * value the playground accepts in its `?sample=` query. */
+  /** Stable id: a tour program's basename, or `iyi/` and a repository
+   * sample's basename. The route under /playground/ and, with any slash
+   * folded to a dash, the module's file name. */
   id: string;
+  /** Which family: `tour`, this site's own short programs, or `iyi`, the
+   * repository's samples, which stand behind `iyi/` in their ids. */
+  set: "tour" | "iyi";
   /** Repository relative path of the source. The key into the highlight
    * record, and the module's own name in iyi, since a module's path is its
    * file's path. */
@@ -106,17 +111,36 @@ export interface CuratedSample {
 
 /**
  * A sample the compiler refused for wasm32-wasi, so the playground has no
- * module for it and no page: what a reader gets is the reason, and the
- * refusal the recorder kept as its evidence.
+ * module for it: what a reader gets is the reason, the refusal the recorder
+ * kept as its evidence, and what the program printed when it ran natively.
  */
 export interface NativeOnlySample {
   id: string;
+  set: "tour" | "iyi";
   path: string;
   sourceSha256: string;
   /** The compiler's own last line, or null if it printed none. */
   refusal: string | null;
   /** One sentence, the recorder's, saying why this target does not have it. */
   reason: string;
+  /** The status the native run ended with. */
+  exitCode: number;
+  /** What the native binary printed, on the machine the record names. */
+  nativeStdout: string;
+}
+
+/** One step of the tour: a program that runs here, or one that ran natively. */
+export type TourStep = CuratedSample | NativeOnlySample;
+
+/** Whether a step has a module this page can run. */
+export function runnable(step: TourStep): step is CuratedSample {
+  return "wasm" in step;
+}
+
+export interface TourSection {
+  title: string;
+  blurb: string;
+  steps: TourStep[];
 }
 
 interface WasmManifest {
@@ -154,11 +178,40 @@ if (!Array.isArray(record.samples) || record.samples.length === 0) {
   );
 }
 
-/** The curated set, in the recorder's order. */
+/** The curated set, in the recorder's order: the tour first, then the rest. */
 export const curatedSamples: readonly CuratedSample[] = record.samples;
 
 /** The samples the recorder found this target cannot run, and why. */
 export const nativeOnlySamples: readonly NativeOnlySample[] = record.nativeOnly ?? [];
+
+/**
+ * The tour, sectioned as samples/tour/tour.json lays it out, each step
+ * resolved to its record. A step the recorder did not see is a build error:
+ * the table of contents and the record are two statements of one list, and
+ * they have to agree.
+ */
+export const tourSections: readonly TourSection[] = toc.sections.map((section) => ({
+  title: section.title,
+  blurb: section.blurb,
+  steps: section.steps.map((id) => {
+    const step =
+      curatedSamples.find((sample) => sample.id === id) ??
+      nativeOnlySamples.find((sample) => sample.id === id);
+    if (step === undefined) {
+      throw new Error(
+        `playground: samples/tour/tour.json names "${id}" and ` +
+          `records/wasm/manifest.json has no record of it. Regenerate with ` +
+          `npm run record:wasm.`,
+      );
+    }
+    return step;
+  }),
+}));
+
+/** The tour's steps in order, sections flattened. */
+export const tourSamples: readonly TourStep[] = tourSections.flatMap(
+  (section) => section.steps,
+);
 
 /**
  * Lookup by id or by repository relative path, because callers hold one or the
@@ -203,7 +256,7 @@ export function playgroundHref(pathOrId: string): string | null {
   const sample = findSample(pathOrId);
   if (sample === null) return null;
   const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
-  return `${base}playground/${encodeURIComponent(sample.id)}/`;
+  return `${base}playground/${sample.id}/`;
 }
 
 /**

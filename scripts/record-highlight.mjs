@@ -139,7 +139,7 @@ for (const [key, value] of Object.entries(recorded)) {
 // Every listing the site can print
 // ---------------------------------------------------------------------------
 
-// The two families scripts/samples.mjs indexes, walked the same way it walks
+// The families scripts/samples.mjs indexes, walked the same way it walks
 // them, so a path the site can render is a path this record carries. A listing
 // with no entry here is a build error rather than a plain-text render, which
 // is only a safe design if this set is the larger one.
@@ -154,24 +154,25 @@ function walk(dir) {
 }
 
 const samplesRoot = resolve(repo, "samples", "iyi");
+const tourRoot = resolve(site, "samples", "tour");
 const breakRoot = resolve(site, "records", "break");
-for (const root of [samplesRoot, breakRoot]) {
+for (const root of [samplesRoot, tourRoot, breakRoot]) {
   if (!existsSync(root)) {
     throw new Error(`${root} is not there, so there is nothing to record`);
   }
 }
 
-// A listing's key is its path: a sample's in the iyi repository, a break
-// program's in this one. The two never collide because the iyi tree has no
-// `records/` at its top, and the key is what the lessons name.
+// A listing's key is its path: a sample's in the iyi repository, a tour or a
+// break program's in this one. `samples/iyi/` is the one prefix that is the
+// iyi tree's, and the key is what the lessons name.
 const keyOf = (file) =>
-  relative(file.startsWith(breakRoot) ? site : repo, file).split("\\").join("/");
+  relative(file.startsWith(samplesRoot) ? repo : site, file).split("\\").join("/");
 const fileOf = (key) =>
-  key.startsWith("records/") ? resolve(site, key) : resolve(repo, key);
-const files = [...walk(samplesRoot), ...walk(breakRoot)].map(keyOf);
+  key.startsWith("samples/iyi/") ? resolve(repo, key) : resolve(site, key);
+const files = [...walk(samplesRoot), ...walk(tourRoot), ...walk(breakRoot)].map(keyOf);
 if (files.length === 0) {
   throw new Error(
-    `found no .iyi files under ${samplesRoot} or ${breakRoot}`,
+    `found no .iyi files under ${samplesRoot}, ${tourRoot} or ${breakRoot}`,
   );
 }
 

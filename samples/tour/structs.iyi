@@ -1,0 +1,28 @@
+# A struct: named fields, a constructor, methods.
+
+struct Point
+  getter x : Int32
+  getter y : Int32
+
+  # `@x` is the field. Writing it in the parameter list assigns it.
+  def initialize(@x : Int32, @y : Int32)
+  end
+
+  def +(other : Point) : Point
+    Point.new(x + other.x, y + other.y)
+  end
+
+  def to_s : String
+    "(#{x}, #{y})"
+  end
+end
+
+a = Point.new(1, 2)
+b = Point.new(3, 4)
+
+puts a.x
+puts (a + b).to_s
+
+# A struct is a value: assigning it copies it.
+c = a
+puts c.to_s

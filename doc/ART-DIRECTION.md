@@ -52,9 +52,9 @@ address the accent by that name and a loss and a link get the same colour: the
 site has one accent, taken from the mascot, and spends it on what a reader can
 act on or should notice.
 
-Dark is designed, not inverted: the ground is `#121316`, the accent lightens to
-`#e5565f` and its text cut to `#f07a81`, because the light values fail
-contrast on a dark ground.
+There is one scheme. The page is white whatever the system prefers: the mascot
+and the code are drawn for a white ground, and a second palette would be a
+second design to keep honest.
 
 ## Type
 
@@ -150,16 +150,15 @@ in mono with hairline edges. An emoji is never an icon.
 
 ## Rendered proof
 
-Captured from the running site in a browser, both schemes by emulating
-`prefers-color-scheme`.
+Captured from the running site in a browser.
 
 | File | What it shows |
 |---|---|
-| `screenshots/40-home-{light,dark}.png` | The home page: the one line, the mascot, the listing that runs, the four cards, the measurement card, and the four ways in. |
-| `screenshots/41-why-light.png` | The argument in named axes, with the true-area mass figure. |
-| `screenshots/42-learn-light.png` | The path's entrance and one step of it. |
-| `screenshots/43-sample-run-light.png` | A sample route: `hello.wasm` fetched, its digest matched against the manifest, instantiated in the page, printing the program's own output. |
-| `screenshots/44-spec-light.png` | The generated specification index with its generated-from banner. |
+| `screenshots/40-home.png` | The home page: the one line, the mascot, the listing that runs, the Crystal section with the README's Kemal server, the four cards, the measurement card, and the four ways in. |
+| `screenshots/41-why.png` | The argument in named axes, with the true-area mass figure. |
+| `screenshots/42-learn.png` | The path's entrance and one step of it. |
+| `screenshots/43-sample-run.png` | A sample route after Run: the program on the left, its output on the right, the module and exit status on one line under it. |
+| `screenshots/44-spec.png` | The generated specification index with its generated-from banner. |
 
 ## Prohibitions
 

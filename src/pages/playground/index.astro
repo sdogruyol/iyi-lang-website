@@ -1,60 +1,78 @@
 ---
 /**
- * The playground's front door: the tour, as a list.
+ * The playground's front door: the tour, as a table of contents.
  *
- * Six short programs, this site's own, each of which runs in the visitor's
- * tab from the module the compiler built for it. The page says that in one
- * line, lists the steps, and gets out of the way. What the playground does
- * not do, compile what a visitor types, is said once under the list rather
- * than argued, because a person who came to press Run asked a one-line
- * question; the full account is on the evidence page and in the spec.
+ * Short programs, this site's own, in sections, each of which runs in the
+ * visitor's tab from the module the compiler built for it, or, where the
+ * browser's target has no way to run it, shows what it printed natively. The
+ * page says that in one line, lists the steps, and gets out of the way. What
+ * the playground does not do, compile what a visitor types, is said once
+ * under the list rather than argued; the full account is on the evidence page.
  */
 import Page from "../../layouts/Page.astro";
-import { tourSamples, playgroundHref } from "../../playground/samples";
+import { runnable, tourSamples, tourSections } from "../../playground/samples";
 import { recordedText } from "../../lib/highlight";
 import { lessonHref, sequence } from "../../lib/lessons";
 
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 const lessons = await sequence();
 const firstLesson = lessons[0];
+const first = tourSamples[0];
 
 /* Each program's first line is a comment saying what it is; the list shows
  * that line, so the description cannot drift from the file. */
-const steps = tourSamples.map((sample) => ({
-  id: sample.id,
-  href: playgroundHref(sample.id),
-  blurb: recordedText(sample.path).split("\n")[0].replace(/^#\s*/, ""),
+const blurbOf = (path: string) =>
+  recordedText(path).split("\n")[0].replace(/^#\s*/, "");
+
+let n = 0;
+const sections = tourSections.map((section) => ({
+  title: section.title,
+  blurb: section.blurb,
+  steps: section.steps.map((step) => ({
+    n: ++n,
+    id: step.id,
+    href: `${base}playground/${step.id}/`,
+    blurb: blurbOf(step.path),
+    runs: runnable(step),
+  })),
 }));
 ---
 
 <Page
-  title="Playground | iyi"
-  summary="Six short iyi programs that run in your browser. Read one, press Run, see what it prints."
+  title="A tour of iyi | Playground"
+  summary={`A tour of iyi in ${tourSamples.length} short programs, each of which runs in your browser. Read one, press Run, see what it prints.`}
 >
   <section class="wrap head">
     <p class="label">Playground</p>
-    <h1>Six short programs. Each one runs in your browser.</h1>
+    <h1>A tour of iyi, in {tourSamples.length} short programs.</h1>
     <p class="one-line">
       Start at the top and work down. Read the program, press Run, see what it
-      prints, then move to the next.
+      prints, then move to the next. Each one is a page you can come back to.
     </p>
-    <a class="cta" href={steps[0].href}>Start with {steps[0].id}</a>
+    <a class="cta" href={`${base}playground/${first.id}/`}>Start with {first.id}</a>
   </section>
 
   <section class="wrap">
-    <ol class="steps">
-      {
-        steps.map((step, i) => (
-          <li>
-            <a class="step" href={step.href}>
-              <span class="step-index">{i + 1}</span>
-              <span class="step-id">{step.id}</span>
-              <span class="step-blurb">{step.blurb}</span>
-            </a>
-          </li>
-        ))
-      }
-    </ol>
+    {
+      sections.map((section) => (
+        <div class="group">
+          <h2>{section.title}</h2>
+          <p class="group-blurb">{section.blurb}</p>
+          <ol class="steps">
+            {section.steps.map((step) => (
+              <li>
+                <a class="step" href={step.href}>
+                  <span class="step-index">{step.n}</span>
+                  <span class="step-id">{step.id}</span>
+                  <span class="step-blurb">{step.blurb}</span>
+                  {!step.runs && <span class="step-native">recorded</span>}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
   </section>
 
   <section class="wrap after">
@@ -65,8 +83,10 @@ const steps = tourSamples.map((sample) => ({
     </p>
     <p class="honest">
       Each program runs from the module the iyi compiler built for it, checked
-      against its recording before it starts. Nothing on these pages compiles
-      what you type yet.{" "}
+      against its recording before it starts. A step marked recorded uses tasks,
+      which the browser's target cannot run yet, so it shows what the program
+      printed natively instead. Nothing on these pages compiles what you type
+      yet.{" "}
       <a href={`${base}playground/evidence/`}>How this works</a>
     </p>
   </section>
@@ -88,21 +108,35 @@ const steps = tourSamples.map((sample) => ({
       margin-block-end: 1.4rem;
     }
 
+    .group {
+      margin-block-start: 2.5rem;
+      max-width: 44rem;
+    }
+
+    .group h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.2rem;
+    }
+
+    .group-blurb {
+      color: var(--graphite);
+      margin-block-end: 0.9rem;
+    }
+
     .steps {
       list-style: none;
-      margin: 1.5rem 0 0;
+      margin: 0;
       padding: 0;
       display: grid;
-      gap: 0.75rem;
-      max-width: 40rem;
+      gap: 0.5rem;
     }
 
     .step {
       display: grid;
-      grid-template-columns: auto auto minmax(0, 1fr);
+      grid-template-columns: auto auto minmax(0, 1fr) auto;
       align-items: baseline;
       gap: 1rem;
-      padding: 0.9rem 1.2rem;
+      padding: 0.7rem 1.1rem;
       border: var(--hair) solid var(--hairline);
       border-radius: var(--radius);
       color: var(--ink);
@@ -118,7 +152,8 @@ const steps = tourSamples.map((sample) => ({
       font-family: var(--font-mono);
       font-size: var(--step--2);
       color: var(--mute);
-      min-width: 1.5ch;
+      min-width: 2ch;
+      text-align: right;
     }
 
     .step-id {
@@ -132,11 +167,20 @@ const steps = tourSamples.map((sample) => ({
       font-size: var(--step--1);
     }
 
+    .step-native {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
     @media (max-width: 40rem) {
       .step {
         grid-template-columns: auto minmax(0, 1fr);
       }
-      .step-blurb {
+      .step-blurb,
+      .step-native {
         grid-column: 2;
       }
     }

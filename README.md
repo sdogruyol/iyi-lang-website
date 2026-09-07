@@ -7,10 +7,10 @@ The site restates the iyi repository rather than describing it: every number,
 listing and reference page is generated at build time from that tree - its
 README.md, SPEC.md, CHANGELOG.md, the programs under `samples/`, and the
 measurements `bench/doc_numbers.py` already gates there. The one thing this
-repository authors in iyi is the playground's tour, six short programs under
-`samples/tour/`, and those go through the same recorders as the repository's
-own. Nothing on a page is typed by hand, and `scripts/no-transcription.mjs`
-fails the build if a figure is.
+repository authors in iyi is the playground's tour under `samples/tour/`:
+short programs in the sections `samples/tour/tour.json` lays out, and those go
+through the same recorders as the repository's own. Nothing on a page is typed
+by hand, and `scripts/no-transcription.mjs` fails the build if a figure is.
 
 ## Building
 

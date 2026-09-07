@@ -25,39 +25,47 @@
  */
 import Page from "../../layouts/Page.astro";
 import Playground from "../../components/Playground.astro";
-import type { CuratedSample } from "../../playground/samples";
-import { curatedSamples } from "../../playground/samples";
+import type { TourStep } from "../../playground/samples";
+import { curatedSamples, tourSamples } from "../../playground/samples";
 
 export function getStaticPaths() {
-  /* One per recorded sample, and nothing else. The recording decides what
-   * exists, so a sample that failed to record has no page rather than a page
-   * that cannot run. */
-  return curatedSamples.map((sample) => ({
+  /* Every step of the tour, runnable or recorded, and every runnable sample
+   * of the repository's. The record decides what exists, so a repository
+   * sample that failed to record has no page rather than a page that cannot
+   * run. */
+  const rest = curatedSamples.filter((sample) => sample.set === "iyi");
+  return [...tourSamples, ...rest].map((sample) => ({
     params: { sample: sample.id },
     props: { sample },
   }));
 }
 
 interface Props {
-  sample: CuratedSample;
+  sample: TourStep;
 }
 
 const { sample } = Astro.props as Props;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
+const runs = "wasm" in sample;
 ---
 
 <Page
   title={`Playground: ${sample.id} | iyi`}
-  summary={`${sample.path}, cross-compiled to wasm32-wasi by the iyi compiler and executed on this page.`}
+  summary={
+    runs
+      ? `${sample.path}, cross-compiled to wasm32-wasi by the iyi compiler and executed on this page.`
+      : `${sample.path}, and what it printed when the iyi compiler ran it natively.`
+  }
 >
   <Playground sample={sample} />
 
   <section class="wrap honest">
     <p>
-      This page runs the module the compiler built from the listing above. The
-      listing cannot be edited yet, because a browser has no linker and nothing
-      here compiles. There is no standard input, no filesystem and no threads
-      on this target, and one sample fails on purpose for exactly that reason.{" "}
+      {
+        runs
+          ? "This page runs the module the compiler built from the listing above. The listing cannot be edited yet, because a browser has no linker and nothing here compiles. There is no standard input, no filesystem and no threads on this target, and one sample fails on purpose for exactly that reason."
+          : "This program does not compile for the browser's target, so this page shows what it printed when the compiler ran it natively, on the machine named above. The listing cannot be edited yet, because nothing here compiles."
+      }{" "}
       <a href={`${base}playground/evidence/`}>The recordings behind this</a>{" "}
       say which bytes ran and what checked them.
     </p>

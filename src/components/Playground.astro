@@ -30,13 +30,19 @@
  */
 import { activeEngine } from "../playground/registry";
 import type { Capability } from "../playground/types";
-import type { CuratedSample } from "../playground/samples";
-import { playgroundHref, tourSamples } from "../playground/samples";
+import type { TourStep } from "../playground/samples";
+import {
+  runnable,
+  tourSamples,
+  tourSections,
+  wasmProvenance,
+} from "../playground/samples";
 import { highlightedLines, recordedText } from "../lib/highlight";
 
 interface Props {
-  /** The curated sample this route carries. */
-  sample: CuratedSample;
+  /** The step this route carries: a program that runs here, or one that
+   * only ran natively and is shown with what it printed. */
+  sample: TourStep;
 }
 
 const { sample } = Astro.props;
@@ -44,6 +50,7 @@ const { sample } = Astro.props;
 const engine = activeEngine();
 const caps = engine.capabilities();
 const supports = (cap: Capability) => caps.supported.includes(cap);
+const runs = runnable(sample) && supports("run");
 
 /* The program and its colouring, both out of the records and both read here at
  * build time, which keeps the quarter of a megabyte of listings in
@@ -68,12 +75,15 @@ const seedInk = ink.startsWith("\n") ? `\n${ink}` : ink;
 const lineCount = inkLines.length;
 
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
+const hrefOf = (id: string) => `${base}playground/${id}/`;
 
-/* Previous and next through the tour, in the recorder's order. A repository
- * sample reached from a lesson is not on the walk, so it gets neither. */
+/* Previous and next through the tour, in the recorder's order, and the
+ * section this step sits in. A repository sample reached from a lesson is
+ * not on the walk, so it gets neither. */
 const at = tourSamples.findIndex((entry) => entry.id === sample.id);
 const prev = at > 0 ? tourSamples[at - 1] : null;
 const next = at >= 0 && at < tourSamples.length - 1 ? tourSamples[at + 1] : null;
+const section = tourSections.find((s) => s.steps.some((step) => step.id === sample.id));
 const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
 ---
 
@@ -81,22 +91,21 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   <div class="bench-head">
     <div class="bench-title">
       <p class="label">
-        <a href={`${base}playground/`}>Playground</a>{step && `, ${step}`}
+        <a href={`${base}playground/`}>Playground</a>
+        {section && `, ${section.title}`}{step && `, ${step}`}
       </p>
       <h1>{sample.set === "tour" ? sample.id : sample.path}</h1>
       <p class="pitch">{blurb}.</p>
     </div>
 
     <div class="bar">
-      <button
-        type="button"
-        class="cta run"
-        data-control="run"
-        data-path={sample.path}
-        disabled={supports("run") ? undefined : true}
-      >
-        Run <span class="chord">Ctrl + Enter</span>
-      </button>
+      {
+        runs && (
+          <button type="button" class="cta run" data-control="run" data-path={sample.path}>
+            Run <span class="chord">Ctrl + Enter</span>
+          </button>
+        )
+      }
       <button type="button" class="cta ghost" data-role="cancel" hidden={true}>
         Stop
       </button>
@@ -105,22 +114,29 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
           any script runs, so a lesson's deep link works with scripts off and
           survives being bookmarked. */}
       <details class="menu">
-        <summary class="cta ghost">Samples</summary>
-        <ul class="menu-body">
+        <summary class="cta ghost">Contents</summary>
+        <div class="menu-body">
           {
-            tourSamples.map((entry) => (
-              <li>
-                <a
-                  href={playgroundHref(entry.id)}
-                  class="pick"
-                  aria-current={entry.id === sample.id ? "page" : undefined}
-                >
-                  {entry.id}
-                </a>
-              </li>
+            tourSections.map((group) => (
+              <Fragment>
+                <p class="menu-title">{group.title}</p>
+                <ul>
+                  {group.steps.map((entry) => (
+                    <li>
+                      <a
+                        href={hrefOf(entry.id)}
+                        class="pick"
+                        aria-current={entry.id === sample.id ? "page" : undefined}
+                      >
+                        {entry.id}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </Fragment>
             ))
           }
-        </ul>
+        </div>
       </details>
     </div>
   </div>
@@ -132,7 +148,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     <figure class="source pane-listing">
       <figcaption class="source-head">
         <span class="path">{sample.path}</span>
-        <span>{sample.wasm}</span>
+        <span>{runnable(sample) ? sample.wasm : "native only"}</span>
       </figcaption>
       <pre
         class="listing"
@@ -147,24 +163,35 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       <div class="console-chrome">
         <i aria-hidden="true"></i><i aria-hidden="true"></i><i
           aria-hidden="true"></i>
-        <span class="caption">output</span>
+        <span class="caption">{runs ? "output" : "recorded output"}</span>
       </div>
-      <pre class="out idle">Press Run.</pre>
+      {
+        runs ? (
+          <pre class="out idle">Press Run.</pre>
+        ) : (
+          <Fragment>
+            <pre class="out">{sample.nativeStdout}</pre>
+            <pre class="stamp">exit {sample.exitCode}, on {wasmProvenance.machine}</pre>
+          </Fragment>
+        )
+      }
     </div>
   </div>
 
   <p class="foot">
     {
-      supports("run")
-        ? `Run executes ${sample.wasm}, the module the compiler built from this file, in your browser.`
-        : "The active engine cannot run, so nothing here executes."
+      runnable(sample)
+        ? supports("run")
+          ? `Run executes ${sample.wasm}, the module the compiler built from this file, in your browser.`
+          : "The active engine cannot run, so nothing here executes."
+        : `${sample.reason} What you see is what the program printed when the compiler ran it natively.`
     }{" "}
     <a href={`${base}playground/evidence/`}>How this works</a>
   </p>
 
   <nav class="tour" aria-label="Samples">
-    {prev ? <a href={playgroundHref(prev.id)}>&larr; {prev.id}</a> : <span />}
-    {next ? <a href={playgroundHref(next.id)}>{next.id} &rarr;</a> : <span />}
+    {prev ? <a href={hrefOf(prev.id)}>&larr; {prev.id}</a> : <span />}
+    {next ? <a href={hrefOf(next.id)}>{next.id} &rarr;</a> : <span />}
   </nav>
 </section>
 
@@ -427,16 +454,31 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     z-index: 2;
     inset-inline-end: 0;
     inset-block-start: calc(100% + 0.4rem);
-    min-width: 14rem;
-    max-height: 22rem;
+    min-width: 16rem;
+    max-height: min(70vh, 32rem);
     overflow-y: auto;
-    list-style: none;
-    margin: 0;
     padding: 0.4rem;
     background: var(--paper);
     border: var(--hair) solid var(--hairline);
     border-radius: var(--radius);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    text-align: left;
+  }
+
+  .menu-body ul {
+    list-style: none;
+    margin: 0 0 0.4rem;
+    padding: 0;
+  }
+
+  .menu-title {
+    margin: 0.5rem 0 0.15rem;
+    padding-inline: 0.7rem;
+    font-size: var(--step--2);
+    font-weight: 600;
+    color: var(--mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   .pick {

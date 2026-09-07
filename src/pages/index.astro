@@ -26,16 +26,16 @@ const massRatio = Math.round(bin.crystal.kb / bin.iyi.kb);
 
 const starts = [
   {
-    title: "Learn iyi",
-    body: "Five short lessons, each one a real program from the repository that runs, and each one ending in a mistake so you meet the compiler's own error on purpose.",
-    href: "learn/",
+    title: "Take the tour",
+    body: "The language in short programs, from hello to traits, generics and tasks. Each one runs in your browser; nothing needs installing.",
+    href: "playground/",
     cta: "Start the tour",
   },
   {
-    title: "Try it in the browser",
-    body: "The samples are compiled to wasm and run in your tab, printing the same bytes as a native run. Nothing is faked and nothing needs installing.",
-    href: "playground/",
-    cta: "Open the playground",
+    title: "Learn the rule",
+    body: "Five lessons on what makes iyi its own language, each one a real program from the repository, and each one ending in a mistake so you meet the compiler's own error on purpose.",
+    href: "learn/",
+    cta: "Start the lessons",
   },
   {
     title: "Read the spec",
@@ -67,8 +67,8 @@ const starts = [
           the interface it needs.
         </p>
         <div class="hero-cta">
-          <a class="cta" href={`${base}learn/`}>Get started</a>
-          <a class="cta ghost" href={`${base}playground/hello/`}>Run it in your browser</a>
+          <a class="cta" href={`${base}playground/`}>Take the tour</a>
+          <a class="cta ghost" href={`${base}playground/hello/`}>Run hello in your browser</a>
         </div>
       </div>
       <div class="hero-art">

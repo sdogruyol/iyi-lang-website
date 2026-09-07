@@ -430,6 +430,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.6rem;
+    position: relative;
   }
 
   .bar .cta {
@@ -452,6 +453,13 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     font-weight: 400;
     font-size: var(--step--2);
     opacity: 0.8;
+  }
+
+  /* A keyboard chord means nothing to a thumb. */
+  @media (hover: none), (max-width: 40rem) {
+    .chord {
+      display: none;
+    }
   }
 
   /* The sample menu. A disclosure holding real links, so it needs no script and
@@ -496,6 +504,19 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     list-style: none;
     margin: 0 0 0.4rem;
     padding: 0;
+  }
+
+  /* On a phone the list hangs off the whole bar rather than off its button,
+   * so it cannot open past the edge of the screen. */
+  @media (max-width: 40rem) {
+    .menu {
+      position: static;
+    }
+
+    .menu-body {
+      inset-inline: 0;
+      max-height: min(60vh, 28rem);
+    }
   }
 
   .menu-title {
@@ -603,6 +624,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     border-top: var(--hair) solid var(--hairline);
     font-family: var(--font-mono);
     font-size: var(--step--1);
+  }
+
+  .tour a {
+    padding: 0.5rem 0.2rem;
   }
 
   /* Runtime-only blocks: nodes the client script creates cannot carry Astro's

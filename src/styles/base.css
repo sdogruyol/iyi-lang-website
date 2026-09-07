@@ -394,3 +394,32 @@ samp,
 .prose td code {
   white-space: normal;
 }
+
+/* Narrow screens ---------------------------------------------------------- */
+
+/* Inline code stays on one line where there is room, and wraps where there is
+ * not: a digest or a command in a sentence must never widen the page. */
+@media (max-width: 52rem) {
+  :not(pre) > code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .evidence {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Buttons in a row fill the row on a phone, so the thumb has something to
+ * hit and the row does not rag. */
+@media (max-width: 40rem) {
+  .hero-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-cta .cta {
+    justify-content: center;
+    padding-block: 0.85rem;
+  }
+}

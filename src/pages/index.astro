@@ -295,13 +295,14 @@ const starts = [
 
     @media (max-width: 52rem) {
       .hero-inner {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
       .hero-art {
         order: -1;
+        justify-content: flex-start;
       }
-      .hero-art img {
-        max-width: 14rem;
+      .hero-inner .hero-art img {
+        max-width: 9rem;
       }
     }
 
@@ -354,7 +355,7 @@ const starts = [
 
     @media (max-width: 52rem) {
       .try-inner {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
@@ -387,7 +388,7 @@ const starts = [
 
     @media (max-width: 52rem) {
       .crystal-inner {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
@@ -459,7 +460,7 @@ const starts = [
 
     @media (max-width: 52rem) {
       .install-inner {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 

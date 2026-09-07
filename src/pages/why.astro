@@ -565,7 +565,7 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
 
     @media (max-width: 52rem) {
       .aix-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
@@ -607,7 +607,7 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
 
     @media (max-width: 40rem) {
       .loop li {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 

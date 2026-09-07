@@ -466,7 +466,7 @@ const ticks = Array.from({ length: total }, (_, i) => i + 1);
 
   @media (max-width: 42rem) {
     .onward-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .forward {

@@ -196,6 +196,8 @@ const WANTED = {
   using_missing: { lang: "console", anchor: "this file has not written `using`" },
   import_missing: { lang: "console", anchor: "is not imported here" },
   orphan_rule: { lang: "console", anchor: "an impl must live in the module" },
+  kemal_site: { lang: "crystal", anchor: '"Hello from an iyi program"' },
+  kemal_run: { lang: "console", anchor: "curl localhost:3000/json" },
 };
 
 const blocks = fencedBlocks(readmeLines);

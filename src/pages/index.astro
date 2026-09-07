@@ -4,6 +4,7 @@ import Measure from "../components/Measure.astro";
 import Stamped from "../components/Stamped.astro";
 import DurationChart from "../components/DurationChart.astro";
 import Sample from "../components/Sample.astro";
+import Quote from "../components/Quote.astro";
 import facts from "../generated/facts.json";
 
 const base = import.meta.env.BASE_URL;
@@ -106,6 +107,48 @@ BEEP 7
     </div>
   </section>
 
+  <section class="crystal">
+    <div class="wrap crystal-inner">
+      <div class="crystal-copy">
+        <p class="label">Coming from Crystal?</p>
+        <h2>iyi runs your Crystal code today.</h2>
+        <p class="crystal-lede">
+          iyi's compiler is Crystal's compiler. It builds your{" "}
+          <code>.cr</code> files unchanged, and <code>iyi build --crystal</code> gives an iyi
+          program Crystal's standard library, <code>require</code>, and the
+          shards you already depend on. Kemal, db, ameba, sqlite3: they build
+          and they run. You can switch without touching a dependency.
+        </p>
+        <ul class="checks">
+          <li>
+            <strong>Your <code>.cr</code> files compile as they are.</strong>{" "}
+            Same compiler, same output; nothing to port first.
+          </li>
+          <li>
+            <strong>Your shards work.</strong> With <code>--crystal</code>,{" "}
+            <code>require</code> means what it means in Crystal, and a program
+            that requires a shard is buildable today.
+          </li>
+          <li>
+            <strong>The syntax is the one you know.</strong> Blocks, union
+            types, nil-safety, macros and local inference are all here. What
+            iyi adds is a module rule, and the compiler teaches it as you go.
+          </li>
+        </ul>
+        <div class="hero-cta">
+          <a class="cta" href="https://github.com/sdogruyol/iyi#the-library-a-program-has">
+            Switch from Crystal
+          </a>
+          <a class="cta ghost" href={`${base}learn/`}>Learn the one rule</a>
+        </div>
+      </div>
+      <div class="crystal-run">
+        <Quote id="kemal_site" as="source" caption="site.iyi" />
+        <Quote id="kemal_run" as="console" caption="a Kemal server, from an iyi program" />
+      </div>
+    </div>
+  </section>
+
   <section class="features">
     <div class="wrap">
       <h2>What iyi is for</h2>
@@ -165,8 +208,9 @@ BEEP 7
       <h2>Measured, not promised</h2>
       <p class="section-sub">
         One line changed in one of 30 modules, <Measure of="generated" /> lines
-        in all, built three ways by a generator that refuses to start the clock
-        until all three print the same total. The bars run at real speed.
+        in all, built by iyi and by the same compiler under Crystal's rules, by
+        a generator that refuses to start the clock until both print the same
+        total. The bars run at real speed.
       </p>
       <Stamped
         claim={loopClaim}
@@ -179,8 +223,9 @@ BEEP 7
         <DurationChart />
       </Stamped>
       <p class="section-sub">
-        Where iyi loses is published too, on the <a href={`${base}why/`}>why page</a>,
-        with the same machine named beside it.
+        The rest of the numbers, binary size and start time among them, are on
+        the <a href={`${base}why/`}>why page</a>, each with the machine that
+        produced it named beside it.
       </p>
     </div>
   </section>
@@ -307,6 +352,79 @@ BEEP 7
     }
 
     .try-run .console {
+      margin-block-start: 0.9rem;
+    }
+
+    /* Crystal ---------------------------------------------------------- */
+
+    .crystal {
+      background: var(--brand-soft);
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .crystal-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: clamp(1.5rem, 4vw, 3.5rem);
+      align-items: start;
+    }
+
+    @media (max-width: 52rem) {
+      .crystal-inner {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .crystal .label {
+      color: var(--brand-deep);
+    }
+
+    .crystal h2 {
+      margin-block: 0.4rem 0.8rem;
+    }
+
+    .crystal-lede {
+      color: var(--graphite);
+      font-size: var(--step-0);
+      max-width: 52ch;
+    }
+
+    .checks {
+      list-style: none;
+      margin: 0 0 1.6rem;
+      padding: 0;
+      display: grid;
+      gap: 0.7rem;
+      max-width: 52ch;
+    }
+
+    .checks li {
+      position: relative;
+      padding-inline-start: 1.6rem;
+      color: var(--graphite);
+      font-size: var(--step--1);
+    }
+
+    .checks li::before {
+      content: "";
+      position: absolute;
+      left: 0.1rem;
+      top: 0.45em;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: var(--brand);
+    }
+
+    .checks strong {
+      color: var(--ink);
+    }
+
+    .crystal-run :global(.source) {
+      background: var(--paper);
+    }
+
+    .crystal-run :global(.console) {
       margin-block-start: 0.9rem;
     }
 

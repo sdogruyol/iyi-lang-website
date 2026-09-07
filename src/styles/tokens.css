@@ -59,20 +59,6 @@
   --tittle: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #121316;
-    --raise: #1b1c20;
-    --ink: #ececee;
-    --graphite: #b0b2b8;
-    --mute: #86888f;
-    --hairline: #2c2e34;
-    --track: #24262b;
-    --brand: #e5565f;
-    --brand-deep: #f07a81;
-    --brand-soft: #2b1a1c;
-    --signal: #f07a81;
-    --signal-deep: #f7a0a5;
-    /* ink 15.6:1, graphite 8.6:1, mute 5.3:1, brand-deep 6.4:1. */
-  }
-}
+/* One scheme. The page is white whatever the system prefers; there is no dark
+ * variant and no toggle, because the mascot and the code are drawn for a white
+ * ground and a second palette would be a second design to keep honest. */

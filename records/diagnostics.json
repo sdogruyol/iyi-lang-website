@@ -1,10 +1,10 @@
 {
   "recorded": {
-    "compiler": "iyi 0.10.0 (built on Crystal 1.22.0-dev [834663adc] (2026-09-07))",
-    "commit": "19f4fb1d1b0ec7e63cc683098a7e2724de342330",
+    "compiler": "iyi 0.10.0 (built on Crystal 1.22.0-dev [19f4fb1d1] (2026-09-07))",
+    "commit": "ea982fc39a32a48ccc1ecad7b4bd17a921f0cdf4",
     "machine": "Linux 7.2.2-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
     "command": "npm run record:diagnostics",
-    "when": "2026-09-07T11:19:42.002Z"
+    "when": "2026-09-07T12:30:09.864Z"
   },
   "cases": [
     {
@@ -41,7 +41,7 @@
       "path": "records/break/r2_wrong_return_type.iyi",
       "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r2_wrong_return_type.iyi",
       "exitCode": 1,
-      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2_wrong_return_type.iyi:6:41\n\n 6 | pub def total(numbers : Array(Int32)) : Int32\n                                             ^----\nError: method Diagnostics::R2WrongReturnType.total must return Int32 but it is returning String\n"
+      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2_wrong_return_type.iyi:6:41\n\n 6 | pub def total(numbers : Array(Int32)) : Int32\n                                             ^----\nError: method Diagnostics::R2WrongReturnType.total must return Int32 but it is returning String\n\nString is not in the declared type\n"
     },
     {
       "id": "r2b-using-missing",

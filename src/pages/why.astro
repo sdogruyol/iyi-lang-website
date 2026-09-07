@@ -2,178 +2,746 @@
 import Page from "../layouts/Page.astro";
 import Measure from "../components/Measure.astro";
 import Stamped from "../components/Stamped.astro";
+import DurationChart from "../components/DurationChart.astro";
+import Quote from "../components/Quote.astro";
 import facts from "../generated/facts.json";
 
+const base = import.meta.env.BASE_URL;
+const loop = facts.recorded.edit_loop;
 const bin = facts.recorded.hello_binary;
 const lib = facts.recorded.library_size;
+const front = facts.recorded.front_end;
+const pack = facts.recorded.context_pack;
+const runtime = facts.recorded.runtime;
+
+const ratios = loop.ratios as number[];
+const loopClaim = `About ${loop.claim.value}x less than Crystal, on the line you just changed.`;
+const loopBand = `${Math.min(...ratios).toFixed(2)}x to ${Math.max(...ratios).toFixed(2)}x across ${loop.sessions.length} published sessions.`;
 
 const massRatio = bin.crystal.kb / bin.iyi.kb;
 const crystalSide = 216;
 const iyiSide = crystalSide / Math.sqrt(massRatio);
+const startRatio = (bin.crystal.ms / bin.iyi.ms).toFixed(1);
+
+const stringRow = runtime.rows.find((r) => r.workload === "string building")!;
+
+const packClaim = `${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens, with no extra rounds.`;
+const packBand = `The grounding pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`;
+
+const targets = [
+  "x86_64-linux-gnu",
+  "x86_64-linux-musl",
+  "aarch64-linux-gnu",
+  "arm-linux-gnueabihf",
+  "x86_64-darwin",
+  "aarch64-darwin",
+  "x86_64-w64-mingw32",
+  "x86_64-windows-msvc",
+  "wasm32-wasi",
+];
+const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu", "wasm32-wasi"]);
 ---
 
 <Page
   title="Why iyi"
-  summary="Four things, one rule. Developer, agentic, portability, performance and efficiency, each with the measurement that stands behind it."
+  summary="iyi runs your Crystal code today and rebuilds it about 9x faster. Developer experience, AI experience, portability, performance and efficiency: four things, one rule, every number measured."
 >
-  <section class="spread hero">
-    <div class="to-wide">
-      <p class="label">Why</p>
-      <h1>Four things, and one rule behind all of them.</h1>
+  <section class="hero">
+    <div class="wrap">
+      <p class="label">Why iyi</p>
+      <h1>Your Crystal code, rebuilt {loop.claim.value}x faster, with a compiler your agents can talk to.</h1>
       <p class="lede">
-        Developer experience, agentic experience, portability, performance and
-        efficiency are one design decision seen from four sides. A module is the
-        unit of compilation and it is compiled against its dependencies'
-        declarations, never their bodies. So a build reads less, a program
-        carries less, a tool can read an interface without a repository, and a
-        person waits less. Everything below is that rule and what it costs.
+        iyi is one design decision seen from four sides. A module compiles
+        against its dependencies' <strong>declarations</strong>, never their
+        bodies. So a build reads less, a program carries less, a tool can read
+        an interface without a repository, and a person waits less. Every
+        number on this page was measured, and the machine and command are
+        printed beside it.
       </p>
+      <div class="hero-cta">
+        <a class="cta" href={`${base}playground/`}>Take the tour</a>
+        <a class="cta ghost" href={`${base}#crystal`}>Switch from Crystal</a>
+      </div>
     </div>
   </section>
 
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">Efficiency, which is mostly subtraction</h2>
-      <p class="section-sub">
-        A program links what it uses, and iyi's own library is{" "}
-        <Measure of="prelude" /> lines against Crystal's{" "}
-        {lib.crystal.toLocaleString("en-GB")}. The whole library is{" "}
-        <Measure of="prelude_kb" unit="KB" /> on disk beside the binary.
-      </p>
+  <section class="band">
+    <div class="wrap">
+      <p class="label">Two things first</p>
+      <div class="two">
+        <div>
+          <h2>It runs your Crystal code. Today.</h2>
+          <p>
+            iyi's compiler is Crystal's compiler. Your <code>.cr</code> files
+            build unchanged, <code>iyi build --crystal</code> gives an iyi
+            program Crystal's standard library and <code>require</code>, and the
+            shards you already use come with it. Kemal, db, ameba, sqlite3: they
+            build and they run. There is no port to do first.
+          </p>
+          <p><a href={`${base}#crystal`}>See the Kemal server, quoted from the README</a></p>
+        </div>
+        <div>
+          <h2>It compiles faster. Measured.</h2>
+          <p>
+            Change one line in a {facts.structural.generated.toLocaleString("en-GB")}
+            line project and rebuild. iyi reads the declarations of the other
+            twenty-nine modules and none of their bodies, so the line you just
+            changed costs about {loop.claim.value}x less than under Crystal's
+            rules, on the same compiler binary. The bars below run at real speed.
+          </p>
+          <p><a href="#dx">The measurement, with its machine</a></p>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <div class="to-wide">
+  <section class="four">
+    <div class="wrap">
+      <p class="label">The four</p>
+      <h2>One rule, four sides.</h2>
+      <ol class="pillars">
+        <li><a href="#dx"><span>1</span> Developer experience</a></li>
+        <li><a href="#aix"><span>2</span> AI experience</a></li>
+        <li><a href="#portability"><span>3</span> Portability</a></li>
+        <li><a href="#performance"><span>4</span> Performance and efficiency</a></li>
+      </ol>
+    </div>
+  </section>
+
+  {/* 1. DX ------------------------------------------------------------- */}
+  <section class="pillar" id="dx">
+    <div class="wrap">
+      <p class="label">1. Developer experience</p>
+      <h2>The loop you are actually in is the loop that got fast.</h2>
+      <p class="sub">
+        Nobody uses a language through full builds. You change a line, you
+        build, you look. That loop is what R-1 was written for, and it is the
+        number this project exists for.
+      </p>
+
       <Stamped
-        claim={`${bin.iyi.kb} KB against ${bin.crystal.kb.toLocaleString("en-GB")} KB, for the same program.`}
-        subject={bin.subject}
-        machine={bin.machine}
-        command={bin.command}
+        claim={loopClaim}
+        band={loopBand}
+        subject={loop.subject}
+        machine={loop.machine}
+        command={loop.command}
         outcome="win"
       >
-        <div class="mass">
-          <figure class="mass-item">
-            <div class="square iyi" style={`width:${iyiSide}px;height:${iyiSide}px`}></div>
-            <figcaption>
-              <span class="mass-name">iyi</span>
-              <span class="mass-val">{bin.iyi.kb} KB</span>
-              <span class="mass-val dim">starts in {bin.iyi.ms} ms</span>
-            </figcaption>
-          </figure>
-          <figure class="mass-item">
-            <div class="square crystal" style={`width:${crystalSide}px;height:${crystalSide}px`}></div>
-            <figcaption>
-              <span class="mass-name">Crystal's library</span>
-              <span class="mass-val">{bin.crystal.kb.toLocaleString("en-GB")} KB</span>
-              <span class="mass-val dim">starts in {bin.crystal.ms} ms</span>
-            </figcaption>
-          </figure>
-        </div>
-        <p class="mass-caption">
-          Drawn at true area, not true width. A difference this large rendered
-          as length would flatter it.
-        </p>
+        <DurationChart />
       </Stamped>
+
+      <ul class="points">
+        <li>
+          <strong>Errors name the rule, and the fix.</strong> A refusal says
+          which rule it enforces and writes out the line you meant. The
+          compiler teaches the language at the moment you break it.
+        </li>
+        <li>
+          <strong>A framework's promise is checked at your line.</strong> Below,
+          a Kemal port refuses a handler that returns something a body cannot
+          be made of, by a module that has never heard of your types. Kemal
+          itself accepts the same block and serves an empty body forever.
+        </li>
+        <li>
+          <strong>The tools are the compiler.</strong> <code>iyi lsp</code>{" "}
+          answers completion, references, rename, hover and diagnostics from
+          the same front end a build uses, so a build, <code>iyi check</code>
+          and your editor cannot disagree about what is clean.{" "}
+          <code>iyi tool format</code> knows the syntax. <code>iyi mod dump</code>{" "}
+          prints a compiled module as text.
+        </li>
+      </ul>
+
+      <Quote id="bad_body" as="diagnostic" caption="A framework's contract, enforced at the caller" />
     </div>
   </section>
 
-  <section class="spread band">
-    <div class="to-wide">
-      <hr class="rule" />
-      <h2 class="section-head">Portability, compiles for nine, runs on four</h2>
-      <p class="section-sub">
-        An iyi program produces code for <Measure of="targets" /> targets and is
-        run on four of them every build: x86-64 glibc, x86-64 musl, aarch64 under
-        emulation, and wasm32-wasi under wasmtime. The object is cross-compiled
-        here and linked there with the target's own toolchain.
+  {/* 2. AIX ----------------------------------------------------------- */}
+  <section class="pillar aix" id="aix">
+    <div class="wrap">
+      <p class="label">2. AI experience</p>
+      <h2>A compiler built to be an agent's tool, not wrapped as one.</h2>
+      <p class="sub">
+        An agent needs two things from a language: a boundary it can read, and
+        a loop it can afford. Most languages give it neither, so it reads whole
+        repositories into a prompt and hopes. iyi gives it both, for the same
+        reason a person gets them: a module's interface is a <em>file</em>, not
+        a convention.
       </p>
-      <p class="section-sub">
-        The wasm32 build is one self-contained module already, which is also why
-        the samples run in your browser on the playground.
+
+      <div class="aix-grid">
+        <div class="aix-copy">
+          <h3>The interface is a file</h3>
+          <p>
+            A <code>.iyimod</code> holds a module's declarations, with every
+            type written down, and its machine code. A tool can read exactly
+            what a module offers without the repository that produced it, and
+            check a change against it without building the world. That is not
+            an agent feature bolted on. It is R-1 and R-2, asked a question.
+          </p>
+          <h3>"Did my change reach anybody?" has an answer</h3>
+          <p>
+            <code>iyi mod diff</code> compares two artifacts and says whether
+            the <em>interface</em> moved, which consumers have to be rebuilt,
+            and which declarations are gone or new. Rename a local and it says
+            the interface is unchanged. <code>--exit-code</code> makes that a
+            branch in a script, or in an agent's plan.
+          </p>
+        </div>
+        <div>
+          <Quote id="mod_diff" as="console" caption="what moved, and who it reaches" />
+        </div>
+      </div>
+
+      <h3 class="loop-head">The loop, one verb per step</h3>
+      <ol class="loop">
+        <li>
+          <span class="verb">iyi mod context FILE</span>
+          <span class="what">
+            <strong>Ground.</strong> Prints what an edit to this file needs to
+            know: every import's exact surface, nothing else. Cut it further
+            with <code>--budget N</code>, by a stated ladder rather than by
+            truncation.
+          </span>
+        </li>
+        <li>
+          <span class="verb">iyi check -f json</span>
+          <span class="what">
+            <strong>Check.</strong> The front end's verdict as data: file,
+            line, column, the rule, and a <code>suggested_edit</code> span the
+            compiler already computed. No binary is built. The exit code is the
+            answer.
+          </span>
+        </li>
+        <li>
+          <span class="verb">iyi fix</span>
+          <span class="what">
+            <strong>Fix.</strong> Applies exactly those edits, one per round,
+            recompiling between, until clean or until an error carries no
+            edit. Nothing is invented.
+          </span>
+        </li>
+        <li>
+          <span class="verb">iyi test --affected FILE</span>
+          <span class="what">
+            <strong>Test.</strong> Runs only the tests whose import closure
+            reaches the change, decided in milliseconds and exactly.
+          </span>
+        </li>
+        <li>
+          <span class="verb">iyi run --sandbox</span>
+          <span class="what">
+            <strong>Run, safely.</strong> Cross-compiles to wasm32-wasi and
+            runs under a host that preopens nothing: no filesystem, no
+            network, no environment. Generated code executes against a
+            runtime holding nothing.
+          </span>
+        </li>
+        <li>
+          <span class="verb">iyi mcp · iyi lsp</span>
+          <span class="what">
+            <strong>Serve.</strong> The same verbs over the Model Context
+            Protocol for agents and the Language Server Protocol for editors.
+            Each is a shell around the same binary, so what a harness gets over
+            the wire is byte for byte what a shell would have printed. No agent
+            mode, no forked behaviour.
+          </span>
+        </li>
+      </ol>
+
+      <Stamped
+        claim={packClaim}
+        band={packBand}
+        subject={pack.subject}
+        machine={pack.machine}
+        command={pack.command}
+        outcome="win"
+      >
+        <p class="stamp-body">
+          A model writing against the grounding pack instead of the sources
+          spent {pack.tokens_low} to {pack.tokens_high}% fewer prompt tokens
+          and needed no more rounds to get there. Counted, not timed, so there
+          is no machine to name. The whole loop is gated in CI by{" "}
+          <code>bench/agent_loop.py</code>, ground to check to fix to affected
+          tests to MCP to sandbox, beside an LSP session.
+        </p>
+      </Stamped>
+
+      <p class="sub">
+        Said plainly, as the README says it: the mechanism is built and the
+        claim is young. If the rules turn out not to be enough for agents,
+        that is a thing to measure rather than to promise.
       </p>
+    </div>
+  </section>
+
+  {/* 3. Portability --------------------------------------------------- */}
+  <section class="pillar" id="portability">
+    <div class="wrap">
+      <p class="label">3. Portability</p>
+      <h2>Compiles for <Measure of="targets" />. Runs on four, every build.</h2>
+      <p class="sub">
+        The object is cross-compiled here and linked there with the target's
+        own toolchain, which is the command <code>--cross-compile</code>{" "}
+        prints. CI type-checks the library for all <Measure of="targets" />
+        every push, and four of them are <em>run</em>: the check is that they
+        print what the same program printed on the machine that compiled them.
+      </p>
+      <ul class="targets">
+        {
+          targets.map((t) => (
+            <li class={ran.has(t) ? "ran" : undefined}>
+              <code>{t}</code>
+              {ran.has(t) && <span>run every build</span>}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="sub">
+        The wasm32 build is one self-contained module, which is why every
+        program on the <a href={`${base}playground/`}>tour</a> runs in your
+        browser. Darwin is "the code generator has no objection" and needs a
+        runner CI does not have; Windows compiles and links, and what it prints
+        at run time cannot be trusted yet. Both are said here rather than left
+        to be found.
+      </p>
+    </div>
+  </section>
+
+  {/* 4. Performance & efficiency ---------------------------------------- */}
+  <section class="pillar" id="performance">
+    <div class="wrap">
+      <p class="label">4. Performance and efficiency</p>
+      <h2>Native code, a small program, and a front end that answers before you notice.</h2>
+      <p class="sub">
+        iyi generates native code through LLVM. At run time the two libraries
+        are within noise where they do the same work. What changes is what a
+        program <em>carries</em>: it links only what it uses, and iyi's own
+        library is <Measure of="prelude" /> lines against Crystal's{" "}
+        {lib.crystal.toLocaleString("en-GB")}, <Measure of="prelude_kb" unit="KB" />{" "}
+        on disk beside the binary.
+      </p>
+
+      <div class="two">
+        <Stamped
+          claim={`${Math.round(massRatio)}x smaller, and starts ${startRatio}x sooner.`}
+          subject={bin.subject}
+          machine={bin.machine}
+          command={bin.command}
+          outcome="win"
+        >
+          <div class="mass">
+            <figure class="mass-item">
+              <div class="square iyi" style={`width:${iyiSide}px;height:${iyiSide}px`}></div>
+              <figcaption>
+                <span class="mass-name">iyi</span>
+                <span class="mass-val">{bin.iyi.kb} KB</span>
+                <span class="mass-val dim">starts in {bin.iyi.ms} ms</span>
+              </figcaption>
+            </figure>
+            <figure class="mass-item">
+              <div class="square crystal" style={`width:${crystalSide}px;height:${crystalSide}px`}></div>
+              <figcaption>
+                <span class="mass-name">Crystal's library</span>
+                <span class="mass-val">{bin.crystal.kb.toLocaleString("en-GB")} KB</span>
+                <span class="mass-val dim">starts in {bin.crystal.ms} ms</span>
+              </figcaption>
+            </figure>
+          </div>
+          <p class="mass-caption">
+            The same <code>puts "hello"</code>, drawn at true area. A difference
+            this large rendered as length would flatter it.
+          </p>
+        </Stamped>
+
+        <Stamped
+          claim={`The front end answers hello in ${front.seconds} s.`}
+          subject={front.subject}
+          machine={front.machine}
+          command={front.command}
+          outcome="win"
+        >
+          <p class="stamp-body">
+            Parse, check, and refuse or accept, before any code is generated.
+            That is what <code>iyi check</code> and the language server pay per
+            question, and it is why an editor and an agent can ask the compiler
+            on every keystroke.
+          </p>
+        </Stamped>
+      </div>
+
+      <h3 class="loses-head">Where it loses, said here</h3>
+      <Stamped
+        claim={`${stringRow.gc_off.toFixed(2)}x slower at building strings, with the collector off.`}
+        subject={runtime.subject}
+        machine={runtime.machine}
+        command={runtime.command}
+        outcome="loss"
+      >
+        <p class="stamp-body">
+          As it runs, the same workload is {stringRow.as_it_runs.toFixed(2)}x,
+          within noise. The collector is masking a slower builder, and the
+          README says so rather than publishing the flattering column. iyi is
+          also not quick at compiling a lot of code it has never seen; it is
+          quick on the loop, which is the row that matters.
+        </p>
+      </Stamped>
+      <p class="sub">
+        Young parts, named: iyi's own prelude carries the small-tool floor and
+        no sockets, TLS or serialisation yet; tasks run on Linux and macOS
+        arm64 only; there is no package registry, and <code>--crystal</code>{" "}
+        still leans on shards. Every one of these is a line in the README, not
+        a footnote.
+      </p>
+    </div>
+  </section>
+
+  <section class="band closing">
+    <div class="wrap">
+      <h2>Check it yourself.</h2>
+      <p class="sub">
+        The tour runs in your browser. The lessons run real programs from the
+        repository. The spec records what was measured and what was thrown
+        away. And every number above names the command that prints it.
+      </p>
+      <div class="hero-cta">
+        <a class="cta" href={`${base}playground/`}>Take the tour</a>
+        <a class="cta ghost" href={`${base}learn/`}>Learn the rule</a>
+        <a class="cta ghost" href="https://github.com/sdogruyol/iyi">Source on GitHub</a>
+      </div>
     </div>
   </section>
 
   <style>
+    section {
+      padding-block: clamp(2.5rem, 5vw, 4.5rem);
+    }
+
     .hero {
-      padding-block: clamp(2.5rem, 6vw, 4.5rem) 1rem;
+      padding-block: clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 4vw, 3rem);
     }
+
     .hero h1 {
-      font-size: var(--step-4);
-      font-variation-settings: "opsz" 72;
-      font-weight: 600;
-      letter-spacing: -0.022em;
-      max-width: 26ch;
-      margin-block: 0.7rem 1.1rem;
+      font-size: var(--step-5);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      max-width: 22ch;
+      margin-block: 0.5rem 1rem;
     }
+
     .lede {
       font-size: var(--step-1);
-      line-height: 1.52;
-      max-width: 58ch;
+      line-height: 1.5;
       color: var(--graphite);
+      max-width: 60ch;
+      margin: 0 0 1.6rem;
     }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
     .band {
-      padding-block-start: 2.6rem;
+      background: var(--raise);
+      border-block: var(--hair) solid var(--hairline);
     }
-    .section-head {
-      margin-block: 1.1rem 0.5rem;
-      font-variation-settings: "opsz" 48;
+
+    .band h2,
+    .pillar h2,
+    .four h2 {
+      font-size: var(--step-3);
+      margin-block: 0.4rem 0.8rem;
+      max-width: 26ch;
     }
-    .section-sub {
+
+    .band p,
+    .sub {
       color: var(--graphite);
       max-width: 62ch;
-      margin-block-end: 1.2rem;
     }
+
+    .two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: clamp(1.5rem, 4vw, 3.5rem);
+      align-items: start;
+    }
+
+    .two :global(.stamped) {
+      margin: 0;
+    }
+
+    .pillars {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+      gap: 0.75rem;
+    }
+
+    .pillars a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.9rem 1.1rem;
+      border: var(--hair) solid var(--hairline);
+      border-radius: var(--radius);
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .pillars a:hover {
+      border-color: var(--graphite);
+      text-decoration: none;
+    }
+
+    .pillars span {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      color: var(--brand);
+      font-size: var(--step-1);
+    }
+
+    .pillar {
+      border-block-start: var(--hair) solid var(--hairline);
+      scroll-margin-top: 1rem;
+    }
+
+    .pillar .label {
+      color: var(--brand-deep);
+    }
+
+    .points {
+      list-style: none;
+      margin: 1.6rem 0;
+      padding: 0;
+      display: grid;
+      gap: 0.9rem;
+      max-width: 62ch;
+    }
+
+    .points li {
+      position: relative;
+      padding-inline-start: 1.6rem;
+      color: var(--graphite);
+    }
+
+    .points li::before {
+      content: "";
+      position: absolute;
+      left: 0.1rem;
+      top: 0.55em;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: var(--brand);
+    }
+
+    .points strong {
+      color: var(--ink);
+    }
+
+    /* AIX ------------------------------------------------------------- */
+
+    .aix {
+      background: var(--brand-soft);
+    }
+
+    .aix h2 {
+      max-width: 24ch;
+    }
+
+    .aix-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: start;
+      margin-block: 1.5rem 2.5rem;
+    }
+
+    @media (max-width: 52rem) {
+      .aix-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .aix-copy h3 {
+      font-size: var(--step-1);
+      margin-block: 0.8rem 0.4rem;
+    }
+
+    .aix-copy p {
+      color: var(--graphite);
+    }
+
+    .loop-head,
+    .loses-head {
+      font-size: var(--step-2);
+      margin-block: 2rem 1rem;
+    }
+
+    .loop {
+      list-style: none;
+      margin: 0 0 2rem;
+      padding: 0;
+      display: grid;
+      gap: 0.6rem;
+      counter-reset: step;
+    }
+
+    .loop li {
+      display: grid;
+      grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+      gap: 1.25rem;
+      padding: 1rem 1.25rem;
+      background: var(--paper);
+      border: var(--hair) solid var(--hairline);
+      border-radius: var(--radius);
+      align-items: start;
+      counter-increment: step;
+    }
+
+    @media (max-width: 40rem) {
+      .loop li {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .verb {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--brand-deep);
+      font-size: var(--step--1);
+    }
+
+    .verb::before {
+      content: counter(step) " ";
+      color: var(--mute);
+      font-weight: 400;
+    }
+
+    .what {
+      color: var(--graphite);
+      font-size: var(--step--1);
+    }
+
+    .what strong {
+      color: var(--ink);
+    }
+
+    .stamp-body {
+      margin: 0;
+      color: var(--graphite);
+      font-size: var(--step--1);
+      max-width: 60ch;
+    }
+
+    /* Targets --------------------------------------------------------- */
+
+    .targets {
+      list-style: none;
+      margin: 1.4rem 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+      gap: 0.5rem;
+    }
+
+    .targets li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      align-items: center;
+      padding: 0.55rem 0.9rem;
+      border: var(--hair) solid var(--hairline);
+      border-radius: var(--radius);
+      font-size: var(--step--1);
+    }
+
+    .targets li.ran {
+      border-color: var(--brand);
+    }
+
+    .targets code {
+      background: none;
+      border: 0;
+      padding: 0;
+    }
+
+    .targets span {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--brand-deep);
+      white-space: nowrap;
+    }
+
+    /* Mass ------------------------------------------------------------ */
+
     .mass {
       display: flex;
+      gap: 2rem;
       align-items: flex-end;
-      gap: clamp(1.5rem, 5vw, 3.5rem);
       flex-wrap: wrap;
-      padding-block: 0.5rem;
+      margin-block: 0.5rem 0.8rem;
     }
+
     .mass-item {
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      gap: 0.5rem;
       align-items: flex-start;
     }
-    .square {
-      border: var(--hair) solid var(--ink);
-      flex: none;
-    }
+
     .square.iyi {
-      background: var(--ink);
+      background: var(--brand);
+      min-width: 6px;
+      min-height: 6px;
     }
+
     .square.crystal {
-      background-image: repeating-linear-gradient(
+      border: var(--hair) solid var(--hairline);
+      background: repeating-linear-gradient(
         45deg,
-        var(--hairline) 0 1px,
-        transparent 1px 11px
+        transparent 0 4px,
+        var(--hairline) 4px 5px
       );
     }
+
     .mass-item figcaption {
       display: flex;
       flex-direction: column;
       font-family: var(--font-mono);
       font-size: var(--step--2);
-      line-height: 1.5;
     }
+
     .mass-name {
-      color: var(--ink);
+      color: var(--mute);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .mass-val {
       font-weight: 600;
     }
-    .mass-val {
+
+    .mass-val.dim {
+      font-weight: 400;
       color: var(--graphite);
     }
-    .mass-val.dim {
-      color: var(--mute);
-    }
+
     .mass-caption {
-      font-family: var(--font-mono);
-      font-size: var(--step--2);
+      margin: 0;
       color: var(--mute);
-      margin-block-start: 0.8rem;
+      font-size: var(--step--2);
+      font-family: var(--font-mono);
+    }
+
+    .closing h2 {
+      margin-block-end: 0.5rem;
     }
   </style>
 </Page>

@@ -1,0 +1,24 @@
+# nil is a value, and the type says whether it can appear.
+
+# `String?` is `String | Nil`: it may hold a string, or nothing.
+def lookup(id : Int32) : String?
+  id == 1 ? "Ada" : nil
+end
+
+found = lookup(1)
+missing = lookup(2)
+
+puts found
+puts missing
+
+# Before you use a maybe-nil value, check it. Inside the `if`, the
+# compiler knows it is a String.
+if found
+  puts found.upcase
+end
+
+# Or give a default with `||`.
+puts missing || "nobody"
+
+# Calling a String method on a `String?` without checking does not
+# compile. That is the whole point: a nil can never surprise you at run time.

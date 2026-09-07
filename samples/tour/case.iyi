@@ -1,0 +1,29 @@
+# `case`: one value, many branches.
+
+def day_kind(day : String) : String
+  case day
+  when "Saturday", "Sunday" then "weekend"
+  when "Friday"             then "almost"
+  else                           "weekday"
+  end
+end
+
+puts day_kind("Sunday")
+puts day_kind("Friday")
+puts day_kind("Tuesday")
+
+# A `case` with no value tests each condition in turn.
+score = 87
+case
+when score >= 90 then puts "A"
+when score >= 80 then puts "B"
+else                  puts "C"
+end
+
+# `case ... in` matches on type, and it must cover every possibility.
+# `it` is the value, already narrowed to the branch's type.
+value = score > 50 ? 1 : "one"
+case value
+in Int32  then puts "a number: #{it + 1}"
+in String then puts "a word: #{it.upcase}"
+end

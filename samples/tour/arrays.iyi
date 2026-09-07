@@ -1,0 +1,27 @@
+# Arrays: ordered, growable, one element type.
+
+numbers = [3, 1, 4, 1, 5]
+puts numbers.size
+puts numbers[0]
+puts numbers.first
+puts numbers.last
+
+numbers << 9          # append
+puts numbers
+
+# The common questions.
+puts numbers.includes?(4)
+puts numbers.sum
+puts numbers.sorted
+puts numbers.select { |n| n > 2 }
+puts numbers.map { |n| n * 10 }
+puts numbers.reduce(0) { |acc, n| acc + n }
+
+# An empty array needs its element type written down.
+names = [] of String
+names << "Ayşe"
+names << "Mehmet"
+puts names.join(", ")
+
+# Walk with an index.
+names.each_with_index { |name, i| puts "#{i + 1}. #{name}" }

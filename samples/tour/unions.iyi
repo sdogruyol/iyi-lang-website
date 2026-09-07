@@ -1,0 +1,24 @@
+# Union types: a value that is one of several types.
+
+# `Int32 | String` holds either. Nothing is wrapped or boxed.
+def parse(text : String) : Int32 | String
+  n = text.to_i?
+  n ? n : "not a number: #{text}"
+end
+
+# `case ... in` must name every member, so a new member in the union
+# turns every incomplete `case` into a compile error.
+["12", "x", "7"].each do |text|
+  case parse(text)
+  in Int32  then puts "number #{it * 2}"
+  in String then puts "problem, #{it}"
+  end
+end
+
+# `is_a?` asks, and narrows inside the `if`.
+value = parse("5")
+if value.is_a?(Int32)
+  puts value + 1
+end
+
+# `String?` from the nil lesson is the same idea: `String | Nil`.

@@ -1,0 +1,46 @@
+# Generic types: a struct with a type parameter.
+
+struct Stack(T)
+  def initialize
+    @items = [] of T
+  end
+
+  def push(item : T) : Nil
+    @items << item
+  end
+
+  def pop : T?
+    @items.empty? ? nil : @items.pop
+  end
+
+  def size : Int32
+    @items.size
+  end
+end
+
+numbers = Stack(Int32).new
+numbers.push(1)
+numbers.push(2)
+puts numbers.size
+puts numbers.pop
+puts numbers.pop
+puts numbers.pop
+
+words = Stack(String).new
+words.push("iyi")
+puts words.pop
+
+# A trait can be implemented for the generic type once, for every T.
+trait Describe
+  abstract def describe : String
+end
+
+impl Describe for Stack(T) forall T
+  def describe : String
+    "a stack of #{size}"
+  end
+end
+
+numbers.push(5)
+puts numbers.describe
+puts words.describe

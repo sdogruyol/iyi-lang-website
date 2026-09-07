@@ -1,0 +1,31 @@
+# Blocks and closures: code you hand to a function.
+
+# `yield` runs the block the caller passed.
+def repeat(times : Int32)
+  times.times { |i| yield i }
+end
+
+repeat(3) { |i| puts "step #{i}" }
+
+# A block sees the variables around it.
+total = 0
+[1, 2, 3].each { |n| total += n }
+puts total
+
+# `->` makes a function value you can store and call later.
+square = ->(x : Int32) { x * x }
+puts square.call(7)
+
+# It captures its surroundings too: this one counts every call.
+count = 0
+tick = ->() { count += 1 }
+tick.call
+tick.call
+puts count
+
+# A block parameter with a type, handed on as a value.
+def apply(x : Int32, &f : Int32 -> Int32) : Int32
+  f.call(x)
+end
+
+puts apply(5) { |v| v + 100 }

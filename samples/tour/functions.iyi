@@ -1,32 +1,26 @@
-# Functions, with their types written down.
-
-def greet(name : String) : String
-  "Merhaba, #{name}!"
-end
+# Functions: `def`, typed parameters, a typed result.
 
 def add(a : Int32, b : Int32) : Int32
   a + b
 end
 
-# The last expression is the return value.
-def sign(n : Int32) : String
-  if n > 0
-    "positive"
-  elsif n < 0
+# The last expression is the result. There is no `return` needed.
+def describe(n : Int32) : String
+  if n < 0
     "negative"
-  else
+  elsif n == 0
     "zero"
+  else
+    "positive"
   end
 end
 
-puts greet("dünya")
-puts add(2, 3)
-puts sign(-7)
-
-# A function can take a block.
-def twice(&block)
-  yield
-  yield
+# Parameters can have defaults, and callers can name them.
+def greet(name : String, greeting = "Hello") : String
+  "#{greeting}, #{name}!"
 end
 
-twice { puts "again" }
+puts add(2, 3)
+puts describe(-5)
+puts greet("Ayşe")
+puts greet("Ayşe", greeting: "Selam")

@@ -1,13 +1,19 @@
-# Variables, numbers and text.
+# Variables: assign a value and the type follows.
 
 name = "iyi"
 year = 2026
-pi = 3.14
+ratio = 0.75
+ready = true
 
-puts "The language is #{name}."
-puts "The year is #{year}, and next year is #{year + 1}."
-puts "Half of pi is #{pi / 2}."
+puts name
+puts year
+puts ratio
+puts ready
 
-# Types are inferred. name is a String, year is an Int32, pi is a Float64.
-puts name.upcase
-puts name.size
+# A variable keeps its type. You can reassign, but not to a different kind.
+year = year + 1
+puts year
+
+# Write the type when you want to be explicit.
+count : Int32 = 10
+puts count

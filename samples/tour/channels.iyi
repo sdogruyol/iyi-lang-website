@@ -1,0 +1,38 @@
+# Channels: tasks talk by sending values, not by sharing them.
+
+jobs = Channel(Int32).new(8)
+results = Channel(Int32).new(8)
+
+group do |g|
+  # Two workers. Each takes jobs until the channel closes.
+  2.times do
+    g.spawn do
+      loop do
+        case jobs.receive
+        in Int32         then results.send(it * 10)
+        in ChannelClosed then break
+        in Cancelled     then break
+        end
+      end
+      0
+    end
+  end
+
+  # One producer. Closing says there will be no more.
+  g.spawn do
+    (1..5).each { |n| jobs.send(n) }
+    jobs.close
+    0
+  end
+
+  # Collect five answers.
+  total = 0
+  5.times do
+    case results.receive
+    in Int32         then total += it
+    in ChannelClosed then break
+    in Cancelled     then break
+    end
+  end
+  puts total
+end

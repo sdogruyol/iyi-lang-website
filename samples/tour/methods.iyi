@@ -1,0 +1,32 @@
+# Methods: functions that belong to a type.
+
+struct Rectangle
+  getter width : Float64
+  getter height : Float64
+
+  def initialize(@width : Float64, @height : Float64)
+  end
+
+  def area : Float64
+    width * height
+  end
+
+  def square? : Bool
+    width == height
+  end
+
+  # A method can take arguments like any function.
+  def scale(factor : Float64) : Rectangle
+    Rectangle.new(width * factor, height * factor)
+  end
+end
+
+r = Rectangle.new(3.0, 4.0)
+puts r.area
+puts r.square?
+puts r.scale(2.0).area
+
+# Methods on the built-in types work the same way.
+puts "iyi".upcase
+puts 3.7.round
+puts [1, 2, 3].sum

@@ -1,0 +1,28 @@
+# Tuples: a fixed group of values, each with its own type.
+
+pair = {1, "one"}
+puts pair[0]
+puts pair[1]
+
+# Unpack into variables.
+number, word = pair
+puts "#{number} is #{word}"
+
+# A named tuple gives each slot a name.
+person = {name: "Ayşe", age: 31}
+puts person[:name]
+puts person[:age]
+
+# A function that answers several things at once.
+def min_max(items : Array(Int32)) : Tuple(Int32, Int32)
+  low = items.first
+  high = items.first
+  items.each do |n|
+    low = n if n < low
+    high = n if n > high
+  end
+  {low, high}
+end
+
+low, high = min_max([7, 2, 9, 4])
+puts "#{low}..#{high}"

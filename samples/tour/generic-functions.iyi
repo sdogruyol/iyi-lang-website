@@ -1,0 +1,18 @@
+# Generic functions: `forall T` makes a function work for any type.
+
+def first(items : Array(T)) : T forall T
+  items[0]
+end
+
+puts first([10, 20, 30])
+puts first(["a", "b"])
+
+def swap(pair : Tuple(A, B)) : Tuple(B, A) forall A, B
+  {pair[1], pair[0]}
+end
+
+puts swap({1, "one"})
+
+# The type is fixed per call: `first` of an Int32 array is an Int32, so
+# arithmetic on the result compiles.
+puts first([1, 2]) + 100

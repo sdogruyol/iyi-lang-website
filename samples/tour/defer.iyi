@@ -1,0 +1,26 @@
+# `defer`: name the cleanup where you acquire, run it when the scope ends.
+
+def work : Int32
+  puts "open"
+  defer puts "close"
+
+  puts "working"
+  42
+end
+
+puts work
+
+# Deferred lines run last-in, first-out.
+def nested : Nil
+  defer puts "third"
+  defer puts "second"
+  puts "first"
+end
+
+nested
+
+# The scope is the block, so in a loop the cleanup runs every turn.
+2.times do |i|
+  defer puts "done with #{i}"
+  puts "turn #{i}"
+end

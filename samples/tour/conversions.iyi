@@ -1,0 +1,18 @@
+# Conversions are explicit: nothing changes type on its own.
+
+n = 42
+puts n.to_f
+puts n.to_s + "!"
+
+f = 9.99
+puts f.to_i
+puts f.round(1)
+
+# From text. `to_i` expects a number; `to_i?` answers nil when there is none.
+puts "17".to_i + 1
+puts "17".to_i?
+puts "seventeen".to_i?
+
+# A Char is a byte, and its code is a number.
+puts 'A'.ord
+puts 66.chr

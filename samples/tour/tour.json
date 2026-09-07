@@ -1,0 +1,39 @@
+{
+  "sections": [
+    {
+      "title": "Welcome",
+      "blurb": "One program, to see the shape of the thing.",
+      "steps": ["hello"]
+    },
+    {
+      "title": "Basics",
+      "blurb": "Modules, variables, types and functions: what every program is made of.",
+      "steps": ["modules", "exports", "variables", "types", "conversions", "constants", "functions", "returns", "nil"]
+    },
+    {
+      "title": "Flow control",
+      "blurb": "Loops, ranges, conditions, case, and cleanup with defer.",
+      "steps": ["loops", "ranges", "conditions", "case", "defer"]
+    },
+    {
+      "title": "Data",
+      "blurb": "Structs, classes, arrays, hashes, tuples and blocks.",
+      "steps": ["structs", "classes", "arrays", "hashes", "tuples", "blocks"]
+    },
+    {
+      "title": "Methods and traits",
+      "blurb": "Behaviour on types, traits that name it, unions and errors as values.",
+      "steps": ["methods", "traits", "dispatch", "defaults", "unions", "errors", "strings"]
+    },
+    {
+      "title": "Generics",
+      "blurb": "Functions and types that work for any type, and bounds that say which.",
+      "steps": ["generic-functions", "generic-types", "bounds"]
+    },
+    {
+      "title": "Concurrency",
+      "blurb": "Tasks in a group, and channels between them.",
+      "steps": ["tasks", "channels"]
+    }
+  ]
+}

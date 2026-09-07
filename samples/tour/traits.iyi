@@ -1,0 +1,36 @@
+# A trait: a set of methods a type promises to have.
+
+trait Shape
+  # `abstract def` is a requirement. Every implementer must define it.
+  abstract def area : Float64
+end
+
+struct Circle
+  def initialize(@radius : Float64)
+  end
+end
+
+struct Square
+  def initialize(@side : Float64)
+  end
+end
+
+# `impl Trait for Type` is the one way to give a type a trait. The impl
+# lives next to the trait or next to the type, never anywhere else.
+impl Shape for Circle
+  def area : Float64
+    3.14159 * @radius * @radius
+  end
+end
+
+impl Shape for Square
+  def area : Float64
+    @side * @side
+  end
+end
+
+puts Circle.new(1.0).area.round(2)
+puts Square.new(2.0).area
+
+# Leave a requirement out and the compiler refuses the impl, naming the
+# missing method. Try removing `area` from one of the impls above.

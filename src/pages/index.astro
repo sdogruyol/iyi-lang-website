@@ -7,6 +7,9 @@ import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
 import facts from "../generated/facts.json";
 import { findSample } from "../playground/samples";
+import { latestRelease } from "../lib/release";
+
+const release = latestRelease();
 
 /* The tour's first program and what it printed, out of the wasm record. The
  * build refuses a home page whose hello the recorder did not run. */
@@ -70,6 +73,9 @@ const starts = [
           <a class="cta" href={`${base}playground/`}>Take the tour</a>
           <a class="cta ghost" href={`${base}install/`}>Install</a>
         </div>
+        <p class="release">
+          <a href={`${base}changelog/`}>Version {release.version}</a>, {release.date}
+        </p>
       </div>
       <div class="hero-art">
         <img
@@ -326,6 +332,18 @@ const starts = [
       display: flex;
       gap: 0.8rem;
       flex-wrap: wrap;
+    }
+
+    .release {
+      margin: 1rem 0 0;
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+    }
+
+    .release a {
+      color: var(--graphite);
+      font-weight: 600;
     }
 
     .hero-art {

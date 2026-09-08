@@ -10,6 +10,7 @@
 import type { APIRoute } from "astro";
 import facts from "../generated/facts.json";
 import { tourSections, wasmProvenance } from "../playground/samples";
+import { latestRelease } from "../lib/release";
 
 export const GET: APIRoute = ({ site }) => {
   const origin = (site ?? new URL("https://iyi-lang.com")).href.replace(/\/$/, "");
@@ -17,6 +18,7 @@ export const GET: APIRoute = ({ site }) => {
   const bin = facts.recorded.hello_binary;
   const pack = facts.recorded.context_pack;
   const s = facts.structural;
+  const release = latestRelease();
 
   const tour = tourSections
     .map(
@@ -32,7 +34,7 @@ export const GET: APIRoute = ({ site }) => {
 > something an agent can talk to.
 
 iyi is Turkish for "good". Source: https://github.com/sdogruyol/iyi (Apache 2.0).
-Site: ${origin}
+Site: ${origin}. Latest release: ${release.version}, ${release.date}.
 
 ## What it is
 

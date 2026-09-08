@@ -162,10 +162,11 @@ export function runOf(lesson: Lesson): {
 }
 
 /**
- * The two inline spans this site's short strings use: code and bold. SPEC.md
- * writes its rule premises that way and a lesson writes its summary that way,
- * and both are placed as text rather than run through the markdown pipeline,
- * so the spans are rendered here rather than left as punctuation on the page.
+ * The three inline spans this site's short strings use: code, bold and
+ * italic. SPEC.md writes its rule premises that way, a lesson writes its
+ * summary that way, and README.md's tables do too; all are placed as text
+ * rather than run through the markdown pipeline, so the spans are rendered
+ * here rather than left as punctuation on the page.
  */
 export function inlineMarkdown(text: string): string {
   return text
@@ -173,7 +174,8 @@ export function inlineMarkdown(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?=[^*\w]|$)/g, "$1<em>$2</em>");
 }
 
 /**

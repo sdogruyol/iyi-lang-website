@@ -4,6 +4,7 @@ import Measure from "../components/Measure.astro";
 import Stamped from "../components/Stamped.astro";
 import DurationChart from "../components/DurationChart.astro";
 import Quote from "../components/Quote.astro";
+import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
 
 const base = import.meta.env.BASE_URL;
@@ -79,7 +80,7 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
             shards you already use come with it. Kemal, db, ameba, sqlite3: they
             build and they run. There is no port to do first.
           </p>
-          <p><a href={`${base}#crystal`}>See the Kemal server, quoted from the README</a></p>
+          <p><a href="#moved">What moved, in one table</a></p>
         </div>
         <div>
           <h2>It compiles faster. Measured.</h2>
@@ -93,6 +94,19 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
           <p><a href="#dx">The measurement, with its machine</a></p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="moved" id="moved">
+    <div class="wrap">
+      <p class="label">Coming from Crystal</p>
+      <h2>What moved, and why.</h2>
+      <p class="sub">
+        The syntax is Crystal's. What moved is where things may be written,
+        and each move is one of the four rules. A <code>.cr</code> file still
+        compiles unchanged; the rows below are about <code>.iyi</code> files.
+      </p>
+      <Compare id="crystal" caption="Crystal to iyi, side by side" />
     </div>
   </section>
 

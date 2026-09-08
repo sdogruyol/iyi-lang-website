@@ -5,6 +5,7 @@ import Stamped from "../components/Stamped.astro";
 import DurationChart from "../components/DurationChart.astro";
 import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
+import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
 import { findSample } from "../playground/samples";
 import { latestRelease } from "../lib/release";
@@ -154,6 +155,15 @@ const starts = [
         <Quote id="kemal_site" as="source" caption="site.iyi" />
         <Quote id="kemal_run" as="console" caption="a Kemal server, from an iyi program" />
       </div>
+    </div>
+    <div class="wrap crystal-table">
+      <h3>What moved, and why</h3>
+      <p class="section-sub">
+        The syntax is Crystal's. What moved is where things may be written,
+        and each move is one of the four rules. Everything not in this table
+        is unchanged.
+      </p>
+      <Compare id="crystal" caption="Crystal to iyi, side by side" />
     </div>
   </section>
 
@@ -461,6 +471,15 @@ const starts = [
 
     .crystal-run :global(.console) {
       margin-block-start: 0.9rem;
+    }
+
+    .crystal-table {
+      margin-block-start: clamp(2rem, 4vw, 3rem);
+    }
+
+    .crystal-table h3 {
+      font-size: var(--step-2);
+      margin-block-end: 0.4rem;
     }
 
     /* Install ---------------------------------------------------------- */

@@ -244,6 +244,59 @@ for (const [id, want] of Object.entries(WANTED)) {
   };
 }
 
+// The tables ---------------------------------------------------------------
+
+// A markdown table README.md publishes, found by its header row, which has to
+// appear exactly once. Cells keep their markdown; the page renders it inline.
+// Like the recordings, a table is quoted with the lines it came from and
+// never retyped: the comparison a Crystal programmer reads on the site is the
+// one the README states.
+const TABLES = {
+  crystal: "| Crystal | iyi | why |",
+};
+
+const cells = (line) =>
+  line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+
+const tables = {};
+for (const [id, header] of Object.entries(TABLES)) {
+  const at = readmeLines
+    .map((line, i) => (line.trim() === header ? i : -1))
+    .filter((i) => i >= 0);
+  if (at.length !== 1) {
+    die(
+      `README.md has ${at.length} tables headed "${header}", and the site ` +
+        `quotes exactly one as "${id}"`,
+    );
+  }
+  const start = at[0];
+  if (!/^\|\s*-+/.test(readmeLines[start + 1] ?? "")) {
+    die(`README.md:${start + 1}: "${header}" is not followed by a table rule`);
+  }
+  const rows = [];
+  let i = start + 2;
+  while (i < readmeLines.length && readmeLines[i].trim().startsWith("|")) {
+    rows.push(cells(readmeLines[i]));
+    i++;
+  }
+  if (rows.length === 0) {
+    die(`README.md:${start + 1}: "${header}" has no rows`);
+  }
+  tables[id] = {
+    header: cells(readmeLines[start]),
+    rows,
+    from: start + 1,
+    to: i,
+    source: "README.md",
+    cite: `README.md, lines ${start + 1} to ${i}`,
+  };
+}
+
 // The rules themselves -----------------------------------------------------
 
 // A lesson says which rule it teaches, and the rail beside it prints that
@@ -438,6 +491,11 @@ writeFileSync(
 writeFileSync(
   resolve(out, "rules.json"),
   `${JSON.stringify(rules, null, 2)}\n`,
+  "utf8",
+);
+writeFileSync(
+  resolve(out, "tables.json"),
+  `${JSON.stringify(tables, null, 2)}\n`,
   "utf8",
 );
 

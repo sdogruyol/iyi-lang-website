@@ -26,3 +26,35 @@ export function latestRelease(): Release {
   const [, version, date] = HEADING.exec(first.heading)!;
   return { version, date };
 }
+
+/**
+ * The tarballs a release publishes, named the way `install.sh` names them:
+ * `iyi-$version-$target.tar.gz` under `releases/download/v$version`, for the
+ * two `uname` pairs the script accepts. Derived from the recorded version
+ * rather than typed into a page, so the links move with the changelog.
+ */
+export interface ReleaseAsset {
+  /** The `uname` pair, as the installer prints it when it refuses one. */
+  target: string;
+  /** The machine, in the words the page uses around it. */
+  machine: string;
+  file: string;
+  url: string;
+}
+
+const TARGETS: ReadonlyArray<[target: string, machine: string]> = [
+  ["linux-x86_64", "Linux x86-64"],
+  ["darwin-arm64", "macOS arm64"],
+];
+
+export function releaseAssets(release: Release = latestRelease()): ReleaseAsset[] {
+  return TARGETS.map(([target, machine]) => {
+    const file = `iyi-${release.version}-${target}.tar.gz`;
+    return {
+      target,
+      machine,
+      file,
+      url: `https://github.com/sdogruyol/iyi/releases/download/v${release.version}/${file}`,
+    };
+  });
+}

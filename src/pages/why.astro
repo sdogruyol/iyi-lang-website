@@ -26,7 +26,7 @@ const startRatio = (bin.crystal.ms / bin.iyi.ms).toFixed(1);
 
 const stringRow = runtime.rows.find((r) => r.workload === "string building")!;
 
-const packClaim = `${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens, with no extra rounds.`;
+const packClaim = `${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens, for no fewer rounds.`;
 const packBand = `The grounding pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`;
 
 const targets = [
@@ -274,11 +274,13 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
       >
         <p class="stamp-body">
           A model writing against the grounding pack instead of the sources
-          spent {pack.tokens_low} to {pack.tokens_high}% fewer prompt tokens
-          and needed no more rounds to get there. Counted, not timed, so there
-          is no machine to name. The whole loop is gated in CI by{" "}
-          <code>bench/agent_loop.py</code>, ground to check to fix to affected
-          tests to MCP to sandbox, beside an LSP session.
+          spent {pack.tokens_low} to {pack.tokens_high}% fewer prompt tokens.
+          The rounds to get to green are the model's, and they are not iyi's
+          win: tied {pack.rounds_tied} times and lost {pack.rounds_lost}, and
+          with <code>iyi fix</code> in the loop the last run tied. Counted, not
+          timed, so there is no machine to name. The whole loop is gated in CI
+          by <code>bench/agent_loop.py</code>, ground to check to fix to
+          affected tests to MCP to sandbox, beside an LSP session.
         </p>
       </Stamped>
 

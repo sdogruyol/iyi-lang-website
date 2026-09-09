@@ -205,6 +205,15 @@ RECORDED_PATTERNS: list[tuple[str, str, tuple[str, ...]]] = [
         r"\*\*(\d+)–(\d+)% fewer prompt tokens\*\* over ([a-z]+(?:-[a-z]+)*) measured runs",
         ("low", "high", "runs"),
     ),
+    # The other half of the same measurement, and the half that does not go
+    # iyi's way: the model's rounds to green. README.md publishes it in the
+    # same sentence as the token saving, so the site parses it from there and
+    # states it beside the saving rather than leaving a reader to assume.
+    (
+        "context_rounds",
+        r"rounds-to-green are the model's, tied ([a-z]+) times and lost ([a-z]+),",
+        ("tied", "lost"),
+    ),
 ]
 
 # Which command prints each recorded group, quoted from README.md's own
@@ -224,6 +233,7 @@ COMMANDS: dict[str, str] = {
     "runtime_arithmetic": "python3 bench/runtime.py",
     "context_pack": "python3 bench/context_pack.py",
     "context_tokens": "python3 bench/context_pack.py",
+    "context_rounds": "python3 bench/context_pack.py",
 }
 
 # Binary sizes and start times are quoted against a different machine from the
@@ -379,6 +389,8 @@ def build() -> tuple[dict, list[str]]:
                 "tokens_low": int(raw["context_tokens"]["low"]),
                 "tokens_high": int(raw["context_tokens"]["high"]),
                 "runs": raw["context_tokens"]["runs"],
+                "rounds_tied": raw["context_rounds"]["tied"],
+                "rounds_lost": raw["context_rounds"]["lost"],
                 "unit": "%",
                 "machine": None,
                 "command": COMMANDS["context_pack"],

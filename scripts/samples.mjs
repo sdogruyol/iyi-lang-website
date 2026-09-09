@@ -205,8 +205,11 @@ const WANTED = {
   kemal_run: { lang: "console", anchor: "curl localhost:3000/json" },
   mod_diff: { lang: "console", anchor: "Consumers have to be rebuilt" },
   bad_body: { lang: "console", anchor: "does not implement Kemal::Router::IntoBody" },
-  install: { lang: "console", anchor: "install.sh | sh" },
-  install_manual: { lang: "console", anchor: "tar -xzf iyi-" },
+  // `sh`, not `console`: README.md gives the two install lines as commands to
+  // run, with no prompt and no output, so the site sets them as commands and
+  // does not draw a prompt the README never printed.
+  install: { lang: "sh", anchor: "install.sh | sh" },
+  install_manual: { lang: "sh", anchor: "tar -xzf iyi-" },
 };
 
 const blocks = fencedBlocks(readmeLines);

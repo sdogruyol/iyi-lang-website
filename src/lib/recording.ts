@@ -12,16 +12,18 @@
  * sits in, which is what lets the caret line stay exactly as the compiler
  * printed it while still being coloured with the signal.
  *
- * The two faces are styled in styles/code.css:
+ * The faces are styled in styles/code.css:
  *
  *   console     a real run. The prompt and the command are marked, output is
  *               not, because nothing highlighted it in the terminal.
+ *   shell       a `sh` block: lines to run, with no prompt and no output in
+ *               the source, so every line is a command and none is invented.
  *   diagnostic  a compiler error. iyi's errors name the rule they enforce,
  *               which is a feature, so the rule citation is pulled into a
  *               cited footer by the component and the caret is in signal.
  */
 
-export type RecordingFace = "console" | "diagnostic";
+export type RecordingFace = "console" | "shell" | "diagnostic";
 
 export function escapeHtml(text: string): string {
   return text
@@ -39,6 +41,11 @@ export function markLine(line: string, as: RecordingFace): string {
       return `<span class="prompt">$</span><span class="cmd">${escapeHtml(line.slice(1))}</span>`;
     }
     return `<span class="out">${text}</span>`;
+  }
+
+  // A `sh` block. Every line is a command; a blank line is a blank line.
+  if (as === "shell") {
+    return line.length === 0 ? text : `<span class="cmd">${text}</span>`;
   }
 
   // A diagnostic. `$` is the command that produced it and `In ...` is the

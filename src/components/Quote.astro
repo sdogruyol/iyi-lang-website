@@ -7,12 +7,15 @@
  * came from. Nothing here retypes output. A page that invented a terminal
  * session would be the same failure as a page that invented a number.
  *
- * Three faces. Two are already styled in styles/code.css and classified by
+ * Four faces. Three are styled in styles/code.css and classified by
  * src/lib/recording.ts, which BreakRule shares so that a caret line means the
  * same thing wherever a recording is set:
  *
  *   console     a recording of a real run. Prompts and commands are marked,
  *               output is not, because nothing highlighted it in the terminal.
+ *   shell       a `sh` block: commands to run, quoted with no prompt, because
+ *               README.md printed none. Set in the console's frame, since it
+ *               is still a terminal, but nothing is marked as output.
  *   diagnostic  a compiler error. iyi's errors name the rule they enforce,
  *               which is a feature, so this is a designed component rather
  *               than a red box, and the caret line is preserved exactly.
@@ -25,11 +28,11 @@ import { renderRecording } from "../lib/recording";
 
 interface Props {
   id: string;
-  as?: "console" | "diagnostic" | "source";
+  as?: "console" | "shell" | "diagnostic" | "source";
   caption?: string;
-  /** On a console face: a control that copies the commands, without their
-   * prompts and without the output, so what lands in a shell is what the
-   * recording ran. */
+  /** On a console or shell face: a control that copies the commands, without
+   * their prompts and without the output, so what lands in a shell is what
+   * the recording ran. */
   copy?: boolean;
 }
 
@@ -49,17 +52,22 @@ if (!block) {
 
 const body = as === "source" ? null : renderRecording(block.text, as);
 
-/* The commands alone: the lines the recording ran, with the prompt stripped.
- * Taken from the text, not the markup, so the copy cannot pick up a span. */
-const commands = block.text
-  .split("\n")
-  .filter((line) => line.startsWith("$ "))
-  .map((line) => line.slice(2))
-  .join("\n");
+/* The commands alone: the lines to run, with the prompt stripped where there
+ * is one. Taken from the text, not the markup, so the copy cannot pick up a
+ * span. A `sh` block is commands throughout; a console recording is the lines
+ * that carry a prompt. */
+const commands = (
+  as === "shell"
+    ? block.text.split("\n").filter((line) => line.trim().length > 0)
+    : block.text
+        .split("\n")
+        .filter((line) => line.startsWith("$ "))
+        .map((line) => line.slice(2))
+).join("\n");
 ---
 
 {
-  as === "console" ? (
+  as === "console" || as === "shell" ? (
     <div class="console">
       <div class="console-chrome">
         <i aria-hidden="true" />

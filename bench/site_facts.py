@@ -202,7 +202,7 @@ RECORDED_PATTERNS: list[tuple[str, str, tuple[str, ...]]] = [
     ),
     (
         "context_tokens",
-        r"\*\*(\d+)–(\d+)% fewer prompt tokens\*\* over (\w+) measured runs",
+        r"\*\*(\d+)–(\d+)% fewer prompt tokens\*\* over ([a-z]+(?:-[a-z]+)*) measured runs",
         ("low", "high", "runs"),
     ),
 ]

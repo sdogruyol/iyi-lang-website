@@ -34,7 +34,12 @@ build refuses to publish if they no longer describe the iyi tree it was given.
 Regenerate them after the samples or the compiler change:
 
     make -C ../iyi                          # the compiler
-    WASI_SDK=/path/to/wasi-sdk npm run record
+    WASI_SDK=/path/to/wasi-sdk-24 npm run record
+
+wasi-sdk 24, not a later one: the modules are linked for `wasm32-wasi`, the
+target README.md publishes, and wasi-sdk renamed that sysroot to
+`wasm32-wasip1` and dropped the old name afterwards. `record:wasm` refuses one
+without that sysroot by name rather than failing at the linker.
 
 ## Layout
 

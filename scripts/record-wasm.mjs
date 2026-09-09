@@ -154,6 +154,22 @@ const clang = (() => {
   return found;
 })();
 
+// The link below is `--target=wasm32-wasi`, which needs a sysroot of that
+// name. wasi-sdk renamed it to wasm32-wasip1 and dropped the old name after
+// 24, so a newer sdk fails here with `cannot open crt1.o`, which says nothing
+// about the version. Say it instead: this is a toolchain to install, not a
+// bug in the tree.
+const sysroot = resolve(dirname(dirname(clang)), "share", "wasi-sysroot");
+if (existsSync(sysroot) && !existsSync(join(sysroot, "lib", "wasm32-wasi"))) {
+  throw new Error(
+    `${clang} has no wasm32-wasi sysroot: ${join(sysroot, "lib")} holds ` +
+      `${readdirSync(join(sysroot, "lib")).join(", ")}. This records the ` +
+      `wasm32-wasi target README.md publishes, so it links against that ` +
+      `sysroot by name. Use wasi-sdk 24, the last one that carries it, or ` +
+      `point WASI_SDK at one that does.`,
+  );
+}
+
 const env = { ...process.env, IYI_PATH: resolve(repo, "src") };
 
 // ---------------------------------------------------------------------------

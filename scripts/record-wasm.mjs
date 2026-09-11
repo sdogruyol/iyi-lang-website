@@ -85,6 +85,14 @@ const NOTES = {
     "preopened directory fd\", because a WASI module reaches the filesystem " +
     "only through directory handles the host granted it, and this module " +
     "asks for none.",
+  "iyi/socket":
+    "There are no sockets on wasm32-wasi to open: src/std/socket.iyi binds " +
+    "the calls per platform and wasm32 falls to the branch that has none, " +
+    "so the first line panics with \"IyiSocket is not supported on this " +
+    "platform\" and the module prints nothing. WASI preview1 can accept, " +
+    "read and write a socket the host handed it, and has no call that " +
+    "creates or binds one; natively the same program runs both ends of the " +
+    "exchange on loopback.",
 };
 
 // ---------------------------------------------------------------------------

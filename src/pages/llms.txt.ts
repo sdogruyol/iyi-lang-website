@@ -33,7 +33,7 @@ export const GET: APIRoute = ({ site }) => {
 > native through LLVM, compatible with Crystal, and built so that a compiler is
 > something an agent can talk to.
 
-iyi is Turkish for "good". Source: https://github.com/sdogruyol/iyi (Apache 2.0).
+iyi is Turkish for "good". Source: https://github.com/iyilang/iyi (Apache 2.0).
 Site: ${origin}. Latest release: ${release.version}, ${release.date}.
 
 ## What it is
@@ -63,7 +63,7 @@ for Type\` lives with the trait or the type (R-3).
 
 ## Install
 
-    curl -fsSL https://raw.githubusercontent.com/sdogruyol/iyi/master/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/iyilang/iyi/master/install.sh | sh
     ~/.local/bin/iyi run ~/.local/share/iyi/samples/hello.iyi
 
 The latest release into ~/.local, on Linux x86-64 or macOS arm64, with both

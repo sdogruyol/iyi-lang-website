@@ -39,7 +39,7 @@ jobs:
       # number with the same confidence as a true one.
       - uses: actions/checkout@v4
         with:
-          repository: sdogruyol/iyi
+          repository: iyilang/iyi
           path: iyi
           fetch-depth: 0
 

@@ -1,6 +1,6 @@
 # iyi-lang.com
 
-The website for [iyi](https://github.com/sdogruyol/iyi), published at
+The website for [iyi](https://github.com/iyilang/iyi), published at
 https://iyi-lang.com from this repository.
 
 The site restates the iyi repository rather than describing it: every number,
@@ -17,7 +17,7 @@ by hand, and `scripts/no-transcription.mjs` fails the build if a figure is.
 The scripts look for an iyi checkout beside this one, named `iyi`, or wherever
 `IYI_REPO` points:
 
-    git clone git@github.com:sdogruyol/iyi.git ../iyi
+    git clone git@github.com:iyilang/iyi.git ../iyi
     npm ci
     npm run build            # generate, build, check the built prose
     npm run dev              # the same, served locally

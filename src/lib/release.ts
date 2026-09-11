@@ -54,7 +54,7 @@ export function releaseAssets(release: Release = latestRelease()): ReleaseAsset[
       target,
       machine,
       file,
-      url: `https://github.com/sdogruyol/iyi/releases/download/v${release.version}/${file}`,
+      url: `https://github.com/iyilang/iyi/releases/download/v${release.version}/${file}`,
     };
   });
 }

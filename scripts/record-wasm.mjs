@@ -500,7 +500,9 @@ for (const { id, slug, set, relative, source } of order) {
     throw new Error(
       `${relative}: the wasm run and the native run print different things ` +
         `and nothing in this script says why. Add the sentence to NOTES, or ` +
-        `fix the difference.`,
+        `fix the difference.\n` +
+        `wasm32-wasi printed:\n${wasmStdout}\n` +
+        `natively it printed:\n${nativeStdout}`,
     );
   }
   if (identical && note) {

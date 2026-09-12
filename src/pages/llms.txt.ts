@@ -17,7 +17,7 @@ import { SPELLED } from "../lib/lessons";
 import agent from "../../records/agent.json";
 
 export const GET: APIRoute = async ({ site }) => {
-  const origin = (site ?? new URL("https://iyi-lang.com")).href.replace(/\/$/, "");
+  const origin = (site ?? new URL("https://iyi.dev")).href.replace(/\/$/, "");
   const loop = facts.recorded.edit_loop;
 
   /* The lessons, counted rather than stated. The path grew from five to eight

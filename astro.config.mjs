@@ -3,11 +3,11 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import { unified } from "@astrojs/markdown-remark";
 
-// GitHub Pages serves this repository at `iyi-lang.com` (the CNAME under
-// public/, which the build copies into dist/ - so the domain is this file's
-// and a deploy carries it), at the root. Override both to preview under
-// another origin or path.
-const site = process.env.SITE_ORIGIN ?? "https://iyi-lang.com";
+// GitHub Pages serves this repository at `iyi.dev` (the CNAME under public/,
+// which the build copies into dist/ - so the domain is this file's and a
+// deploy carries it), at the root. Override both to preview under another
+// origin or path.
+const site = process.env.SITE_ORIGIN ?? "https://iyi.dev";
 const base = process.env.SITE_BASE ?? "/";
 
 export default defineConfig({

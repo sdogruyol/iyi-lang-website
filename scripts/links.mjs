@@ -59,7 +59,7 @@ const site = resolve(here, "..");
 const dist = resolve(site, process.argv[2] ?? "dist");
 
 /* The serving rules are the config's, not this file's. Repeating "the origin
- * is iyi-lang.com and the base is /" here would be a second place for them to
+ * is iyi.dev and the base is /" here would be a second place for them to
  * disagree, and the config is the one the build obeys. */
 const config = (await import(resolve(site, "astro.config.mjs"))).default;
 const origin = new URL(config.site).origin;

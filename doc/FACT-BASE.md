@@ -634,7 +634,7 @@ From README.md, line 7:
 The repository shows:
 - Owner: github.com/iyilang
 - Remote: git@github.com:iyilang/iyi.git
-- This website: github.com/iyilang/website, published at https://iyi-lang.com
+- This website: github.com/iyilang/website, published at https://iyi.dev
 
 ### License
 

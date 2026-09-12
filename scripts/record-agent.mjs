@@ -467,7 +467,7 @@ const mcp = spawnSync(
         rpc(1, "initialize", {
           protocolVersion: "2024-11-05",
           capabilities: {},
-          clientInfo: { name: "iyi-lang.com recorder", version: "1" },
+          clientInfo: { name: "iyi.dev recorder", version: "1" },
         }),
         JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
         rpc(2, "tools/list"),

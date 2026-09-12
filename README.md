@@ -1,7 +1,7 @@
-# iyi-lang.com
+# iyi.dev
 
 The website for [iyi](https://github.com/iyilang/iyi), published at
-https://iyi-lang.com from this repository.
+https://iyi.dev from this repository.
 
 The site restates the iyi repository rather than describing it: every number,
 listing and quotation is generated at build time from that tree - its

@@ -49,6 +49,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { releaseRef, requireReleaseCompiler, requireReleaseTree } from "./release-ref.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
@@ -184,17 +185,16 @@ const env = { ...process.env, IYI_PATH: resolve(repo, "src") };
 // Provenance
 // ---------------------------------------------------------------------------
 
-const version = execFileSync(iyi, ["--version"], { encoding: "utf8" })
-  .split("\n")[0]
-  .trim();
-if (!version) {
-  throw new Error(`${iyi} --version printed nothing, so the record cannot say`
-    + ` which compiler made it`);
-}
-
-const commit = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
-  encoding: "utf8",
-}).trim();
+// A recording is evidence about a release, so it is taken from the release:
+// the checkout this is pointed at has to be the tag the changelog states, the
+// compiler beside it has to have been built there, and the tree has to be
+// unedited. `scripts/release-ref.mjs` says why, and says what to run when it
+// is not. Without this the playground served modules compiled from master,
+// which is source the tarball the install page points at does not contain.
+const release = releaseRef(repo);
+requireReleaseTree(repo, release, "record:wasm");
+const version = requireReleaseCompiler(iyi, release, "record:wasm");
+const commit = release.commit;
 
 const machine = (() => {
   const uname = execFileSync("uname", ["-srm"], { encoding: "utf8" }).trim();

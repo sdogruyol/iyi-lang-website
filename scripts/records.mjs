@@ -13,6 +13,16 @@
 // sample page through the engine's import graph; the reasoning is with the
 // section that writes it.
 //
+// WHAT IT CHECKS THEM AGAINST, and this is the whole of why the gate is
+// usable. A record is evidence about a release, so the file it claims to have
+// recorded is read out of the tag that publishes that release and never out
+// of the sibling working tree. Checked against the working tree, every
+// record went stale on every commit to the language: the tenth commit after
+// 0.12.0 edited a line count in a comment in `samples/iyi/calc.iyi` and
+// refused a site whose pages were all still right. Commits reach the site
+// when they are released. `scripts/release-ref.mjs` resolves which one that
+// is and why it fails rather than falling back.
+//
 // Every check here is a check the good records pass and a corrupted record
 // fails. A gate that cannot fail is not a gate, and this pipeline is the
 // argument that the site cannot drift from the tree.
@@ -28,14 +38,29 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { blobAt, releaseRef } from "./release-ref.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
 const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site, "..", "iyi");
-// A recorded path is a sample's in the iyi repository, `samples/iyi/...`, or
-// this site's own: a tour program under `samples/tour/` or a break program
-// under `records/`. The one prefix that is the iyi tree's says so.
-const sourceOf = (path) => resolve(path.startsWith("samples/iyi/") ? repo : site, path);
+
+/* A recorded path is a sample's in the iyi repository, `samples/iyi/...`, or
+ * this site's own: a tour program under `samples/tour/` or a break program
+ * under `records/`. The one prefix that is the iyi tree's says so, and only
+ * that one is read at the release: this repository's own files are in front
+ * of you and move when you move them. */
+const release = releaseRef(repo);
+const inIyi = (path) => path.startsWith("samples/iyi/");
+
+/** A recorded file's bytes, or null where nothing has them. */
+const sourceBytes = (path) => {
+  if (inIyi(path)) return blobAt(repo, release.tag, path);
+  const local = resolve(site, path);
+  return existsSync(local) ? readFileSync(local) : null;
+};
+
+/** Where a reader should look for a recorded file, for a message. */
+const sourceWhere = (path) => (inIyi(path) ? `${path} at ${release.tag}` : path);
 const records = resolve(site, "records");
 const publicWasm = resolve(site, "public", "wasm");
 
@@ -153,23 +178,24 @@ if (manifest) {
         );
       }
 
-      // The sample the record measured must still be in the tree under the
+      // The sample the record measured must still be in the release under the
       // name the record gives it, or the page would cite a file nobody can
-      // open.
-      if (typeof sample.path === "string" && sample.path !== "") {
-        if (!existsSync(sourceOf(sample.path))) {
-          problem(file, `sample "${id}" cites ${sample.path}, which is gone`);
-        }
+      // open in the tarball the install page points at.
+      const source =
+        typeof sample.path === "string" && sample.path !== ""
+          ? sourceBytes(sample.path)
+          : null;
+      if (typeof sample.path === "string" && sample.path !== "" && source === null) {
+        problem(file, `sample "${id}" cites ${sourceWhere(sample.path)}, which is not there`);
       }
 
       // The digest of the sample's own source. The playground compares it
       // against a hash of the editor's text to tell an unedited curated
       // sample, which can run from its recorded module, from text the visitor
-      // changed, which has to go to the compile service. Checking it against
-      // the file on disk is therefore a staleness gate and not a formality: a
-      // sample edited since the recording no longer matches its recorded
-      // module either, so the page would hand a visitor bytes compiled from
-      // text that is no longer in the tree.
+      // changed. Checking it against the release is therefore a staleness
+      // gate and not a formality: a sample edited between releases no longer
+      // matches its recorded module either, so the page would hand a visitor
+      // bytes compiled from text the release does not ship.
       if (
         typeof sample.sourceSha256 !== "string" ||
         sample.sourceSha256 === ""
@@ -181,20 +207,15 @@ if (manifest) {
           `sample "${id}" records "${sample.sourceSha256}" as its ` +
             `sourceSha256, which is not a 64 character lowercase hex digest`,
         );
-      } else if (
-        typeof sample.path === "string" &&
-        sample.path !== "" &&
-        existsSync(sourceOf(sample.path))
-      ) {
-        const source = readFileSync(sourceOf(sample.path));
+      } else if (source !== null) {
         const digest = createHash("sha256").update(source).digest("hex");
         if (digest !== sample.sourceSha256) {
           problem(
             file,
-            `sample "${id}" is stale: ${sample.path} hashes to ${digest} ` +
-              `where the manifest says ${sample.sourceSha256}, so the ` +
-              `recorded module was compiled from text that is no longer in ` +
-              `the tree. Regenerate with: npm run record:wasm`,
+            `sample "${id}" is stale: ${sourceWhere(sample.path)} hashes to ` +
+              `${digest} where the manifest says ${sample.sourceSha256}, so ` +
+              `the recorded module was compiled from text that release does ` +
+              `not ship. Regenerate with: npm run record:wasm`,
           );
         }
       }
@@ -250,14 +271,15 @@ if (manifest) {
         }
       }
       if (typeof sample?.path === "string" && sample.path !== "") {
-        if (!existsSync(sourceOf(sample.path))) {
-          problem(file, `native-only sample "${id}" cites ${sample.path}, which is gone`);
+        const refused = sourceBytes(sample.path);
+        if (refused === null) {
+          problem(file, `native-only sample "${id}" cites ${sourceWhere(sample.path)}, which is not there`);
         } else {
-          const digest = createHash("sha256").update(readFileSync(sourceOf(sample.path))).digest("hex");
+          const digest = createHash("sha256").update(refused).digest("hex");
           if (digest !== sample.sourceSha256) {
             problem(
               file,
-              `native-only sample "${id}" is stale: ${sample.path} hashes to ${digest} ` +
+              `native-only sample "${id}" is stale: ${sourceWhere(sample.path)} hashes to ${digest} ` +
                 `where the manifest says ${sample.sourceSha256}. Regenerate with: npm run record:wasm`,
             );
           }
@@ -324,8 +346,8 @@ if (diagnostics) {
         );
       }
       if (typeof entry.path === "string" && entry.path !== "") {
-        if (!existsSync(sourceOf(entry.path))) {
-          problem(file, `case "${id}" cites ${entry.path}, which is gone`);
+        if (sourceBytes(entry.path) === null) {
+          problem(file, `case "${id}" cites ${sourceWhere(entry.path)}, which is not there`);
         } else if (typeof entry.stderr === "string") {
           // The site draws a marker on the offending line, so the position in
           // the compiler's own header has to still be a position in the file
@@ -338,25 +360,26 @@ if (diagnostics) {
           // which is a dependency of the program that was compiled. So the
           // check follows the header rather than the case.
           const where = DIAGNOSTIC_LOCATION.exec(entry.stderr);
+          const pointed = where === null ? null : sourceBytes(where[1]);
           if (where === null) {
             problem(
               file,
               `case "${id}" has compiler output with no "In file:line:column" ` +
                 `header, so nothing can say where the error is`,
             );
-          } else if (!existsSync(sourceOf(where[1]))) {
+          } else if (pointed === null) {
             problem(
               file,
-              `case "${id}" points at ${where[1]}, which is not in the tree`,
+              `case "${id}" points at ${sourceWhere(where[1])}, which is not there`,
             );
           } else {
-            const lines = readFileSync(sourceOf(where[1]), "utf8").split("\n").length;
+            const lines = pointed.toString("utf8").split("\n").length;
             const line = Number(where[2]);
             if (line > lines) {
               problem(
                 file,
-                `case "${id}" points at line ${line} of ${where[1]}, which ` +
-                  `has fewer lines than that now. Regenerate with: npm run ` +
+                `case "${id}" points at line ${line} of ${sourceWhere(where[1])}, ` +
+                  `which has fewer lines than that. Regenerate with: npm run ` +
                   `record:diagnostics`,
               );
             }
@@ -403,16 +426,16 @@ if (highlight) {
         problem(file, `${path} has no markup`);
         continue;
       }
-      const source = sourceOf(path);
-      if (!existsSync(source)) {
-        problem(file, `records ${path}, which is gone from the tree`);
+      const source = sourceBytes(path);
+      if (source === null) {
+        problem(file, `records ${sourceWhere(path)}, which is not there`);
         continue;
       }
-      if (textOf(html) !== readFileSync(source, "utf8")) {
+      if (textOf(html) !== source.toString("utf8")) {
         problem(
           file,
-          `${path} is stale: the recorded markup does not encode the file ` +
-            `that is in the tree now`,
+          `${sourceWhere(path)} is stale: the recorded markup does not ` +
+            `encode the file that release ships`,
         );
       }
     }

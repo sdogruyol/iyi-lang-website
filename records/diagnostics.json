@@ -1,10 +1,10 @@
 {
   "recorded": {
-    "compiler": "iyi 0.12.0 (built on Crystal 1.22.0-dev [95068b98e] (2026-09-12))",
-    "commit": "95068b98ee6d0c70e6bcff43a5fcd732f30a4302",
+    "compiler": "iyi 0.12.0 (built on Crystal 1.22.0-dev [44b843563] (2026-09-11))",
+    "commit": "44b8435633d47d2d3ba2106abe86e0ea1188257f",
     "machine": "Linux 7.2.4-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
     "command": "npm run record:diagnostics",
-    "when": "2026-09-12T08:41:05.497Z"
+    "when": "2026-09-12T16:06:26.670Z"
   },
   "cases": [
     {

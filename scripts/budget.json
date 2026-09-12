@@ -28,7 +28,7 @@
     { "match": "/targets/", "ceiling": 196608 },
     { "match": "/download/", "ceiling": 196608 },
     { "match": "/agents/", "ceiling": 212992 },
-    { "match": "/", "ceiling": 294912 },
+    { "match": "/", "ceiling": 278528 },
     { "match": "/404.html", "ceiling": 212992 },
     { "match": "/why/", "ceiling": 229376 },
     { "match": "/install/", "ceiling": 196608 },
@@ -38,5 +38,5 @@
     { "match": "/playground/iyi/*/", "ceiling": 229376 },
     { "match": "/playground/*/", "ceiling": 294912 }
   ],
-  "assets": 622592
+  "assets": 589824
 }

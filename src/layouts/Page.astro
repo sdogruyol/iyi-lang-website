@@ -341,10 +341,25 @@ const current = (path: string) => here.startsWith(href(path));
             loading="lazy"
             decoding="async"
           />
+          {/* What the thing is, for a reader who landed on a deep page and
+              scrolled to the bottom. The licence and the copyright used to be
+              recited here, which made the footer of every page a hand-typed
+              second copy of `/project/notice/` - the repository's own NOTICE,
+              published there verbatim and checked byte for byte on every
+              build. One copy, and a link to it.
+
+              The rule is put as the refusal it is, and in words the hero does
+              not already use: the hero says "declarations, never their
+              bodies" and "an interface instead of a repository", so a third
+              page-furniture copy of those two phrases would read as a
+              template. What a dependency declares against what it does is
+              the same rule said once. */}
           <p>
-            iyi is Turkish for good. The compiler is built on Crystal's and
-            carries its licence and copyright: Apache 2.0, Copyright 2012-2026
-            Manas Technology Solutions.
+            iyi is Turkish for good. A fast, compiled language for developers
+            and the agents working beside them, built on a single refusal: a
+            module compiles against what its dependencies declare, never
+            against what they do. Quick builds and small binaries follow from
+            it.
           </p>
         </div>
         <nav class="colophon-links" aria-label="Footer">
@@ -357,6 +372,7 @@ const current = (path: string) => here.startsWith(href(path));
               ))
             }
             <li><a href="https://github.com/iyilang/iyi">Source on GitHub</a></li>
+            <li><a href={href("project/notice/")}>Licence and notices</a></li>
           </ul>
         </nav>
         <dl class="evidence colophon-evidence">

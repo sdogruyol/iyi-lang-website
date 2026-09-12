@@ -46,8 +46,8 @@ without that sysroot by name rather than failing at the linker.
     doc/          the art direction, the stack, the fact base, the playground
                   feasibility and service notes, and screenshots
     samples/tour/ the playground's tour: short programs, this site's own
-    scripts/      the generators: facts, reference, samples, records, and
-                  the gates on the built output
+    scripts/      the generators: facts, targets, reference, samples,
+                  records, and the gates on the palette and the built output
     records/      committed recordings (see above)
     src/          the Astro site
     bench/        the two Python checks the build runs

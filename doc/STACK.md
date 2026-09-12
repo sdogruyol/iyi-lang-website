@@ -37,12 +37,18 @@ Alternatives considered and rejected, in writing, because the brief asks for it.
 ```
 site/
   astro.config.mjs          base /iyi, static output, trailing slash
-  package.json              build chain: facts, reference, samples, then astro
+  package.json              build chain: facts, targets, reference, samples, then astro
   scripts/
     facts.mjs               runs bench/site_facts.py, writes generated/facts.json
+    targets.mjs             reads the platforms out of iyi's CI workflow and the
+                            run set out of README.md, writes generated/targets.json
     reference.mjs           splits SPEC.md and CHANGELOG.md into sections
     samples.mjs             copies samples/iyi/*.iyi into generated/samples/
+    contrast.mjs            build gate: computes the palette's contrast, and
+                            forbids a hand-typed ratio in src/styles
     no-transcription.mjs    build gate: forbids hand-typed recorded numbers
+    prose.mjs               build gate: forbids a word or figure welded to the
+                            next one in the built HTML
   src/
     styles/                 tokens.css, base.css, code.css
     components/             Measure, Stamped, DurationChart, Sample, Quote, Record

@@ -11,7 +11,7 @@
   --raise: #f7f7f8;
   --ink: #1c1c1e;
   --graphite: #4d4f53;
-  --mute: #6f7277;
+  --mute: #676a6f;
   --hairline: #e3e4e8;
   --track: #eceef1;
 
@@ -25,8 +25,10 @@
   --signal: var(--brand-deep);
   --signal-deep: #8a151d;
 
-  /* Contrast on white, computed not guessed:
-   * ink 16.4:1, graphite 8.2:1, mute 5.1:1, brand 4.9:1, brand-deep 6.9:1. */
+  /* Contrast is not recorded here. `scripts/contrast.mjs` computes every pair
+   * these tokens are used in on every build and fails under the floor the
+   * pair's role requires. It exists because this comment once carried five
+   * ratios and four of them were wrong. */
 
   --font-sans: "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-text: var(--font-sans);

@@ -9,6 +9,8 @@ import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
 import { findSample } from "../playground/samples";
 import { latestRelease } from "../lib/release";
+import platforms from "../generated/targets.json";
+import { SPELLED } from "../lib/lessons";
 
 const release = latestRelease();
 
@@ -27,6 +29,10 @@ const ratios = loop.ratios as number[];
 const loopClaim = `About ${loop.claim.value}x less than Crystal, on the line you just changed.`;
 const loopBand = `${Math.min(...ratios).toFixed(2)}x to ${Math.max(...ratios).toFixed(2)}x across ${loop.sessions.length} published sessions.`;
 const massRatio = Math.round(bin.crystal.kb / bin.iyi.kb);
+
+/* The platforms README.md says are run every build, out of
+ * scripts/targets.mjs rather than counted into this sentence by hand. */
+const ranCount = SPELLED[platforms.ran.length];
 
 const starts = [
   {
@@ -215,9 +221,8 @@ const starts = [
           <h3>Portable</h3>
           <p>
             An iyi program compiles for <Measure of="targets" /> targets, and is
-            run on four of them on every build: two flavours of x86-64, aarch64
-            under emulation, and wasm32-wasi, which is what the playground on
-            this site uses.
+            run on {ranCount} of them on every build. One of those is
+            wasm32-wasi, which is what the playground on this site uses.
           </p>
           <a href={`${base}playground/evidence/`}>How the playground runs</a>
         </li>

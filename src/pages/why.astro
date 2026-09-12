@@ -6,6 +6,8 @@ import DurationChart from "../components/DurationChart.astro";
 import Quote from "../components/Quote.astro";
 import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
+import platforms from "../generated/targets.json";
+import { SPELLED } from "../lib/lessons";
 
 const base = import.meta.env.BASE_URL;
 const loop = facts.recorded.edit_loop;
@@ -29,18 +31,13 @@ const stringRow = runtime.rows.find((r) => r.workload === "string building")!;
 const packClaim = `${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens, for no fewer rounds.`;
 const packBand = `The grounding pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`;
 
-const targets = [
-  "x86_64-linux-gnu",
-  "x86_64-linux-musl",
-  "aarch64-linux-gnu",
-  "arm-linux-gnueabihf",
-  "x86_64-darwin",
-  "aarch64-darwin",
-  "x86_64-w64-mingw32",
-  "x86_64-windows-msvc",
-  "wasm32-wasi",
-];
-const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu", "wasm32-wasi"]);
+/* The platforms, out of scripts/targets.mjs: the list the workflow
+ * type-checks and the subset README.md says is run every build. Typed here
+ * once and it went stale once, which is why it is read now. */
+const targets = platforms.typechecked;
+const ran = new Set(platforms.ran);
+const ranCount = SPELLED[platforms.ran.length];
+const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platforms.how]);
 ---
 
 <Page
@@ -85,8 +82,8 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
         <div>
           <h2>It compiles faster. Measured.</h2>
           <p>
-            Change one line in a {facts.structural.generated.toLocaleString("en-GB")}
-            line project and rebuild. iyi reads the declarations of the other
+            Change one line in a {facts.structural.generated.toLocaleString("en-GB")}-line
+            project and rebuild. iyi reads the declarations of the other
             twenty-nine modules and none of their bodies, so the line you just
             changed costs about {loop.claim.value}x less than under Crystal's
             rules, on the same compiler binary. The bars below run at real speed.
@@ -296,12 +293,12 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
   <section class="pillar" id="portability">
     <div class="wrap">
       <p class="label">3. Portability</p>
-      <h2>Compiles for <Measure of="targets" />. Runs on four, every build.</h2>
+      <h2>Compiles for <Measure of="targets" />. Runs on {ranCount}, every build.</h2>
       <p class="sub">
         The object is cross-compiled here and linked there with the target's
         own toolchain, which is the command <code>--cross-compile</code>{" "}
-        prints. CI type-checks the library for all <Measure of="targets" />
-        every push, and four of them are <em>run</em>: the check is that they
+        prints. CI type-checks the library for all <Measure of="targets" />{" "}
+        every push, and {ranCount} of them are <em>run</em>: the check is that they
         print what the same program printed on the machine that compiled them.
       </p>
       <ul class="targets">
@@ -315,12 +312,13 @@ const ran = new Set(["x86_64-linux-gnu", "x86_64-linux-musl", "aarch64-linux-gnu
         }
       </ul>
       <p class="sub">
-        The wasm32 build is one self-contained module, which is why every
-        program on the <a href={`${base}playground/`}>tour</a> runs in your
-        browser. Darwin is "the code generator has no objection" and needs a
-        runner CI does not have; Windows compiles and links, and what it prints
-        at run time cannot be trusted yet. Both are said here rather than left
-        to be found.
+        The {ranCount} that run are {ranHow.join(", ")}. The wasm32 build is one
+        self-contained module, which is why every program on the{" "}
+        <a href={`${base}playground/`}>tour</a> runs in your browser. The rest
+        type-check and have the object they emit audited for what it asks the
+        machine for; Windows also compiles and links, and what it prints at run
+        time cannot be trusted yet. That is said here rather than left to be
+        found.
       </p>
     </div>
   </section>

@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: iyi-lang.sdogruyol.io
+          path: site
 
       # Full history, not a shallow clone: bench/site_facts.py counts commits
       # and authors for the contribution section, and it refuses to publish a
@@ -47,29 +47,37 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: iyi-lang.sdogruyol.io/package-lock.json
+          cache-dependency-path: site/package-lock.json
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: The paths the documents cite
-        working-directory: iyi-lang.sdogruyol.io
+        working-directory: site
         run: python3 bench/website_citations.py
 
       - name: Install site dependencies
-        working-directory: iyi-lang.sdogruyol.io
+        working-directory: site
         run: npm ci
 
+      # Type-check before building. `astro check` is the only gate that reads
+      # the pages as TypeScript, and the generated JSON they import is typed
+      # by its own shape, so a page that reads a field a generator stopped
+      # writing fails here rather than rendering the word "undefined".
+      - name: Type-check the pages
+        working-directory: site
+        run: npm run check
+
       - name: Generate facts, reference and samples, then build
-        working-directory: iyi-lang.sdogruyol.io
+        working-directory: site
         run: npm run build
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: iyi-lang.sdogruyol.io/dist
+          path: site/dist
 
   deploy:
     needs: build

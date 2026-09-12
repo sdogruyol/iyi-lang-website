@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "node scripts/facts.mjs && node scripts/reference.mjs && node scripts/samples.mjs && node scripts/records.mjs && node scripts/no-transcription.mjs && node scripts/blocker.mjs",
+    "generate": "node scripts/facts.mjs && node scripts/targets.mjs && node scripts/reference.mjs && node scripts/samples.mjs && node scripts/records.mjs && node scripts/contrast.mjs && node scripts/no-transcription.mjs && node scripts/blocker.mjs",
     "record:wasm": "node scripts/record-wasm.mjs",
     "record:diagnostics": "node scripts/record-diagnostics.mjs",
     "record:highlight": "node scripts/record-highlight.mjs",
@@ -14,6 +14,7 @@
     "build": "astro build",
     "postbuild": "node scripts/prose.mjs",
     "preview": "astro preview",
+    "precheck": "npm run generate",
     "check": "astro check"
   },
   "dependencies": {
@@ -23,5 +24,9 @@
     "@fontsource-variable/newsreader": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "astro": "^7.2.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^5.9.3"
   }
 }

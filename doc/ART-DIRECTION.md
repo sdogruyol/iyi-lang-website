@@ -33,8 +33,10 @@ dotless `ı`; the same dot terminates every section rule on the site.
 
 ## Palette
 
-Committed values, in `src/styles/tokens.css`, each with its contrast on white
-recorded beside it.
+Committed values, in `src/styles/tokens.css`. The contrast of every pair they
+are used in is computed by `scripts/contrast.mjs` on each build and the build
+fails under the floor the pair's role requires, so no ratio is written down
+here or there: the file that once recorded five of them had four wrong.
 
 | Token | Value | Where it is used |
 |---|---|---|
@@ -42,7 +44,7 @@ recorded beside it.
 | `--raise` | `#f7f7f8` | Alternating bands, cards, code blocks, the footer. |
 | `--ink` | `#1c1c1e` | Text and headings. |
 | `--graphite` | `#4d4f53` | Secondary prose, captions, console output. |
-| `--mute` | `#6f7277` | Labels, ticks, elision marks. |
+| `--mute` | `#676a6f` | Labels, ticks, elision marks. |
 | `--hairline` | `#e3e4e8` | Every border. |
 | `--brand` | `#d1333d` | The mascot's red. Buttons, figures, the tittle. |
 | `--brand-deep` | `#ad1f29` | Links and any brand text that has to pass AA on white. |

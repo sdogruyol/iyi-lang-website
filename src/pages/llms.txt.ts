@@ -11,6 +11,8 @@ import type { APIRoute } from "astro";
 import facts from "../generated/facts.json";
 import { tourSections, wasmProvenance } from "../playground/samples";
 import { latestRelease } from "../lib/release";
+import platforms from "../generated/targets.json";
+import { SPELLED } from "../lib/lessons";
 
 export const GET: APIRoute = ({ site }) => {
   const origin = (site ?? new URL("https://iyi-lang.com")).href.replace(/\/$/, "");
@@ -19,6 +21,12 @@ export const GET: APIRoute = ({ site }) => {
   const pack = facts.recorded.context_pack;
   const s = facts.structural;
   const release = latestRelease();
+
+  /* The platforms README.md says are run every build, and how each is run,
+   * out of scripts/targets.mjs. This file is read by agents, so a stale
+   * count here is worse than one on a page. */
+  const ranCount = SPELLED[platforms.ran.length];
+  const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platforms.how]);
 
   const tour = tourSections
     .map(
@@ -55,8 +63,8 @@ for Type\` lives with the trait or the type (R-3).
   (verdict as data with suggested_edit spans), \`iyi fix\`, \`iyi test
   --affected\`, \`iyi run --sandbox\`, and \`iyi mcp\` / \`iyi lsp\` serving the
   same verbs over MCP and LSP.
-- Portability: compiles for ${s.targets} targets and is run on four every build
-  (x86-64 glibc, x86-64 musl, aarch64 under emulation, wasm32-wasi).
+- Portability: compiles for ${s.targets} targets and is run on ${ranCount} every
+  build (${ranHow.join(", ")}).
 - Performance and efficiency: native code through LLVM; a hello world is
   ${bin.iyi.kb} KB and starts in ${bin.iyi.ms} ms, against ${bin.crystal.kb.toLocaleString("en-GB")} KB and ${bin.crystal.ms} ms with Crystal's
   library (\`${bin.command}\` on ${bin.machine}).

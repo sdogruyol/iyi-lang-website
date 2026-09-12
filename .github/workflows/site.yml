@@ -45,10 +45,14 @@ jobs:
         with:
           path: site
 
-      # Full history, not a shallow clone: bench/site_facts.py counts commits
-      # and authors for the contribution section, and it refuses to publish a
-      # count taken from a truncated history rather than printing a smaller
-      # number with the same confidence as a true one.
+      # Full history and the tags, not a shallow clone. Two things need them:
+      # bench/site_facts.py counts commits and authors for the contribution
+      # section, and refuses to publish a count taken from a truncated history
+      # rather than printing a smaller number with the same confidence as a
+      # true one; and scripts/records.mjs reads every recorded file out of the
+      # tag CHANGELOG.md names, because a record is evidence about a release
+      # and not about whatever master happens to be. A clone with no tags
+      # fails the build by name rather than falling back to the checkout.
       - uses: actions/checkout@v4
         with:
           repository: iyilang/iyi

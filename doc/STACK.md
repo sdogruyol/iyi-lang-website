@@ -39,6 +39,9 @@ site/
   astro.config.mjs          base /iyi, static output, trailing slash
   package.json              build chain: facts, targets, releases, samples, then astro
   scripts/
+    release-ref.mjs         resolves the release CHANGELOG.md states to its tag,
+                            reads the iyi tree at it, and refuses a recording
+                            taken from anything else
     facts.mjs               runs bench/site_facts.py, writes generated/facts.json
     targets.mjs             reads the platforms out of iyi's CI workflow and the
                             run set out of README.md, writes generated/targets.json

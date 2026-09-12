@@ -41,12 +41,29 @@ cite exists, in this tree or in iyi's.
 `records/` holds what only a machine with the compiler can produce: the wasm
 modules the playground runs, the diagnostics the break-this-rule exercises
 show, the agent loop the agents page is a transcript of, and the syntax
-highlighting of every listing. They are committed, and the build refuses to
-publish if they no longer describe the iyi tree it was given.
-Regenerate them after the samples or the compiler change:
+highlighting of every listing. They are committed, and they are evidence about
+**a release**, not about somebody's checkout.
 
-    make -C ../iyi                          # the compiler
-    WASI_SDK=/path/to/wasi-sdk-24 npm run record
+That is what makes them checkable without making the build brittle. Every
+recorder refuses to run against anything but the tag CHANGELOG.md states, and
+`scripts/records.mjs` reads the recorded files out of that same tag with
+`git cat-file` rather than off the working tree. So a commit to the language
+after the release cannot make this site stale: the playground keeps running
+the tarball the install page tells a reader to download, and commits reach the
+site when they are released. Before this, the tenth commit after 0.12.0 edited
+a line count inside a comment in `samples/iyi/calc.iyi` and `npm run check`
+refused to build a site whose every page was still correct.
+
+Regenerate after a release, in a worktree at its tag so your own branch and
+build directory are left alone:
+
+    git -C ../iyi worktree add --detach /tmp/iyi-0.12.0 v0.12.0
+    make -C /tmp/iyi-0.12.0 all -j"$(nproc)"
+    IYI_REPO=/tmp/iyi-0.12.0 IYI_BUILD=/tmp/iyi-0.12.0/.build \
+      WASI_SDK=/path/to/wasi-sdk-24 npm run record
+
+The recorders say this themselves, with the commands, when they are pointed
+somewhere else; `scripts/release-ref.mjs` is where the rule lives and why.
 
 wasi-sdk 24, not a later one: the modules are linked for `wasm32-wasi`, the
 target README.md publishes, and wasi-sdk renamed that sysroot to

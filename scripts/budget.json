@@ -20,74 +20,23 @@
   ],
   "grain": 16384,
   "routes": [
-    {
-      "match": "/project/security/",
-      "ceiling": 180224
-    },
-    {
-      "match": "/project/",
-      "ceiling": 180224
-    },
-    {
-      "match": "/project/contributing/",
-      "ceiling": 180224
-    },
-    {
-      "match": "/project/notice/",
-      "ceiling": 180224
-    },
-    {
-      "match": "/project/conduct/",
-      "ceiling": 180224
-    },
-    {
-      "match": "/targets/",
-      "ceiling": 196608
-    },
-    {
-      "match": "/download/",
-      "ceiling": 196608
-    },
-    {
-      "match": "/agents/",
-      "ceiling": 212992
-    },
-    {
-      "match": "/",
-      "ceiling": 294912
-    },
-    {
-      "match": "/404.html",
-      "ceiling": 212992
-    },
-    {
-      "match": "/why/",
-      "ceiling": 229376
-    },
-    {
-      "match": "/install/",
-      "ceiling": 196608
-    },
-    {
-      "match": "/learn/",
-      "ceiling": 212992
-    },
-    {
-      "match": "/learn/*/",
-      "ceiling": 212992
-    },
-    {
-      "match": "/playground/",
-      "ceiling": 196608
-    },
-    {
-      "match": "/playground/iyi/*/",
-      "ceiling": 229376
-    },
-    {
-      "match": "/playground/*/",
-      "ceiling": 327680
-    }
+    { "match": "/project/security/", "ceiling": 180224 },
+    { "match": "/project/", "ceiling": 180224 },
+    { "match": "/project/contributing/", "ceiling": 180224 },
+    { "match": "/project/notice/", "ceiling": 180224 },
+    { "match": "/project/conduct/", "ceiling": 180224 },
+    { "match": "/targets/", "ceiling": 196608 },
+    { "match": "/download/", "ceiling": 196608 },
+    { "match": "/agents/", "ceiling": 212992 },
+    { "match": "/", "ceiling": 294912 },
+    { "match": "/404.html", "ceiling": 212992 },
+    { "match": "/why/", "ceiling": 229376 },
+    { "match": "/install/", "ceiling": 196608 },
+    { "match": "/learn/", "ceiling": 212992 },
+    { "match": "/learn/*/", "ceiling": 212992 },
+    { "match": "/playground/", "ceiling": 196608 },
+    { "match": "/playground/iyi/*/", "ceiling": 229376 },
+    { "match": "/playground/*/", "ceiling": 294912 }
   ],
   "assets": 622592
 }

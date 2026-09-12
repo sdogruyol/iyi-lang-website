@@ -83,9 +83,11 @@ script fails rather than defaulting, which is the same rule
 The build chain runs `bench/site_facts.py` and writes
 `src/generated/facts.json`. The components read that file. `Measure`
 renders a structural number and throws if the key is absent. `Stamped` renders
-a recorded group and throws if it lacks a machine or a command. So a missing
-figure fails the build instead of rendering blank, and a hand-typed figure has
-no component to live in.
+a recorded group inside a calibration card. `scripts/facts.mjs` is what refuses
+a recorded group naming no machine or no command, so the provenance gate sits
+on the record rather than on the card that shows it. So a missing figure fails
+the build instead of rendering blank, and a hand-typed figure has no component
+to live in.
 
 A second gate, `scripts/no-transcription.mjs`, scans the authored
 directories (pages, content, components) for a recorded value written next to a

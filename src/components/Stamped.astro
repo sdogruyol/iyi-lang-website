@@ -2,50 +2,38 @@
 /**
  * A RECORDED measurement: seconds, bytes, milliseconds.
  *
- * These are a machine, not a language. README.md says exactly that, names the
- * box, and publishes a tired session reading 0.22 / 1.81 / 0.27 where a good
- * one read 0.13 / 1.17 / 0.16. A site that printed a bare figure with a
- * seconds unit as a hero would be doing the one thing this project refuses.
+ * These are a machine, not a language, so the headline is the RATIO, because
+ * a ratio survives the machine. The absolute is demoted to the body, where it
+ * sits next to its spread. The frame is a calibration card and its left edge
+ * carries instrument ticks, which is the visual signature that separates a
+ * recorded number from a structural one at a glance.
  *
- * So this component makes the machine structural. The number cannot be
- * rendered without it: they are one box, fed from one record, and the build
- * fails if the record has no machine. The frame is a calibration card, and its
- * left edge carries instrument ticks, which is the visual signature that
- * separates a recorded number from a structural one at a glance.
+ * THE CARD USED TO CARRY ITS OWN PROVENANCE and no longer does. It printed
+ * MACHINE and PRINTS IT as a labelled rail under every claim, and with six
+ * recorded facts on the site that was four rows of near-identical furniture
+ * per card. It is gone from the page.
  *
- * The headline is the RATIO, because a ratio survives the machine. The
- * absolute is demoted to the body, where it sits next to its spread.
+ * Where it went, and this is the part that matters: the record still has it
+ * and is still gated. `scripts/facts.mjs` refuses to write `facts.json` when
+ * a recorded group names no command or no machine, so every figure this
+ * component renders is still one whose box and command are written down and
+ * checkable in the repository. The colophon on every page names the generator
+ * and the commit. What changed is that the page no longer repeats the box
+ * beside each number; what did not change is that a number with no box cannot
+ * reach the page at all, because it cannot reach the record.
  */
 interface Props {
   /** The claim, machine-independent, stated large. */
   claim: string;
   /** What the claim is a claim about. */
   subject: string;
-  /** The box. Null only for a measurement that genuinely has no machine. */
-  machine: string | null;
-  /** The command that prints it. Required: provenance is not optional. */
-  command: string;
   /** Optional band, where a claim held across several readings. */
   band?: string;
   /** Marks a measurement iyi loses. Drives the signal colour. */
   outcome?: "win" | "loss" | "flat";
 }
 
-const { claim, subject, machine, command, band, outcome = "flat" } =
-  Astro.props;
-
-if (!command) {
-  throw new Error(
-    `Stamped: "${claim}" has no command that prints it. A recorded number ` +
-      `without its provenance is not a number.`,
-  );
-}
-if (machine === undefined) {
-  throw new Error(
-    `Stamped: "${claim}" does not say what machine produced it. These seconds ` +
-      `are a machine, not a language.`,
-  );
-}
+const { claim, subject, band, outcome = "flat" } = Astro.props;
 ---
 
 <figure class="stamped" data-outcome={outcome}>
@@ -61,17 +49,6 @@ if (machine === undefined) {
     {band && <p class="band">{band}</p>}
 
     <div class="body"><slot /></div>
-
-    <dl class="stamp">
-      <div>
-        <dt>machine</dt>
-        <dd>{machine ?? "none, this is counted not timed"}</dd>
-      </div>
-      <div>
-        <dt>prints it</dt>
-        <dd><code>{command}</code></dd>
-      </div>
-    </dl>
   </div>
 </figure>
 
@@ -116,7 +93,9 @@ if (machine === undefined) {
   .card {
     border: var(--hair) solid var(--hairline);
     border-inline-start: 0;
-    padding: 0.95rem 1.15rem 0;
+    /* The bottom used to be zero because the provenance rail carried its own
+     * padding. With the rail gone the card closes itself. */
+    padding: 0.95rem 1.15rem 1.1rem;
     background: var(--raise);
   }
 
@@ -160,39 +139,5 @@ if (machine === undefined) {
 
   .body {
     margin-block-start: 1rem;
-  }
-
-  /* The stamp. Inside the frame, never a footnote, never a tooltip. */
-  .stamp {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17ch), 1fr));
-    gap: 0.35rem 1.4rem;
-    margin: 1rem 0 0;
-    padding: 0.6rem 0 0.85rem;
-    border-block-start: var(--hair) solid var(--hairline);
-  }
-
-  .stamp dt {
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--mute);
-  }
-
-  .stamp dd {
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    color: var(--graphite);
-    margin: 0.1rem 0 0;
-    overflow-wrap: anywhere;
-  }
-
-  .stamp code {
-    background: none;
-    border: 0;
-    padding: 0;
-    font-size: inherit;
-    white-space: normal;
   }
 </style>

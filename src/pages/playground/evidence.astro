@@ -350,9 +350,10 @@ const marked = diagnosticEvents.map((event) => {
       <hr class="rule" />
       <h2>Every recorded module</h2>
       <p>
-        One card per sample, each one a claim with the machine that produced it
-        in the same frame. A byte count and an exit status are recorded numbers,
-        so they appear only inside these frames and never as bare figures.
+        One card per sample. A byte count and an exit status are recorded
+        numbers, so they appear only inside these frames and never as bare
+        figures; the compiler, the machine and the command that recorded every
+        one of them are in the rail under the last card.
       </p>
       {
         curatedSamples.map((sample) => (
@@ -363,8 +364,6 @@ const marked = diagnosticEvents.map((event) => {
                 : "On this target the module and the native binary do not print the same thing"
             }
             subject={`${sample.wasm} from ${sample.path}`}
-            machine={wasmProvenance.machine}
-            command={wasmProvenance.command}
             outcome={sample.identical ? "flat" : "loss"}
           >
             <dl class="recording">
@@ -401,8 +400,6 @@ const marked = diagnosticEvents.map((event) => {
           <Stamped
             claim="The compiler refused this sample for wasm32-wasi, so there is no module"
             subject={sample.path}
-            machine={wasmProvenance.machine}
-            command={wasmProvenance.command}
             outcome="loss"
           >
             <dl class="recording">

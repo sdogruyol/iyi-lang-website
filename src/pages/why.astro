@@ -76,8 +76,9 @@ const untouched = SPELLED[rest] ?? String(rest);
         against its dependencies' <strong>declarations</strong>, never their
         bodies. So a build reads less, a program carries less, a tool can read
         an interface without a repository, and a person waits less. Every
-        number on this page was measured, and the machine and command are
-        printed beside it.
+        number on this page was measured by a gate in the repository, and the
+        ticked cards are the ones that came off a machine rather than out of
+        the tree.
       </p>
       <div class="hero-cta">
         <a class="cta" href={`${base}playground/`}>Take the tour</a>
@@ -157,8 +158,6 @@ const untouched = SPELLED[rest] ?? String(rest);
         claim={loopClaim}
         band={loopBand}
         subject={loop.subject}
-        machine={loop.machine}
-        command={loop.command}
         outcome="win"
       >
         <DurationChart />
@@ -287,8 +286,6 @@ const untouched = SPELLED[rest] ?? String(rest);
         claim={packClaim}
         band={packBand}
         subject={pack.subject}
-        machine={pack.machine}
-        command={pack.command}
         outcome="win"
       >
         <p class="stamp-body">
@@ -374,8 +371,6 @@ const untouched = SPELLED[rest] ?? String(rest);
         <Stamped
           claim={`${Math.round(massRatio)}x smaller, and starts ${startRatio}x sooner.`}
           subject={bin.subject}
-          machine={bin.machine}
-          command={bin.command}
           outcome="win"
         >
           <div class="mass">
@@ -405,8 +400,6 @@ const untouched = SPELLED[rest] ?? String(rest);
         <Stamped
           claim={`The front end answers hello in ${front.seconds} s.`}
           subject={front.subject}
-          machine={front.machine}
-          command={front.command}
           outcome="win"
         >
           <p class="stamp-body">
@@ -422,8 +415,6 @@ const untouched = SPELLED[rest] ?? String(rest);
       <Stamped
         claim={`${stringRow.gc_off.toFixed(2)}x slower at building strings, with the collector off.`}
         subject={runtime.subject}
-        machine={runtime.machine}
-        command={runtime.command}
         outcome="loss"
       >
         <p class="stamp-body">

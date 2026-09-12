@@ -293,8 +293,6 @@ if (!consumer) {
         claim="Byte for byte the same answer through both doors."
         band="Compared on every recording, and the record is refused when they differ."
         subject="iyi check -f json in a shell, against the check tool over MCP stdio"
-        machine={provenance.machine}
-        command={provenance.command}
         outcome="win"
       >
         <dl class="evidence">
@@ -326,8 +324,6 @@ if (!consumer) {
         claim={`${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens, for no fewer rounds.`}
         band={`The pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`}
         subject={pack.subject}
-        machine={pack.machine}
-        command={pack.command}
         outcome="win"
       >
         <p class="wire-note">

@@ -224,12 +224,19 @@ counted from the tree, identical on every machine, and rendered flat and inline
 by `Measure`, which throws if the key is absent from `facts.json`.
 
 A **recorded** number is a second, a byte, a millisecond: a machine, not a
-language. It is rendered only by `Stamped`, inside a card that carries the
-machine that produced it and the command that prints it, and the build fails
-if either is missing. The card's left edge is a ruler of ticks so the eye reads
-"this came off an instrument" before it reads any text. The headline of the
-card is the ratio, because a ratio survives the machine; the absolute sits in
-the body beside its spread.
+language. It is rendered only by `Stamped`, whose left edge is a ruler of ticks
+so the eye reads "this came off an instrument" before it reads any text. The
+headline of the card is the ratio, because a ratio survives the machine; the
+absolute sits in the body beside its spread.
+
+The card does not print the box it came off. It did, as a labelled `MACHINE`
+and `PRINTS IT` rail under every claim, and with six recorded facts on the
+site that was four rows of near-identical furniture per card: evidence that
+had started reading as decoration. The gate moved rather than went.
+`scripts/facts.mjs` refuses to write `facts.json` when a recorded group names
+no command or no machine, so a figure with no box still cannot reach a page,
+because it cannot reach the record. The colophon on every page names the
+generator and the commit, and `facts.json` is in the tree for anyone checking.
 
 `DurationChart` draws duration at real speed, once, when scrolled to, with a
 run-again control. Size comparisons are drawn at true area, not true width,

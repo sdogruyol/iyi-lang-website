@@ -6,7 +6,6 @@ import Stamped from "../components/Stamped.astro";
 import DurationChart from "../components/DurationChart.astro";
 import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
-import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
 import { tourSamples, runnable, playgroundHref } from "../playground/samples";
 import { latestRelease, releaseUrl, releaseAssets } from "../lib/release";
@@ -206,8 +205,6 @@ const starts = [
         claim={`${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens.`}
         band={`The grounding pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`}
         subject={pack.subject}
-        machine={pack.machine}
-        command={pack.command}
         outcome="win"
       >
         <p class="stamp-note">
@@ -225,48 +222,27 @@ const starts = [
         <p class="label">Coming from Crystal?</p>
         <h2>iyi runs your Crystal code today.</h2>
         <p class="crystal-lede">
-          iyi's compiler is Crystal's compiler. It builds your{" "}
-          <code>.cr</code> files unchanged, and <code>iyi build --crystal</code> gives an iyi
+          iyi's compiler is Crystal's compiler. Your <code>.cr</code> files
+          build unchanged, and <code>iyi build --crystal</code> gives an iyi
           program Crystal's standard library, <code>require</code>, and the
-          shards you already depend on. Kemal, db, ameba, sqlite3: they build
-          and they run. You can switch without touching a dependency.
+          shards you already depend on. Nothing to port first, and nothing to
+          give up: blocks, union types, nil-safety and macros are all here.
         </p>
-        <ul class="checks">
-          <li>
-            <strong>Your <code>.cr</code> files compile as they are.</strong>{" "}
-            Same compiler, same output; nothing to port first.
-          </li>
-          <li>
-            <strong>Your shards work.</strong> With <code>--crystal</code>,{" "}
-            <code>require</code> means what it means in Crystal, and a program
-            that requires a shard is buildable today.
-          </li>
-          <li>
-            <strong>The syntax is the one you know.</strong> Blocks, union
-            types, nil-safety, macros and local inference are all here. What
-            iyi adds is a module rule, and the compiler teaches it as you go.
-          </li>
-        </ul>
+        <p class="crystal-lede">
+          The listing here is a Kemal server written as an iyi module, and the
+          console under it is that server answering. What iyi adds is one rule
+          about where things may be written, and the compiler teaches it as you
+          go.
+        </p>
         <div class="hero-cta">
-          <a class="cta" href="https://github.com/iyilang/iyi#the-library-a-program-has">
-            Switch from Crystal
-          </a>
-          <a class="cta ghost" href={`${base}learn/`}>Learn the one rule</a>
+          <a class="cta" href={`${base}learn/`}>Learn the one rule</a>
+          <a class="cta ghost" href={`${base}why/#moved`}>What moved, and why</a>
         </div>
       </div>
       <div class="crystal-run">
         <Quote id="kemal_site" as="source" caption="site.iyi" />
         <Quote id="kemal_run" as="console" caption="a Kemal server, from an iyi program" />
       </div>
-    </div>
-    <div class="wrap crystal-table">
-      <h3>What moved, and why</h3>
-      <p class="section-sub">
-        The syntax is Crystal's. What moved is where things may be written,
-        and each move is one of the four rules. Everything not in this table
-        is unchanged.
-      </p>
-      <Compare id="crystal" caption="Crystal to iyi, side by side" />
     </div>
   </section>
 
@@ -352,16 +328,14 @@ const starts = [
         claim={loopClaim}
         band={loopBand}
         subject={loop.subject}
-        machine={loop.machine}
-        command={loop.command}
         outcome="win"
       >
         <DurationChart />
       </Stamped>
       <p class="section-sub">
         The rest of the numbers, binary size and start time among them, are on
-        the <a href={`${base}why/`}>why page</a>, each with the machine that
-        produced it named beside it.
+        the <a href={`${base}why/`}>why page</a>, each one a reading off a
+        machine rather than a property of the language.
       </p>
     </div>
   </section>
@@ -617,15 +591,6 @@ const starts = [
 
     .crystal-run :global(.console) {
       margin-block-start: 0.9rem;
-    }
-
-    .crystal-table {
-      margin-block-start: clamp(2rem, 4vw, 3rem);
-    }
-
-    .crystal-table h3 {
-      font-size: var(--step-2);
-      margin-block-end: 0.4rem;
     }
 
     /* Install ---------------------------------------------------------- */

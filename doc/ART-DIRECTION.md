@@ -23,7 +23,7 @@ compete with it.
 
 ## The mascot
 
-`src/assets/mascot.webp`, cut out of its background so it sits on the page
+`src/assets/mascot.png`, cut out of its background so it sits on the page
 ground in either scheme. It appears in four places and no more: large in the
 hero, small beside the wordmark in the header, at the foot of every page, and
 as the favicon, cropped to the face. It is

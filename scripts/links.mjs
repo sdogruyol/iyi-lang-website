@@ -18,8 +18,8 @@
 //     renamed heading breaks a jump that still looks like a link and still
 //     navigates - to the top of the page, silently.
 //   - An `<img>` with no `alt` attribute. A screen reader reads the file name
-//     of an image with no alternative, so `mascot.webp` is announced as
-//     "mascot dot webp". The empty string is a different claim and a correct
+//     of an image with no alternative, so `mascot.png` is announced as
+//     "mascot dot png". The empty string is a different claim and a correct
 //     one: `alt=""` says the image carries nothing a reader needs, which is
 //     true of a decorative mark. So the gate asks for the attribute, never for
 //     its contents.
@@ -282,7 +282,7 @@ const found =
       unlabelled.length === 1 ? "ies" : "y"
     } no alt attribute.`,
     'A screen reader falls back to the file name, so an image with no alt is read\n' +
-      'out as "mascot dot webp". Write what the image says, or alt="" if it says\n' +
+      'out as "mascot dot png". Write what the image says, or alt="" if it says\n' +
       "nothing a reader needs.",
   );
 

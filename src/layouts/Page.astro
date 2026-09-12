@@ -182,6 +182,23 @@ const current = (path: string) => here.startsWith(href(path));
     {summary && <meta name="twitter:description" content={summary} />}
     <meta name="twitter:image" content={ogImage} />
     <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+
+    {/* Google Analytics. `is:inline` keeps Astro from bundling the snippet:
+     * gtag has to run as a classic script against a global, and a processed
+     * module would not. Production only, so a local preview is not a visit. */}
+    {
+      import.meta.env.PROD && (
+        <>
+          <script async src="https://www.googletagmanager.com/gtag/js?id=G-TLLJKX51NY" is:inline></script>
+          <script is:inline>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-TLLJKX51NY');
+          </script>
+        </>
+      )
+    }
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

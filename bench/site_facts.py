@@ -13,9 +13,13 @@ There are TWO CLASSES OF NUMBER and the site is required to render them
 differently, because they are not the same kind of claim.
 
 STRUCTURAL. Line counts, target counts, sample counts. Measured from the tree,
-exact, identical on every machine. These come from `doc_numbers.py`'s
+exact, identical on every machine. Most come from `doc_numbers.py`'s
 `measured()`, the same function that already gates README.md in CI, so the page
-and the gate cannot disagree. A structural number can be stated flatly.
+and the gate cannot disagree. The rest are counted here, by `project()` and
+`bench_modules()`, for figures the site prints and the compiler's own docs do
+not state as a number - and each one is counted from the tree and checked
+against whatever else in the repository states it. A structural number can be
+stated flatly.
 
 RECORDED. Seconds, bytes, milliseconds. These are a machine, not a language,
 and README.md is scrupulous about saying so: it names the exact box and it
@@ -53,7 +57,10 @@ REPO = pathlib.Path(
 ).resolve()
 sys.path.insert(0, str(REPO / "bench"))
 
-from doc_numbers import measured  # noqa: E402  the one measurement function
+# `measured()` is the one measurement function; `WORDS` is the repository's own
+# spelling of small numbers, borrowed rather than written again so the site
+# reads a spelled-out claim with the same table the compiler's gate reads it.
+from doc_numbers import WORDS, measured  # noqa: E402
 
 
 def flat(text: str) -> str:
@@ -132,6 +139,107 @@ def project() -> dict:
         "inherited_commits": int(git("rev-list", "--count", "HEAD")),
         "inherited_authors": len(set(git("log", "--format=%aE").splitlines())),
     }
+
+
+def bench_modules(readme: str, lines: int) -> int:
+    """How many modules the edit-loop bench's generated project has.
+
+    THE BUG THIS EXISTS TO PREVENT. The site stated this count twice, by hand,
+    and stated it as two different numbers: the why page said the other
+    "twenty-nine" modules and the home page said "one of 30 modules", about the
+    same project. Neither gate could see it. `no-transcription.mjs` looks for a
+    decimal against a time or size unit, and a module count carries neither; a
+    spelled-out word is not even a digit.
+
+    `doc_numbers.measured()` counts that project's LINES and not its modules,
+    so the count is taken here the way it takes the lines: the generator is
+    run and what it wrote is counted. `bench/incremental/generate_project.py`
+    is the authority because it is the thing the bench runs, and a module is
+    one file under `parts/`, which is how README.md describes the project
+    ("30 modules, one file each"). Identical on every machine: the generator
+    takes no input but its module count.
+
+    THREE READINGS, ALL IN THE REPOSITORY, and a disagreement is a failure
+    here rather than a sentence on a page:
+
+    * the files the generator writes, counted;
+    * the lines of those same files, which have to equal the `generated`
+      figure `doc_numbers.measured()` reports, or this function is counting a
+      different tree from the one the rest of the site prints;
+    * README.md's own two statements of the count - the row that introduces
+      the project, in digits, and the sentence in R-1's section that names the
+      modules a build did not read, in words. The second is the sentence the
+      why page restates, so it is the one whose drift would reach a reader.
+    """
+    import tempfile
+
+    generator = "bench/incremental/generate_project.py"
+    with tempfile.TemporaryDirectory() as work:
+        run = subprocess.run(
+            [sys.executable, generator, work],
+            cwd=str(REPO),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if run.returncode != 0:
+            raise SystemExit(
+                f"bench/site_facts.py: `{generator}` failed, so the module "
+                f"count the site prints has no source:\n{run.stderr.strip()}"
+            )
+        root = pathlib.Path(work) / "iyi"
+        modules = len(sorted((root / "parts").glob("*.iyi")))
+        written = sum(len(p.read_text().splitlines()) for p in root.rglob("*.iyi"))
+
+    if modules == 0:
+        raise SystemExit(
+            f"bench/site_facts.py: `{generator}` wrote no module under "
+            f"parts/, so either it stopped writing one file per module or the "
+            f"layout moved. The count is not allowed to fall back to a guess."
+        )
+    if written != lines:
+        raise SystemExit(
+            f"bench/site_facts.py: the generated project measures {written:,} "
+            f"lines here and doc_numbers.measured() reports {lines:,}. One of "
+            f"the two readings is of a different tree, so the module count "
+            f"beside that line count cannot be trusted."
+        )
+
+    text = flat(readme)
+    stated = {int(n.replace(",", "")) for n in re.findall(r"\*\*([\d,]+) modules\*\*", text)}
+    if not stated:
+        raise SystemExit(
+            "bench/site_facts.py: README.md no longer states the bench "
+            "project's size as '**N modules**', so the counted number has "
+            "nothing in the repository to be checked against."
+        )
+    if stated != {modules}:
+        raise SystemExit(
+            f"bench/site_facts.py: README.md states "
+            f"{', '.join(f'{n:,}' for n in sorted(stated))} modules and "
+            f"{generator} writes {modules:,}. Update the sentence, or update "
+            f"the generator; the site will not publish either number until "
+            f"they agree."
+        )
+
+    untouched = re.search(r"the ([\w-]+) modules you did not touch", text)
+    if not untouched:
+        raise SystemExit(
+            "bench/site_facts.py: README.md's R-1 section no longer says how "
+            "many modules a build did not touch. The why page restates that "
+            "sentence, so the site stops rather than restating a sentence "
+            "nobody maintains."
+        )
+    spelled = WORDS.get(untouched.group(1).lower())
+    if spelled != modules - 1:
+        raise SystemExit(
+            f"bench/site_facts.py: README.md says a build reads the "
+            f"{untouched.group(1)!r} modules it did not touch, which is not "
+            f"one fewer than the {modules:,} {generator} writes. The why page "
+            f"spells that word from this count, so the two have to agree."
+        )
+
+    return modules
 
 
 # (key, pattern, group names). A miss is an error, never a default.
@@ -296,11 +404,17 @@ def build() -> tuple[dict, list[str]]:
     default_machine = machine(raw["machine"]["name"])
     loop = sessions(raw["edit_loop_sessions"])
     ratios = [round(s["crystal"] / s["iyi"], 2) for s in loop]
+    tree = measured()
+    # Counted here rather than by `measured()`, which measures that project's
+    # lines and not its files. Both pages that talk about the project now read
+    # this one number, including the subject line below.
+    modules = bench_modules(readme, tree["generated"])
 
     facts = {
-        # Both are counted, both are the same on any full clone, so both are
-        # structural and render flat. `project()` refuses a shallow clone.
-        "structural": {**measured(), **project()},
+        # Every one is counted, every one is the same on any full clone, so all
+        # of them are structural and render flat. `project()` refuses a shallow
+        # clone; `bench_modules()` refuses a count README.md contradicts.
+        "structural": {**tree, **project(), "modules": modules},
         "recorded": {
             "edit_loop": {
                 # The claim, which is machine-independent and held across every
@@ -329,7 +443,7 @@ def build() -> tuple[dict, list[str]]:
                 "unit": "s",
                 "machine": default_machine,
                 "command": COMMANDS["edit_loop"],
-                "subject": "one line changed in one of 30 modules",
+                "subject": f"one line changed in one of {modules} modules",
             },
             "hello_binary": {
                 "iyi": {
@@ -398,7 +512,10 @@ def build() -> tuple[dict, list[str]]:
             },
         },
         "provenance": {
-            "structural_source": "bench/doc_numbers.py measured(), and git",
+            "structural_source": (
+                "bench/doc_numbers.py measured(), the bench's own project "
+                "generator, and git"
+            ),
             "recorded_source": "README.md, parsed",
             "generator": "bench/site_facts.py",
         },

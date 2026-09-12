@@ -44,8 +44,10 @@ import {
 import {
   diagnosticCases,
   diagnosticsProvenance,
+  recordedDiagnostics,
 } from "../../playground/diagnostics";
-import { diagnosticHtml } from "../../playground/render";
+import { provideDiagnostics } from "../../playground/evidence";
+import { caretWidth, diagnosticHtml, markListing } from "../../playground/render";
 import {
   highlightProvenance,
   highlightedLines,
@@ -59,7 +61,17 @@ const supports = (cap: Capability) => caps.supported.includes(cap);
 
 /* GATE 1 and GATE 3. The same call the browser makes, made here, so what this
  * page renders is the engine's own event stream and not a second reading of the
- * record. */
+ * record.
+ *
+ * The record is handed to the engine first. It used to import it, and because
+ * the engine is also the browser's, every visitor of every sample page was
+ * served the compiler's whole standard error for every recorded case in order
+ * to render a page that shows none of them. This page is the one that shows
+ * them, so this page is the one that carries them; the gates below are
+ * unchanged, because what they check is that the engine streams back what a
+ * checking engine would stream. */
+provideDiagnostics(recordedDiagnostics());
+
 const diagnosticEvents: Extract<RunEvent, { kind: "diagnostic" }>[] = [];
 if (supports("diagnostics")) {
   const first = curatedSamples[0];
@@ -185,6 +197,37 @@ for (const sample of curatedSamples) {
  * no machine stamp because they need none. */
 const identical = curatedSamples.filter((sample) => sample.identical);
 const differing = curatedSamples.filter((sample) => !sample.identical);
+
+/* THE PROGRAM EACH DIAGNOSTIC IS ABOUT, WITH THE COMPILER'S OWN MARK ON IT.
+ *
+ * The record already carries the position structurally: `diagnostics.ts`
+ * parses `In file:line:column` out of the compiler's output, and `caretWidth`
+ * reads the width of the caret run under it. Until now both were thrown away
+ * by the time a reader saw anything, and the caret line in the quoted output
+ * was the only thing pointing at the mistake, which means a reader had to
+ * count columns in one block to find a line in a file they could not see.
+ *
+ * So the file is here, coloured by the compiler's own lexer out of the
+ * highlight record, with the line the compiler named marked in the gutter and
+ * the columns it underlined marked under them. The marker is drawn from the
+ * record and from nothing else; `scripts/records.mjs` fails the build when a
+ * case points at a line its file no longer has, so the mark cannot land on a
+ * line that moved.
+ *
+ * The file a diagnostic names is not always the program that was compiled: an
+ * import cycle is reported against the module that closes the loop. The
+ * listing shown is therefore the one the compiler's header names. */
+const marked = diagnosticEvents.map((event) => {
+  const width = caretWidth(event.message);
+  const lines = highlightedLines(event.file);
+  return {
+    file: event.file,
+    lines:
+      width === null
+        ? lines
+        : markListing(lines, event.line, event.column, width),
+  };
+});
 ---
 
 <Page
@@ -415,6 +458,17 @@ const differing = curatedSamples.filter((sample) => !sample.identical);
                   {diagnosticCases[index]?.path ?? event.file}, exit{" "}
                   {diagnosticCases[index]?.exitCode ?? 1}
                 </p>
+                {/* The program, with the compiler's own line and columns
+                    marked on it, and then what the compiler said about them.
+                    That order because it is the order a reader needs: the
+                    mistake, then the complaint. */}
+                <figure class="source offender">
+                  <figcaption class="source-head">
+                    <span class="path">{marked[index]?.file}</span>
+                    <span>line {event.line}, column {event.column}</span>
+                  </figcaption>
+                  <pre class="listing" set:html={marked[index]?.lines.join("\n")} />
+                </figure>
                 <div
                   class="diagnostic"
                   set:html={diagnosticHtml(
@@ -574,5 +628,47 @@ const differing = curatedSamples.filter((sample) => !sample.identical);
     color: var(--mute);
     margin: 0 0 0.5rem;
     overflow-wrap: anywhere;
+  }
+
+  /* The offending program, above the complaint about it. */
+  .offender {
+    margin: 0 0 0.6rem;
+  }
+
+  .offender .listing {
+    max-height: 24rem;
+    overflow: auto;
+    white-space: pre;
+    tab-size: 2;
+  }
+
+  /* THE MARK ON THE LINE THE COMPILER NAMED. Pseudo elements and custom
+   * properties rather than characters, so that nothing is added to the text of
+   * the program: a listing on this site is the file, and a marker made of
+   * characters would make it something else. `--col` is the compiler's column
+   * counted from zero and `--wide` is the width of its caret run, both read
+   * out of the record by src/playground/render.ts.
+   *
+   * Global because the span is written into `set:html`, which Astro does not
+   * give its scoped attribute to. */
+  .offender :global(.flagged) {
+    position: relative;
+  }
+
+  .offender :global(.flagged)::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -0.7ch;
+    border-inline-start: 2px solid var(--signal);
+  }
+
+  .offender :global(.flagged)::after {
+    content: "";
+    position: absolute;
+    inset-block-end: -0.1em;
+    inset-inline-start: calc(var(--col) * 1ch);
+    width: calc(var(--wide) * 1ch);
+    border-block-end: 2px solid var(--signal);
   }
 </style>

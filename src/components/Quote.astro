@@ -84,7 +84,13 @@ const commands = (
     </div>
   ) : as === "diagnostic" ? (
     <div class="diagnostic">
-      <pre set:html={body} />
+      {/* Focusable, named, and for the same reason Sample's listing is: the
+          caret line a compiler prints is as wide as the source line it points
+          at, so this pane scrolls, and a scrolling pane with nothing focusable
+          in it is unreachable by keyboard. */}
+      <div class="scroll-x" role="region" tabindex="0" aria-label={`Compiler diagnostic, quoted from ${block.cite}`}>
+        <pre set:html={body} />
+      </div>
       <span class="cites">
         {caption ? `${caption}. ` : ""}Quoted verbatim from {block.cite}.
       </span>
@@ -95,7 +101,9 @@ const commands = (
         <span class="path">{caption}</span>
         <span>quoted from {block.cite}</span>
       </figcaption>
-      <pre><code>{block.text}</code></pre>
+      <div class="scroll-x" role="region" tabindex="0" aria-label={`${caption ?? "Listing"}, quoted from ${block.cite}`}>
+        <pre><code>{block.text}</code></pre>
+      </div>
     </figure>
   )
 }

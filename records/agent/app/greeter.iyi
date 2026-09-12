@@ -1,0 +1,23 @@
+# The dependency. Its exported surface is the whole of what a consumer, or an
+# agent editing one, is allowed to know: two functions with their types
+# written down, and a trait. `greeting` has no `pub`, so it is this module's
+# own business and appears in no consumer's grounding (SPEC.md R-1, IV.2).
+module app/greeter
+
+pub trait Greet
+  abstract def greet : String
+end
+
+# The exported surface carries its doc comment, so the grounding pack an agent
+# reads says what the function is for and not only what it takes.
+pub def polite(name : String) : String
+  "#{greeting}, #{name}."
+end
+
+pub def shout(name : String) : String
+  "#{greeting.upcase}, #{name.upcase}!"
+end
+
+def greeting : String
+  "Hello"
+end

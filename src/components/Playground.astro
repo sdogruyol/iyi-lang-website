@@ -19,33 +19,48 @@
  *    resolves, no synthesised exit status, no output attributed to a program
  *    that did not run.
  *
- * 2. THE RUN IS PRECOMPILED, AND THE PAGE SAYS SO IN ONE LINE. Nothing here
- *    compiles, so the listing is not editable: an editor whose text cannot
- *    reach the run would be a control that does nothing, and the reader it
- *    misleads is exactly the one this page is for. When the compiler runs in
- *    the tab, the listing becomes a pane; until then it is a listing.
+ * 2. THE PANE IS EDITABLE AND THE RUN IS PRECOMPILED, SO THE CONTROL SAYS
+ *    WHICH. Nothing here compiles, and for a long time that was the reason the
+ *    listing could not be edited: an editor whose text cannot reach the run
+ *    would be a control that does nothing. The answer is not to take the
+ *    editor away, it is to stop the control from lying. The pane is a pane,
+ *    the shell hashes it against the source digest the recorder wrote for this
+ *    sample, and the moment the two differ the run control renames itself to
+ *    say it runs the recorded module, the line under the panes names the bytes
+ *    that will execute, and the recorded colouring is withdrawn because it
+ *    describes text that is no longer there. That is what
+ *    `doc/PLAYGROUND-SERVICE.md` asks for under "no silent fallback".
  *
  * 3. COLOURING COMES FROM THE COMPILER'S LEXER OR IT DOES NOT COME AT ALL.
  *    Recorded for this file, out of `records/highlight.json`.
+ *
+ * WHAT REACHES THE BROWSER FROM HERE. The record does not. The route hands
+ * this component one entry out of `src/generated/playground/`, which is this
+ * sample's slice of the manifest, and it is serialised into one `data-entry`
+ * attribute for the island to parse. The island's own imports are the share
+ * codec, the digest, the progress store and the renderer; the engine and the
+ * WASI host are behind a dynamic import and are fetched when somebody presses
+ * Run, so a page whose program cannot run in a browser never downloads the
+ * machinery for running one.
  */
 import { activeEngine } from "../playground/registry";
 import type { Capability } from "../playground/types";
 import type { TourStep } from "../playground/samples";
-import {
-  runnable,
-  tourSamples,
-  tourSections,
-  wasmProvenance,
-} from "../playground/samples";
+import type { SampleEntry } from "../playground/entry";
+import { runnable, tourSamples, tourSections } from "../playground/samples";
+import { markListing } from "../playground/render";
 import { highlightedLines, recordedText } from "../lib/highlight";
 
 interface Props {
   /** The step this route carries: a program that runs here, or one that
    * only ran natively and is shown with what it printed. */
   sample: TourStep;
+  /** The same step as the browser is allowed to see it: digests, the module's
+   * name, the answer key, and nothing else. */
+  entry: SampleEntry;
 }
 
-const { sample } = Astro.props;
+const { sample, entry } = Astro.props;
 
 const engine = activeEngine();
 const caps = engine.capabilities();
@@ -56,7 +71,22 @@ const runs = runnable(sample) && supports("run");
  * build time, which keeps the quarter of a megabyte of listings in
  * `records/highlight.json` out of the client bundle. */
 const source = recordedText(sample.path);
-const inkLines = highlightedLines(sample.path);
+const recordedInk = highlightedLines(sample.path);
+
+/* Where a recorded case points into this very file, the line it points at is
+ * marked and the caret's own columns are marked under it. Drawn here rather
+ * than in the browser because it is a fact about the recorded text: the moment
+ * the pane is edited the colouring goes, and the marker goes with it, which is
+ * correct because the diagnostic was about the file and not about the edit. */
+const inkLines =
+  entry.diagnostic === null
+    ? recordedInk
+    : markListing(
+        recordedInk,
+        entry.diagnostic.line,
+        entry.diagnostic.column,
+        entry.diagnostic.width,
+      );
 
 /* Every sample opens with a comment saying what it is. That line is the page's
  * one sentence about the program, so the description cannot drift from the
@@ -83,11 +113,18 @@ const hrefOf = (id: string) => `${base}playground/${id}/`;
 /* Previous and next through the tour, in the recorder's order, and the
  * section this step sits in. A repository sample reached from a lesson is
  * not on the walk, so it gets neither. */
-const at = tourSamples.findIndex((entry) => entry.id === sample.id);
+const at = tourSamples.findIndex((entry_) => entry_.id === sample.id);
 const prev = at > 0 ? tourSamples[at - 1] : null;
 const next = at >= 0 && at < tourSamples.length - 1 ? tourSamples[at + 1] : null;
 const section = tourSections.find((s) => s.steps.some((step) => step.id === sample.id));
 const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
+
+/* The exercise, on the steps where it is a question rather than a reading
+ * comprehension test. A tour step that runs here hides its output until
+ * somebody presses Run, so asking what it prints is a real question; a step
+ * whose output is already on the page because the browser cannot run it would
+ * be asking a reader to copy what is in front of them. */
+const asks = runs && sample.set === "tour";
 ---
 
 <section class="bench wrap" aria-label="Run a recorded program">
@@ -101,16 +138,45 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       <p class="pitch">{blurb}.</p>
     </div>
 
-    <div class="bar">
+    <div class="bar" data-entry={JSON.stringify(entry)}>
       {
         runs && (
-          <button type="button" class="cta run" data-control="run" data-path={sample.path}>
-            Run <span class="chord">Ctrl + Enter</span>
-          </button>
+          <Fragment>
+            <button
+              type="button"
+              class="cta run"
+              data-control="run"
+              data-label="Run"
+              data-label-edited="Run the recorded module"
+            >
+              <span data-role="run-label">Run</span> <span class="chord">Ctrl + Enter</span>
+            </button>
+            {/* Only while a run is in flight, and only on a page that has
+                one: a page with no Run has nothing to stop. */}
+            <button type="button" class="cta ghost" data-role="cancel" hidden={true}>
+              Stop
+            </button>
+          </Fragment>
         )
       }
-      <button type="button" class="cta ghost" data-role="cancel" hidden={true}>
-        Stop
+
+      {/* The program travels in the fragment, which is the one part of a URL
+          a browser never sends anywhere: sharing a program from this page
+          puts it in the link and not on a server. The codec is
+          src/playground/share.ts and the ceiling is its own constant. */}
+      <button
+        type="button"
+        class="cta ghost"
+        data-role="share"
+        data-label="Share"
+      >
+        Share
+      </button>
+
+      {/* Only once there is something to restore. A control that undoes
+          nothing is a control that does nothing. */}
+      <button type="button" class="cta ghost" data-role="reset" hidden={true}>
+        Restore
       </button>
 
       {/* Links, not a select. Each sample is a real URL that resolves before
@@ -159,8 +225,13 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       <pre
         class="listing"
         style={`--lines: ${lineCount}`}
+        contenteditable="plaintext-only"
+        spellcheck="false"
+        role="textbox"
+        aria-multiline="true"
         tabindex="0"
-        aria-label={`iyi source, ${sample.path}`}
+        aria-label={`iyi source, ${sample.path}, editable`}
+        data-role="pane"
         set:html={seedInk}
       />
     </figure>
@@ -177,14 +248,13 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
         ) : (
           <Fragment>
             <pre class="out">{sample.nativeStdout}</pre>
-            <pre class="stamp">exit {sample.exitCode}, on {wasmProvenance.machine}</pre>
+            <pre class="stamp">exit {sample.exitCode}, on {entry.recorded.machine}</pre>
           </Fragment>
         )
       }
     </div>
   </div>
-
-  <p class="foot">
+  <p class="foot" data-role="foot-recorded">
     {
       runnable(sample)
         ? supports("run")
@@ -195,11 +265,54 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     <a href={`${base}playground/evidence/`}>How this works</a>
   </p>
 
+  {/* The same line for the same page once the pane stops holding the file the
+      record is about. Written here rather than assembled in the browser: it is
+      copy, it belongs where the rest of the copy is, and the island only
+      swaps which of the two is hidden. */}
+  <p class="foot" data-role="foot-edited" hidden>
+    {
+      runnable(sample) && supports("run")
+        ? `The pane no longer holds ${sample.path}. Run executes ${sample.wasm}, the module the compiler built from the recorded file, so your edit is not in this run: there is no iyi compiler in this page.`
+        : `The pane no longer holds ${sample.path}. What the output pane shows is the recorded run of the recorded file, not of what you typed.`
+    }{" "}
+    <a href={`${base}playground/evidence/`}>How this works</a>
+  </p>
+
+  {
+    asks && (
+      <div class="quiz" data-role="quiz">
+        <p class="quiz-ask">
+          <strong>Before you run it.</strong> What does this program print?
+        </p>
+        <textarea
+          class="quiz-answer"
+          rows="4"
+          spellcheck="false"
+          data-role="answer"
+          aria-label="What this program prints"
+        />
+        <div class="quiz-bar">
+          <button type="button" class="cta ghost" data-role="check">
+            Check
+          </button>
+          <p class="quiz-verdict" data-role="verdict" aria-live="polite" />
+        </div>
+        <p class="quiz-note">
+          Checked in this tab, against digests of what the program printed when
+          the recorder ran it. The output itself is not on this page, which is
+          why the check can only tell you how far you got.
+        </p>
+      </div>
+    )
+  }
+
   <div class="local">
     <p class="foot">
       <strong>Try it on your machine.</strong> Copy the program into{" "}
-      <code>{basename}</code>, change something, and run it. The listing here
-      cannot be edited, but your copy can.
+      <code>{basename}</code>, change something, and run it. You can type in the
+      pane above as well, and the page will say so the moment what is in it
+      stops being this file, but only a compiler on your own machine can run
+      what you wrote.
     </p>
     <div class="console local-run">
       <div class="console-chrome">
@@ -221,44 +334,44 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
 
 <script>
   /**
-   * The live half. It imports the same registry the build did, so what runs in
-   * the browser is what the page said it was. Until an engine claims at least
-   * one capability this script does nothing at all, which is the honest resting
-   * state and not an error.
+   * The live half.
+   *
+   * WHAT IT IMPORTS, AND WHAT IT DELIBERATELY DOES NOT. This file is served to
+   * every sample page, so every import here is paid for by every visitor. It
+   * takes the share codec, the digest, the progress store, the renderer and
+   * the copy wiring, all of which are small and none of which imports a
+   * record. The engine is not here: `registry.ts` reaches the WASI host and
+   * the execution path, which is the bulk of the playground's JavaScript and
+   * is of no use at all on a page whose program the browser's target cannot
+   * run. It is loaded by a dynamic import when somebody presses Run, so it
+   * arrives in a chunk of its own, for the pages that can use it, at the
+   * moment they use it.
+   *
+   * The build and the browser still read the same engine through the same
+   * registry, which is the property that stops the page claiming a capability
+   * the running engine does not have. What changed is when, not which.
+   *
+   * WHAT IT IS ABOUT. One sample, parsed out of `data-entry`, which the route
+   * wrote from `src/generated/playground/`. The island never looks anything
+   * up: there is nothing here to look it up in.
    */
-  import { activeEngine } from "../playground/registry";
-  import type { Capability, RunEvent } from "../playground/types";
+  import type { Capability, PlaygroundEngine, RunEvent } from "../playground/types";
   import { CAPABILITY_LABEL } from "../playground/types";
+  import type { SampleEntry } from "../playground/entry";
+  import { normaliseOutput, parseEntry, provideEntry } from "../playground/entry";
+  import { sha256Hex } from "../playground/digest";
+  import { SHARE_LIMIT, decodeShare, encodeShare } from "../playground/share";
+  import { markStep } from "../playground/progress";
   import { diagnosticHtml } from "../playground/render";
   import { wireCopyButtons } from "../lib/copy";
 
   wireCopyButtons();
 
   (() => {
-    const engine = activeEngine();
-    const caps = engine.capabilities();
-
-    const runBtn = document.querySelector<HTMLButtonElement>("button[data-control=run]");
-    const listing = document.querySelector<HTMLPreElement>(".listing");
+    const bar = document.querySelector<HTMLElement>(".bar[data-entry]");
+    const pane = document.querySelector<HTMLPreElement>('[data-role="pane"]');
     const output = document.querySelector<HTMLDivElement>('[data-role="output"]');
-    const cancelBtn = document.querySelector<HTMLButtonElement>('[data-role="cancel"]');
-
-    if (!runBtn || !listing || !output || !cancelBtn) return;
-    if (caps.supported.length === 0) return;
-
-    /* The program, taken from the page the build produced rather than shipped
-     * a second time in this bundle. The engine reads none of it, since it
-     * runs the recorded module, but the contract hands a file over and the
-     * file handed over is the one on screen. */
-    const entry = runBtn.dataset.path ?? "main.iyi";
-    const text = listing.textContent ?? "";
-
-    let running = false;
-
-    const refreshDisabled = () => {
-      runBtn.disabled = running;
-      cancelBtn.hidden = !running;
-    };
+    if (!bar || !pane || !output) return;
 
     /* Runtime nodes cannot carry Astro's scoped attributes, so they use the
      * global classes code.css already defines plus the ones declared global
@@ -269,6 +382,293 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       pre.textContent = text;
       output.appendChild(pre);
       return pre;
+    };
+
+    let entry: SampleEntry;
+    try {
+      entry = parseEntry(bar.dataset.entry);
+    } catch (error) {
+      /* The page said what it is about and this script could not read it.
+       * Said out loud, because everything below would otherwise be about
+       * nothing in particular. */
+      appendBlock(
+        "gap",
+        `this page carries no readable record of its own sample, so nothing ` +
+          `here can run or be checked: ` +
+          `${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
+    }
+    provideEntry(entry);
+
+    const runBtn = document.querySelector<HTMLButtonElement>("button[data-control=run]");
+    const runLabel = document.querySelector<HTMLElement>('[data-role="run-label"]');
+    const cancelBtn = document.querySelector<HTMLButtonElement>('[data-role="cancel"]');
+    const shareBtn = document.querySelector<HTMLButtonElement>('[data-role="share"]');
+    const resetBtn = document.querySelector<HTMLButtonElement>('[data-role="reset"]');
+    const copyBtn = document.querySelector<HTMLButtonElement>(".source-head button[data-copy]");
+    const footRecorded = document.querySelector<HTMLElement>('[data-role="foot-recorded"]');
+    const footEdited = document.querySelector<HTMLElement>('[data-role="foot-edited"]');
+
+    /* One step of the tour, opened. Recorded before anything else, because a
+     * visitor who reads a page and leaves has still read it. */
+    if (entry.set === "tour") markStep(entry.id, "visited");
+
+    /* The recorded colouring, kept so that restoring the program restores it.
+     * It is markup the build wrote out of the compiler's own token stream;
+     * nothing in this file can produce it again. */
+    const recordedInk = pane.innerHTML;
+
+    /* A label that says what just happened and then goes back to saying what
+     * the control does. The pattern is `wireCopyButtons`'s, and the idle text
+     * comes off the element rather than out of this file, so the copy stays in
+     * the component with the rest of the copy. */
+    const flash = (button: HTMLButtonElement, said: string) => {
+      const idle = button.dataset.label ?? button.textContent ?? "";
+      button.textContent = said;
+      setTimeout(() => {
+        button.textContent = idle;
+      }, 1600);
+    };
+
+    /* ------------------------------------------------------------------ *
+     * The pane, and whether it still holds the recorded program.
+     * ------------------------------------------------------------------ */
+
+    let coloured = true;
+    let edited = false;
+
+    const showEdited = (now: boolean) => {
+      if (now === edited) return;
+      edited = now;
+      if (runLabel && runBtn) {
+        runLabel.textContent =
+          (now ? runBtn.dataset.labelEdited : runBtn.dataset.label) ?? "Run";
+      }
+      if (footRecorded) footRecorded.hidden = now;
+      if (footEdited) footEdited.hidden = !now;
+      if (resetBtn) resetBtn.hidden = !now;
+    };
+
+    /* The caret as a count of characters from the start of the pane, and back
+     * again. Withdrawing the colouring replaces the pane's markup with its own
+     * text, which destroys the selection, and a pane that jumps to the top on
+     * the first keystroke is not an editor. */
+    const caretAt = (): number | null => {
+      const selection = getSelection();
+      if (selection === null || selection.rangeCount === 0) return null;
+      const range = selection.getRangeAt(0);
+      if (!pane.contains(range.endContainer)) return null;
+      const measure = range.cloneRange();
+      measure.selectNodeContents(pane);
+      measure.setEnd(range.endContainer, range.endOffset);
+      return measure.toString().length;
+    };
+
+    const putCaret = (at: number) => {
+      const first = pane.firstChild;
+      if (first === null) return;
+      const range = document.createRange();
+      const length = first.textContent?.length ?? 0;
+      range.setStart(first, Math.min(at, length));
+      range.collapse(true);
+      const selection = getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    };
+
+    /* COLOURING COMES FROM THE COMPILER OR IT DOES NOT COME AT ALL. The
+     * recorded token stream describes the recorded text. One keystroke later
+     * it describes text nobody has, and a keyword left emphasised where the
+     * visitor has just written something else is the page painting a claim no
+     * compiler made. So the markup goes and the characters stay. */
+    const withdrawColouring = () => {
+      if (!coloured) return;
+      coloured = false;
+      const at = caretAt();
+      pane.textContent = pane.textContent ?? "";
+      if (at !== null) putCaret(at);
+    };
+
+    /* Hashing is asynchronous, and a visitor types faster than a digest
+     * resolves. The token makes the last edit the one that decides: an older
+     * digest arriving late would otherwise say the pane is unchanged after it
+     * has been changed again. */
+    let generation = 0;
+
+    const checkPane = async () => {
+      const mine = ++generation;
+      const text = pane.textContent ?? "";
+      /* The copy control copies what is on screen, not what was recorded.
+       * Copying the file a visitor can no longer see would be the same lie in
+       * the smallest possible place. */
+      if (copyBtn) copyBtn.dataset.copy = text;
+      let same = false;
+      try {
+        same = (await sha256Hex(new TextEncoder().encode(text))) === entry.sourceSha256;
+      } catch {
+        /* No SubtleCrypto, which a page served over plain http will see. The
+         * pane cannot be shown to hold the recorded file, so it is treated as
+         * edited: the honest direction to fail in is the one that stops the
+         * control claiming the text on screen is what runs. */
+        same = false;
+      }
+      if (mine === generation) showEdited(!same);
+    };
+
+    pane.addEventListener("input", () => {
+      withdrawColouring();
+      void checkPane();
+    });
+
+    resetBtn?.addEventListener("click", () => {
+      pane.innerHTML = recordedInk;
+      coloured = true;
+      if (location.hash.includes("src=")) history.replaceState(null, "", location.pathname);
+      void checkPane();
+      pane.focus();
+    });
+
+    /* ------------------------------------------------------------------ *
+     * Sharing, which is a URL and nothing else.
+     * ------------------------------------------------------------------ */
+
+    /* The fragment this page last put in the address bar itself, so that its
+     * own write is not read back as a link somebody sent. */
+    let shared = "";
+
+    shareBtn?.addEventListener("click", () => {
+      void (async () => {
+        const encoded = await encodeShare(pane.textContent ?? "", entry.path);
+        if (encoded.over > 0) {
+          /* The ceiling is `SHARE_LIMIT` and the overshoot is measured against
+           * it, so neither number is typed here. A link this long is truncated
+           * by something between here and the person you sent it to, silently,
+           * which is why it is refused rather than offered. */
+          flash(
+            shareBtn,
+            `Too long by ${encoded.over} of the ${SHARE_LIMIT} characters a link holds`,
+          );
+          return;
+        }
+        /* Written before the clipboard is asked, so the address bar holds the
+         * shareable link either way, and remembered so that the hashchange
+         * this assignment fires is not read back as somebody else's link. */
+        shared = encoded.fragment;
+        location.hash = encoded.fragment;
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(location.href);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+        /* Either way the address bar now holds the shareable link, because the
+         * fragment was assigned before the clipboard was asked. A refusal to
+         * copy is then an inconvenience rather than a dead end. */
+        flash(shareBtn, copied ? "Link copied" : "Link is in the address bar");
+      })();
+    });
+
+    /* A program that arrived in a link. It is somebody else's text, so it is
+     * not the recorded file, so the page says so through the same path an edit
+     * goes through: no colouring, the run control renamed, the line under the
+     * panes naming the bytes that will run.
+     *
+     * On load and on hashchange both, because a link pasted into the address
+     * bar of a page that is already open changes the fragment without
+     * reloading anything. A page that opened shared programs only on a cold
+     * load would sit there doing nothing, which is the same defect as a
+     * control that does nothing wearing a different hat. */
+    const openShared = () => {
+      if (!location.hash.includes("src=")) return;
+      if (location.hash.slice(1) === shared) return;
+      shared = location.hash.slice(1);
+      void (async () => {
+        const arrived = await decodeShare(location.hash);
+        if (arrived === null) {
+          appendBlock(
+            "gap",
+            "the link that brought you here carries a program this page " +
+              "could not read back. Rather than open part of it, the pane " +
+              "holds the recorded program instead: ask whoever sent it for " +
+              "the whole link, which chat clients and mail readers are apt " +
+              "to cut.",
+          );
+          return;
+        }
+        coloured = false;
+        pane.textContent = arrived.source;
+        void checkPane();
+      })();
+    };
+
+    openShared();
+    addEventListener("hashchange", openShared);
+
+    /* ------------------------------------------------------------------ *
+     * The exercise: what does it print, checked against a digest.
+     * ------------------------------------------------------------------ */
+
+    const answer = document.querySelector<HTMLTextAreaElement>('[data-role="answer"]');
+    const verdict = document.querySelector<HTMLElement>('[data-role="verdict"]');
+    const checkBtn = document.querySelector<HTMLButtonElement>('[data-role="check"]');
+
+    if (answer && verdict && checkBtn) {
+      const digestOf = async (text: string) =>
+        sha256Hex(new TextEncoder().encode(text));
+
+      checkBtn.addEventListener("click", () => {
+        void (async () => {
+          const typed = normaliseOutput(answer.value);
+          if (typed === "") {
+            verdict.textContent = "Type what you think it prints first.";
+            return;
+          }
+          try {
+            if ((await digestOf(typed)) === entry.expect.output) {
+              verdict.textContent = "That is what it prints.";
+              verdict.dataset.state = "right";
+              markStep(entry.id, "answered");
+              return;
+            }
+            /* Not right, so say how far it got and no further. The per-line
+             * digests are short on purpose: they can confirm a line somebody
+             * has already written and they cannot hand one over. */
+            let right = 0;
+            for (const line of typed.split("\n")) {
+              const digest = (await digestOf(line)).slice(0, 16);
+              if (digest !== entry.expect.lines[right]) break;
+              right += 1;
+            }
+            verdict.dataset.state = "wrong";
+            verdict.textContent =
+              right === 0
+                ? "Not what it prints. Press Run and read what it does."
+                : right === 1
+                  ? "The first line is right, the rest is not yet."
+                  : `The first ${right} lines are right, the rest is not yet.`;
+          } catch {
+            verdict.textContent =
+              "This browser will not hash text for this page, so the answer " +
+              "cannot be checked here. Press Run and compare.";
+          }
+        })();
+      });
+    }
+
+    /* ------------------------------------------------------------------ *
+     * The run.
+     * ------------------------------------------------------------------ */
+
+    if (!runBtn || !cancelBtn) return;
+
+    let engine: PlaygroundEngine | null = null;
+    let running = false;
+
+    const refreshDisabled = () => {
+      runBtn.disabled = running;
+      cancelBtn.hidden = !running;
     };
 
     /* The block a run of output is flowing into, and which stream it belongs
@@ -308,7 +708,16 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
         case "diagnostic": {
           const block = document.createElement("div");
           block.className = "diagnostic";
-          block.innerHTML = diagnosticHtml(event);
+          /* The same wrapper the built listings use: a box that scrolls and
+           * nothing in it to focus is a box a keyboard cannot reach, and a
+           * caret line is exactly as wide as the compiler made it. */
+          const scroller = document.createElement("div");
+          scroller.className = "scroll-x";
+          scroller.setAttribute("role", "region");
+          scroller.setAttribute("tabindex", "0");
+          scroller.setAttribute("aria-label", `${event.file}, what the compiler said`);
+          scroller.innerHTML = diagnosticHtml(event);
+          block.appendChild(scroller);
           output.appendChild(block);
           break;
         }
@@ -347,10 +756,27 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       artifact = "";
       const waiting = appendBlock("out idle", "Running.");
       try {
+        /* The engine arrives here, on the first press, rather than with the
+         * page. Everything the shell does before this point, the editor, the
+         * staleness check, the share link and the exercise, is true whether or
+         * not the engine ever loads. */
+        const { activeEngine } = await import("../playground/registry");
+        engine = activeEngine();
+        const caps = engine.capabilities();
+        if (!caps.supported.includes("run")) {
+          waiting.remove();
+          appendBlock(
+            "gap",
+            `the engine this page loaded, ${engine.id}, does not claim it can ` +
+              `run, so this control was rendered by a build that read a ` +
+              `different engine than the one in front of you`,
+          );
+          return;
+        }
         await engine.ready();
         let first = true;
-        for await (const event of engine.run([{ path: entry, text }], {
-          entry,
+        for await (const event of engine.run([{ path: entry.path, text: pane.textContent ?? "" }], {
+          entry: entry.path,
           want: "run" as Capability,
         })) {
           if (first) {
@@ -381,7 +807,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     };
 
     runBtn.addEventListener("click", () => void doRun());
-    cancelBtn.addEventListener("click", () => engine.cancel());
+    cancelBtn.addEventListener("click", () => engine?.cancel());
 
     /* Cmd or Ctrl and Enter runs, from anywhere on the page. */
     document.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -494,9 +920,14 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     overflow-y: auto;
     padding: 0.4rem;
     background: var(--paper);
-    border: var(--hair) solid var(--hairline);
+    /* The popover is a control surface rather than a boundary between two
+     * areas, so its edge is the token that clears WCAG 1.4.11 against paper
+     * and raise in both schemes. The drop shadow that used to lift it off the
+     * page is gone: doc/ART-DIRECTION.md says there are no shadows here, and
+     * the one that was here was a hard-coded black that would have read as a
+     * smear on a dark ground. */
+    border: var(--hair) solid var(--boundary);
     border-radius: var(--radius);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     text-align: left;
   }
 
@@ -578,6 +1009,109 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     overflow: auto;
     white-space: pre;
     tab-size: 2;
+  }
+
+  /* The pane is edited in place, so it takes a focus ring like any other
+   * control rather than the browser's default outline drawn inside the box. */
+  .pane-listing .listing:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: -2px;
+  }
+
+  /* THE RECORDED DIAGNOSTIC, ON THE LINE IT IS ABOUT. Drawn with pseudo
+   * elements and custom properties rather than with characters, because the
+   * pane's text is hashed against the record and copied by the control beside
+   * it: a marker made of characters would change both. `--col` is the
+   * compiler's own column, counted from zero, and `--wide` is the width of its
+   * caret run, both out of records/diagnostics.json.
+   *
+   * Global because the span is written into `set:html`, which Astro does not
+   * give its scoped attribute to. */
+  .pane-listing :global(.flagged) {
+    position: relative;
+  }
+
+  /* The gutter mark. Offset into the pre's own padding so the line's
+   * characters stay on the same grid as every other line's. */
+  .pane-listing :global(.flagged)::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -0.7ch;
+    border-inline-start: 2px solid var(--signal);
+  }
+
+  /* The caret, under exactly the columns the compiler underlined. */
+  .pane-listing :global(.flagged)::after {
+    content: "";
+    position: absolute;
+    inset-block-end: -0.1em;
+    inset-inline-start: calc(var(--col) * 1ch);
+    width: calc(var(--wide) * 1ch);
+    border-block-end: 2px solid var(--signal);
+  }
+
+  /* THE EXERCISE. One question, one box, one verdict. */
+  .quiz {
+    margin-block-start: 1.4rem;
+    max-width: var(--measure);
+  }
+
+  .quiz-ask {
+    margin: 0 0 0.5rem;
+    font-size: var(--step--1);
+    color: var(--graphite);
+  }
+
+  .quiz-answer {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    background: var(--paper);
+    border: var(--hair) solid var(--boundary);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.6;
+    tab-size: 2;
+    resize: vertical;
+  }
+
+  .quiz-answer:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 1px;
+  }
+
+  .quiz-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin-block-start: 0.7rem;
+  }
+
+  .quiz-verdict {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--graphite);
+  }
+
+  /* A wrong answer is a caveat about this attempt, which is what the signal
+   * colour means everywhere else on the site. A right one is the brand. */
+  .quiz-verdict[data-state="right"] {
+    color: var(--brand-deep);
+  }
+
+  .quiz-verdict[data-state="wrong"] {
+    color: var(--signal-deep);
+  }
+
+  .quiz-note {
+    margin: 0.6rem 0 0;
+    font-size: var(--step--2);
+    color: var(--mute);
   }
 
   .pane-output {

@@ -44,7 +44,11 @@ site/
                             run set out of README.md, writes generated/targets.json
     releases.mjs            reads CHANGELOG.md's release headings, writes
                             generated/releases.json
-    samples.mjs             copies samples/iyi/*.iyi into generated/samples/
+    samples.mjs             transcludes samples/iyi, samples/tour, records/break
+                            and records/agent into generated/samples/
+    record-agent.mjs        recorder: runs the agent loop against a real
+                            compiler, writes records/agent.json, and gates the
+                            MCP-equals-shell claim by comparing both answers
     contrast.mjs            build gate: computes the palette's contrast, and
                             forbids a hand-typed ratio in src/styles
     no-transcription.mjs    build gate: forbids hand-typed recorded numbers
@@ -52,9 +56,10 @@ site/
                             next one in the built HTML
   src/
     styles/                 tokens.css, base.css, code.css
-    components/             Measure, Stamped, DurationChart, Sample, Quote, Compare
+    components/             Measure, Stamped, DurationChart, Sample, Quote,
+                            Compare, Frame
     layouts/Page.astro      masthead, colophon, fonts, styles
-    pages/                  index, why, playground, learn, install
+    pages/                  index, why, agents, playground, learn, install
     playground/             the slot: types, registry, engines
     generated/              build output, gitignored, never edited
 ```
@@ -98,6 +103,15 @@ The two classes of number are rendered differently by design; see
   lifted by anchor with their line range by `scripts/samples.mjs`, and the
   compiler diagnostics a lesson shows, replayed byte for byte out of
   `records/diagnostics.json`.
+- **Recorded, and gated on its own claim:** the agent loop at `/agents/`.
+  `scripts/record-agent.mjs` runs the compiler's verbs against
+  `records/agent/` and keeps every frame's argv, stream, exit code and bytes.
+  It is the only recorder here that also falsifies two sentences: the record
+  is refused when `iyi check` stops offering a `suggested_edit`, when a
+  body-only edit starts moving an interface, or when the answer the `check`
+  tool gives over MCP stops matching the answer the same verb gives in a
+  shell. The site had been making the last of those claims in prose, which
+  nobody could check.
 - **Not published at all:** SPEC.md and CHANGELOG.md. The site used to cut
   them into 57 of its 128 routes, and nothing anywhere linked in: every rule
   citation on the site names a SPEC.md section and line as text. A design

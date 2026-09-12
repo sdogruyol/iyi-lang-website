@@ -143,11 +143,17 @@ if (Object.keys(samples).length === 0) {
 // compiler refuses would fail the build for the wrong reason. A lesson shows a
 // break program whole, which is the only honest way to show one.
 const breakRoot = resolve(here, "..", "records", "break");
+// The agent loop's project, authored in iyi by this repository the way the
+// tour is, and recorded by scripts/record-agent.mjs. Transcluded here so the
+// agents page prints the file rather than a copy of it.
+const agentRoot = resolve(here, "..", "records", "agent");
 let breakPrograms = 0;
+let agentPrograms = 0;
 
-if (existsSync(breakRoot)) {
-  for (const file of walk(breakRoot)) {
-    // Keyed by its path in this repository, as the lessons name it and as
+for (const [root, count] of [[breakRoot, "break"], [agentRoot, "agent"]]) {
+  if (!existsSync(root)) continue;
+  for (const file of walk(root)) {
+    // Keyed by its path in this repository, as the pages name it and as
     // the highlight record keys it.
     const path = relative(resolve(here, ".."), file).split("\\").join("/");
     const text = readFileSync(file, "utf8");
@@ -159,7 +165,8 @@ if (existsSync(breakRoot)) {
       regions: {},
       ambiguous: [],
     };
-    breakPrograms += 1;
+    if (count === "break") breakPrograms += 1;
+    else agentPrograms += 1;
   }
 }
 
@@ -504,8 +511,8 @@ writeFileSync(
 
 const totalLines = Object.values(samples).reduce((n, s) => n + s.lines, 0);
 console.log(
-  `samples: ${Object.keys(samples).length - breakPrograms} programs plus ` +
-    `${breakPrograms} break programs, ${totalLines} lines, ` +
+  `samples: ${Object.keys(samples).length - breakPrograms - agentPrograms} programs plus ` +
+    `${breakPrograms} break and ${agentPrograms} agent programs, ${totalLines} lines, ` +
     `${Object.keys(readme).length} README recordings, ` +
     `${Object.keys(rules).length} premises, ` +
     `${asked.size} referenced by ${lessonFiles.length} lessons`,

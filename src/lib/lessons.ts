@@ -125,6 +125,34 @@ export function breakCase(id: string): BreakCase {
 }
 
 /**
+ * Every recorded rejection a step shows: the one it ends on, then any further
+ * case recorded under a rule it teaches.
+ *
+ * A rule is broken more than one way and the record holds a case per way, so a
+ * step shows all of its own rather than one, because a recording nothing
+ * renders is dead weight nobody notices going stale. A case filed under a rule
+ * this step does not teach is a build failure: BreakRule prints the case's own
+ * premise beside the output, so showing somebody else's would cite a rule the
+ * step never stated.
+ */
+export function breakCases(lesson: Lesson): BreakCase[] {
+  const teaches = new Set(lesson.data.rule.trim().split(/\s+/));
+
+  return [lesson.data.breaks, ...(lesson.data.breaksMore ?? [])].map((id) => {
+    const found = breakCase(id);
+    if (!teaches.has(found.rule)) {
+      throw new Error(
+        `${lesson.id} teaches ${[...teaches].join(", ")} and shows the ` +
+          `recorded case "${id}", which is filed under ${found.rule}. The ` +
+          `page prints the case's own premise under the output, so this step ` +
+          `would quote a rule it never stated.`,
+      );
+    }
+    return found;
+  });
+}
+
+/**
  * Where a step's program lives, how long it is, and where it can be run.
  *
  * The line count is read off the file by scripts/samples.mjs, so it is
@@ -182,6 +210,10 @@ export function inlineMarkdown(text: string): string {
  * Small counts spelled as words, the way the repository's own prose spells
  * them. A page indexes this rather than writing "four" into a sentence, so
  * adding a lesson changes the copy instead of making it wrong.
+ *
+ * Hyphenated past twenty, which is how `bench/doc_numbers.py` spells them in
+ * the compiler tree, so a page that spells a generated count here reads the
+ * same as the repository's own prose about it.
  */
 export const SPELLED = [
   "no",
@@ -197,6 +229,24 @@ export const SPELLED = [
   "ten",
   "eleven",
   "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+  "twenty",
+  "twenty-one",
+  "twenty-two",
+  "twenty-three",
+  "twenty-four",
+  "twenty-five",
+  "twenty-six",
+  "twenty-seven",
+  "twenty-eight",
+  "twenty-nine",
+  "thirty",
 ];
 
 /** Where a lesson's pages live, with the deployment's base honoured. */

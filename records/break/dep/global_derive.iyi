@@ -1,0 +1,20 @@
+# A module the break program imports, exporting one derive macro. It compiles:
+# a macro body is expanded where the `derive` is written, not where the macro
+# is defined, so the refusal this module earns lands in its consumer's build.
+#
+# `counted` asks a question about the whole program. `all_subclasses` answers
+# with every type compiled beside it, which is exactly what R-5 keeps a macro
+# away from: a derive that read it would generate different code depending on
+# what else happened to be in the build, and then a `.iyimod` could not carry
+# what it generated (SPEC.md R-5, II.4).
+module dep/global_derive
+
+pub macro counted(declaration)
+  def counted : Int32
+    {% count = 0 %}
+    {% for field in declaration[:fields] %}
+      {% count = field[:type].all_subclasses.size %}
+    {% end %}
+    {{ count }}
+  end
+end

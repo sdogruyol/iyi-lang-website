@@ -1,12 +1,22 @@
 ---
+/**
+ * The page for an address that names nothing.
+ *
+ * `indexable={false}`, which is Page.astro's prop for a robots noindex. A 404
+ * here is served at whatever address was asked for, so to a crawler it is
+ * otherwise indistinguishable from a real page and would be indexed as a
+ * self-canonical dead end.
+ */
+import { Image } from "astro:assets";
 import Page from "../layouts/Page.astro";
+import mascot from "../assets/mascot.webp";
 
 const base = import.meta.env.BASE_URL;
 ---
 
-<Page title="Not found" summary="There is no page at this address.">
+<Page title="Not found" summary="There is no page at this address." indexable={false}>
   <section class="wrap lost">
-    <img src={`${base}mascot.webp`} alt="" width="160" height="150" />
+    <Image src={mascot} alt="" width={160} height={150} densities={[1, 2]} loading="lazy" decoding="async" />
     <div>
       <p class="label">404</p>
       <h1>Nothing here.</h1>

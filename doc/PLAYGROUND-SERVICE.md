@@ -8,6 +8,15 @@ an editor you can type anything into, a control that runs it, and output.
 This document specifies the thing to build. It is written before the engine so
 that whoever fills the slot builds the right shape rather than rediscovering it.
 
+**What landed since.** The sample routes are an editor you can type anything
+into and a control that runs something, and the control says which: the pane
+is editable, the shell hashes it against the `sourceSha256` the recorder wrote
+for that sample, and an edited pane renames the run control, swaps the line
+under the panes for one naming the bytes that will execute, and loses the
+recorded colouring. That is the whole of the "no silent fallback" rule below,
+satisfied without pretending the page can compile. What is still missing is
+the only thing that was ever missing: a compiler in the tab.
+
 ## What was tried, and why it is not here
 
 A compile service was designed here, agreed with a second worker, and half
@@ -160,11 +169,11 @@ Not one of these should be rewritten.
 | Thing | Where | What it gives you |
 |---|---|---|
 | The engine slot | `src/playground/types.ts`, `registry.ts` | One interface, one registration point, and a `capabilities()` call that shapes the whole UI. Read the HARD CONSTRAINT block at the top of `types.ts` first. |
-| The WASI host | `src/playground/engines/wasi-preview1.ts` | preview1 in the page, proven on 13 recorded modules. |
+| The WASI host | `src/playground/engines/wasi-preview1.ts` | preview1 in the page, proven on every module in `records/wasm/manifest.json`. |
 | The execution path | `src/playground/engines/execute.ts` | Instantiate, argv, trap handling, output ordering, exit accounting. Shared so two engines cannot disagree about what running means. |
 | The recorded engine | `src/playground/engines/wasi.ts` | What honestly works today: recorded modules, digest checked, really executed. |
 | The token renderer | `src/lib/tokens.ts` | `inkLines(html, label, expected)` takes a token stream from the compiler's own highlighter and refuses to paint it unless it encodes the exact characters on screen. This is the receiving end for live colouring and it is already gated. |
-| The share scheme | `src/playground/share.ts` | `#src=` in the fragment, base64url of a self-describing payload, deflate where the browser has it. Written and proven; not yet wired to a control, because there is no editor to share from. |
+| The share scheme | `src/playground/share.ts` | `#src=` in the fragment, base64url of a self-describing payload, deflate where the browser has it. Wired to the Share control on every sample route; the ceiling is `SHARE_LIMIT` and every sentence about it is derived from that constant. |
 | The starter program | `src/playground/starter.ts` | Five lines carrying R-1 and R-2, run through the real compiler and exited 0. |
 | The evidence page | `src/pages/playground/evidence.astro` | Where the recordings, the digests and the recorded diagnostics live, with five build-time gates over them. |
 
@@ -178,8 +187,12 @@ Not one of these should be rewritten.
 - It claims what it can back. A front end that type-checks but cannot execute
   claims `compile` and `diagnostics` and not `run`, and the page renders a
   smaller playground rather than a broken one. That is the whole point of the
-  slot and it is already proven: the four stage controls render disabled today,
-  each naming the capability it is missing.
+  slot, and what "smaller" means is literal: a capability the engine does not
+  claim gets no control at all, because a greyed out button is the same missing
+  capability stated quietly instead of plainly. Today the engine claims `run`
+  and `diagnostics`, so a sample route renders Run, Stop while a run is in
+  flight, Share, Restore once the pane has been edited, and nothing for
+  `compile`, `emit-iyimod`, `mod-dump` or `format`.
 - Live colouring comes from the same module. Lex what is in the editor, hand the
   highlighter's HTML to `inkLines`, and paint only if it verifies. When the
   engine cannot lex, the page paints plain ink and says so, which is the state it
@@ -197,9 +210,13 @@ them were nearly built.
 
 - **No control that does nothing.** `registry.ts` states it and it binds: a
   greyed out button beside a greyed out editor is that lie softened rather than
-  avoided. While the playground is parked, `/playground/` carries a structure
-  diagram of the planned panes, drawn typographically with no `button` and no
-  `textarea` element in it, because a diagram is a plan and reads as one.
+  avoided. The rule cost the bare `/playground/` route its diagram. This
+  document used to require that route to carry a typographic picture of the
+  planned panes while the playground was parked, and it never did: what is
+  there is the tour, a table of contents whose every entry is a page that
+  really runs a program, which is a better answer to "what is here now" than a
+  drawing of what is not. The diagram above is where a plan belongs, in the
+  document that is the plan.
 - **No fabricated output.** No spinner that never resolves, no synthesised exit
   status, no output attributed to a program that did not run.
 - **No silent fallback.** Running a recorded module for text the visitor typed,

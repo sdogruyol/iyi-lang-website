@@ -2,11 +2,32 @@
  *
  * One accent, taken from the mascot: the heart is red and the gloves are
  * yellow, and the page uses the red for anything you can act on and the yellow
- * only where the mascot stands. Everything else is white, near-black and a
- * few greys. The reasoning is in doc/ART-DIRECTION.md.
+ * only where the mascot stands. Everything else is a ground, a near-black or
+ * near-white ink, and a few greys. The reasoning is in doc/ART-DIRECTION.md.
+ *
+ * TWO SCHEMES, ONE SET OF LITERALS. Every colour this site draws with is
+ * declared once below as a literal hex, under a name that says which scheme it
+ * belongs to. The dark scheme is then switched on by aliasing, never by a
+ * second literal.
+ *
+ * That is not a style preference, it is what keeps the gate honest.
+ * `scripts/contrast.mjs` reads this file with a regex for `--name: #hex;` into
+ * a flat map. A dark value written the obvious way, `--paper: #14141a` inside
+ * a media query, is the LAST `--paper: #hex` in the file, so the gate would
+ * quietly measure the dark palette, print it under the light palette's names,
+ * and report a green run for a set of pairs nobody declared. The site's own
+ * argument is that a figure has to be checkable; a palette that defeats its
+ * own checker is the same failure in the file that defines the colours.
  */
 
 :root {
+  /* Both schemes are drawn. The browser paints form controls, scrollbars and
+   * the caret to match, which is the whole point of declaring it: without it
+   * a dark page keeps a white scrollbar and a light-mode text caret. */
+  color-scheme: light dark;
+
+  /* Light ---------------------------------------------------------------- */
+
   --paper: #ffffff;
   --raise: #f7f7f8;
   --ink: #1c1c1e;
@@ -25,10 +46,44 @@
   --signal: var(--brand-deep);
   --signal-deep: #8a151d;
 
+  /* A control's own edge, and the only thing this token is for. WCAG 1.4.11
+   * asks a non-text control's boundary to stand off its ground by the same
+   * margin a large glyph would, and --hairline does not: it is a separator
+   * between two areas of the page, which 1.4.11 exempts, and it is drawn far
+   * too faint to serve as the edge of a button. Copy, ghost CTA, declaration
+   * toggle, replay and the menu button all draw with this instead, so a
+   * separator and a control edge stopped being the same colour. */
+  --boundary: #85888f;
+
+  /* Dark ----------------------------------------------------------------- */
+
+  /* Not an inversion. An inverted white is a grey the eye reads as a smudge,
+   * and an inverted accent is a different hue. The grounds are near-black with
+   * the same cool cast the light greys have, and the accent is lightened until
+   * it carries the same weight against a dark ground that #d1333d carries
+   * against white: --brand-dark is the display and fill red, --brand-deep-dark
+   * the one that has to pass AA as running text, exactly as in the light
+   * scheme, so no component has to know which scheme it is in. */
+  --paper-dark: #141418;
+  --raise-dark: #1d1d23;
+  --ink-dark: #f0f0f2;
+  --graphite-dark: #c3c5cb;
+  --mute-dark: #9ba0a8;
+  --hairline-dark: #33343c;
+  --track-dark: #2b2c33;
+
+  --brand-dark: #f4636d;
+  --brand-deep-dark: #ff8f96;
+  --brand-soft-dark: #2b171a;
+  --glove-dark: #f0c25e;
+  --signal-deep-dark: #ffb3b8;
+  --boundary-dark: #6b6d76;
+
   /* Contrast is not recorded here. `scripts/contrast.mjs` computes every pair
    * these tokens are used in on every build and fails under the floor the
    * pair's role requires. It exists because this comment once carried five
-   * ratios and four of them were wrong. */
+   * ratios and four of them were wrong. Both schemes are gated; a dark palette
+   * that is not gated is the second design this file used to refuse. */
 
   --font-sans: "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-text: var(--font-sans);
@@ -62,6 +117,72 @@
   --quick: 150ms ease;
 }
 
-/* One scheme. The page is white whatever the system prefers; there is no dark
- * variant and no toggle, because the mascot and the code are drawn for a white
- * ground and a second palette would be a second design to keep honest. */
+/* The scheme switch, and the whole of it. Nothing in either block below is a
+ * colour: every value is one of the literals above, so a reader can see at a
+ * glance that the dark scheme adds no fourteenth grey nobody gated. The mascot
+ * is cut out of its background and the code is set in weight rather than hue,
+ * which is why one drawing serves both grounds.
+ *
+ * THE SYSTEM DECIDES, AND THE READER CAN OVERRULE IT. The first block is the
+ * default and needs no script: whatever the machine prefers is what the page
+ * is. The second is the override the masthead's switch writes onto `<html>`,
+ * and `:not([data-theme="light"])` on the first is what lets that switch turn
+ * the dark scheme back off on a machine that prefers dark.
+ *
+ * The alias list is written twice, which is the price of both of those being
+ * true at once. A media query cannot be OR'd with an attribute selector in one
+ * rule, and the alternatives are worse: resolving the preference in a script
+ * and writing the attribute always would leave a reader with scripts blocked
+ * on the light palette whatever their machine prefers, and a second set of
+ * literals would defeat the gate for the reason the header explains.
+ *
+ * `screen and` is load bearing on both. A print media query matches the
+ * reader's colour-scheme preference too, so without it a reader who prefers
+ * dark and hits print gets near-black pages: a lesson printed as a solid block
+ * of toner. Pinning both switches to screens hands `print.css` the light
+ * palette with no third set of values to keep honest. */
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: var(--paper-dark);
+    --raise: var(--raise-dark);
+    --ink: var(--ink-dark);
+    --graphite: var(--graphite-dark);
+    --mute: var(--mute-dark);
+    --hairline: var(--hairline-dark);
+    --track: var(--track-dark);
+
+    --brand: var(--brand-dark);
+    --brand-deep: var(--brand-deep-dark);
+    --brand-soft: var(--brand-soft-dark);
+    --glove: var(--glove-dark);
+    --signal-deep: var(--signal-deep-dark);
+    --boundary: var(--boundary-dark);
+
+    color-scheme: dark;
+  }
+}
+
+@media screen {
+  :root[data-theme="dark"] {
+    --paper: var(--paper-dark);
+    --raise: var(--raise-dark);
+    --ink: var(--ink-dark);
+    --graphite: var(--graphite-dark);
+    --mute: var(--mute-dark);
+    --hairline: var(--hairline-dark);
+    --track: var(--track-dark);
+
+    --brand: var(--brand-dark);
+    --brand-deep: var(--brand-deep-dark);
+    --brand-soft: var(--brand-soft-dark);
+    --glove: var(--glove-dark);
+    --signal-deep: var(--signal-deep-dark);
+    --boundary: var(--boundary-dark);
+
+    color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+}

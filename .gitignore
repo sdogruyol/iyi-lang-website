@@ -10,3 +10,6 @@ public/wasm/
 node_modules/
 dist/
 .astro/
+
+# Python leaves these beside the two checks the build runs.
+__pycache__/

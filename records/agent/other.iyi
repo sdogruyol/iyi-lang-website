@@ -1,0 +1,8 @@
+# Imported by nothing. It is here so `iyi test --affected` has a change it can
+# prove no test reaches, which is the half of test selection that is easy to
+# claim and hard to show.
+module app/other
+
+pub def unrelated : Int32
+  0
+end

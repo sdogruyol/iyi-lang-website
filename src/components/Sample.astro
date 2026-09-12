@@ -204,5 +204,15 @@ const shown =
     <span class="path">{sample.path}</span>
     <span>{shown}</span>
   </figcaption>
-  <pre><code set:html={code} /></pre>
+  {/*
+    A listing is wider than the measure often enough that this pane scrolls,
+    and a scrolling pane holding nothing focusable cannot be reached with a
+    keyboard at all: the content is on the page and unreadable without a mouse.
+    So the pane is a named region with a tab stop. The name is the two facts
+    the header already states, in the order a reader would say them, because a
+    region announced as "region" tells nobody which listing they landed in.
+  */}
+  <div class="scroll-x" role="region" tabindex="0" aria-label={`${sample.path}, ${shown}`}>
+    <pre><code set:html={code} /></pre>
+  </div>
 </figure>

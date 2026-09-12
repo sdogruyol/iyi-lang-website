@@ -1,0 +1,385 @@
+---
+/**
+ * The platforms, with what CI proves about each.
+ *
+ * The list and the run set come from src/generated/targets.json, which
+ * scripts/targets.mjs reads out of the workflow and README. What is new here
+ * is src/generated/proofs.json: scripts/proofs.mjs reads the same workflow for
+ * the two loops and the job graph, so the page can separate three claims that
+ * are usually collapsed into the word "supported" - the library type-checks,
+ * the object is audited for what it asks the machine for, and the program is
+ * run somewhere that is that platform.
+ *
+ * A target's row is therefore never a promise: every cell is a job, a step and
+ * a line number.
+ */
+import Page from "../layouts/Page.astro";
+import Measure from "../components/Measure.astro";
+import Lifted from "./tools/_Lifted.astro";
+import platforms from "../generated/targets.json";
+import proofs from "../generated/proofs.json";
+import { SPELLED } from "../lib/lessons";
+
+const base = import.meta.env.BASE_URL;
+
+/* The generated shapes, named. A JSON import gives every array the union of
+ * its elements' shapes, and a target with no cross-compile line has an empty
+ * one; naming the types keeps the template reading like data rather than like
+ * a cast. */
+interface Build {
+  job: string;
+  jobName: string;
+  step: string | null;
+  line: number;
+}
+
+interface TargetProof {
+  target: string;
+  typechecked: boolean;
+  audited: boolean;
+  ran: boolean;
+  how: string | null;
+  builds: Build[];
+}
+
+interface Runner {
+  id: string;
+  name: string;
+  line: number;
+  steps: string[];
+}
+
+const ranCount = SPELLED[platforms.ran.length];
+const targets = proofs.targets as unknown as TargetProof[];
+const runners = proofs.runners as unknown as Runner[];
+const audited = targets.filter((entry) => entry.audited);
+const typecheck = proofs.loops.typecheck;
+const audit = proofs.loops.audit;
+
+/* The audit loop's own spellings that are not one of the nine. Today that is
+ * the Windows GNU target, which the type-check loop calls x86_64-w64-mingw32
+ * and the audit loop calls x86_64-windows-gnu: one platform, two of the
+ * compiler's names for it. scripts/proofs.mjs maps it and then checks its
+ * audited set against the one scripts/targets.mjs derives from README, so a
+ * real divergence fails the build instead of reaching this paragraph. */
+const otherSpelling = audit.values.filter(
+  (target) => !platforms.typechecked.includes(target),
+);
+---
+
+<Page
+  kind="TechArticle"
+  title="Platforms"
+  summary="What CI proves per target: the library type-checks by cross-compiling, an iyi program's object is audited for the symbols it leaves undefined, and the program is linked and run on the platform itself. Three checks, and a target reaches a different number of them."
+>
+  <section class="wrap head">
+    <p class="label">Platforms</p>
+    <h1>Compiles for <Measure of="targets" />. Runs on {ranCount}, every build.</h1>
+    <p class="lede">
+      Most projects say "supports the platform" and mean the code generator had
+      no objection. Here it means three different checks, and a target reaches
+      a different number of them. This page is the table, and every cell in it
+      is a job and a line in{" "}
+      <a href="https://github.com/iyilang/iyi/blob/master/.github/workflows/iyi.yml">
+        one workflow
+      </a>.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>What each check catches</h2>
+    <ol class="senses">
+      <li>
+        <strong>Type-checked.</strong> The library's platform files for that
+        target compile, by cross-compiling with no linking. Catches a
+        declaration that went missing from <code>src/lib_c</code> or{" "}
+        <code>src/crystal/system</code>, which is invisible to every other job.
+      </li>
+      <li>
+        <strong>Audited.</strong> An iyi program is cross-compiled for the
+        target and the object is read for the symbols it leaves undefined.
+        Catches a call nothing on that platform supplies, which a type-check
+        cannot see.
+      </li>
+      <li>
+        <strong>Run.</strong> The object is linked with the target's own
+        toolchain and executed, and what it prints is compared with what the
+        same program printed on the machine that built it. The only check that
+        can fail for a reason the first two cannot reach.
+      </li>
+    </ol>
+  </section>
+
+  <section class="wrap">
+    <h2>The table</h2>
+    <div class="scroll-x" role="region" tabindex="0" aria-label="What CI proves per target">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th scope="col">target</th>
+            <th scope="col">type-checked</th>
+            <th scope="col">object audited</th>
+            <th scope="col">run</th>
+            <th scope="col">object built by</th>
+          </tr>
+        </thead>
+        <tbody>
+          {targets.map((entry) => (
+            <tr class={entry.ran ? "ran" : undefined}>
+              <th scope="row"><code>{entry.target}</code></th>
+              <td>{entry.typechecked ? "yes" : "no"}</td>
+              <td>{entry.audited ? "yes" : "no"}</td>
+              <td>{entry.ran ? entry.how : "no"}</td>
+              <td class="where">
+                {entry.builds.length > 0
+                  ? [...new Set(entry.builds.map((build) => build.jobName))].join(", ")
+                  : "built where it is run"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">
+      The {ranCount} that run are {platforms.ran.map((target) => platforms.how[target as keyof typeof platforms.how]).join(", ")}.
+      The rest type-check and have their objects audited, which is a weaker
+      claim, and this page makes the difference visible rather than averaging
+      it into one word.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>The two loops, as they are written</h2>
+    <div class="cols">
+      <div>
+        <h3>{typecheck.step}</h3>
+        <p class="sub">
+          {typecheck.values.length} targets, in the job{" "}
+          <code>{typecheck.job}</code>. Cross-compiling emits an object and
+          links nothing, so a library missing from the runner is not a failure
+          and a declaration missing from the source is.
+        </p>
+        <Lifted
+          text={typecheck.text}
+          caption="the type-check loop"
+          cite={typecheck.cite}
+        />
+      </div>
+      <div>
+        <h3>{audit.step}</h3>
+        <p class="sub">
+          {audit.values.length} targets crossed with{" "}
+          {audit.samples.length} programs ({audit.samples.join(", ")}), each
+          object read for what it leaves undefined. The programs are not a
+          shorter list for a reason: each carries per-platform branches, and a
+          branch only its own platform compiles is a branch nobody checks.
+        </p>
+        <Lifted
+          text={audit.text}
+          caption="the audit loop"
+          cite={audit.cite}
+        />
+      </div>
+    </div>
+    {otherSpelling.length > 0 && (
+      <p class="sub note">
+        The audit loop writes {otherSpelling.join(", ")}, which is the same
+        platform the type-check loop lists under another of the compiler's
+        names for it. The table above maps the two, and the generator behind it
+        checks its audited set against the one read from the repository's own
+        prose, so a spelling that turns into a real difference fails the build
+        rather than this paragraph.
+      </p>
+    )}
+  </section>
+
+  <section class="wrap">
+    <h2>Where a cross-compiled object goes to be run</h2>
+    <p class="sub">
+      One job builds the objects for the other platforms; {runners.length}{" "}
+      jobs consume them. They are listed here by their own names, and each
+      appears because it says it needs{" "}
+      <code>{proofs.producer.id}</code>, not because this page decided it was
+      relevant.
+    </p>
+    <ul class="runners">
+      {runners.map((runner) => (
+        <li>
+          <span class="job">{runner.name}</span>
+          <span class="steps">{runner.steps.slice(0, 3).join(" / ")}</span>
+        </li>
+      ))}
+    </ul>
+    <p class="sub">
+      Windows is in that list and not in the run set: its objects are built and
+      probed for what they ask the operating system for, and no job runs a
+      Windows binary and compares what it printed. The{" "}
+      <a href={`${base}why/#portability`}>why page</a> says what that means for
+      somebody considering it.
+    </p>
+  </section>
+
+  <section class="wrap next">
+    <h2>Then</h2>
+    <div class="hero-cta">
+      <a class="cta" href={`${base}download/`}>Download a build</a>
+      <a class="cta ghost" href={`${base}playground/`}>The wasm32 build, in your browser</a>
+      <a class="cta ghost" href={`${base}why/#portability`}>Why this matters</a>
+    </div>
+    <dl class="evidence">
+      <dt>targets generated by</dt>
+      <dd>{platforms.provenance.generator}, from {platforms.provenance.source} and {platforms.provenance.claim}</dd>
+      <dt>proofs generated by</dt>
+      <dd>{proofs.provenance.generator}, from {proofs.provenance.source}</dd>
+      <dt>audited targets</dt>
+      <dd>{audited.length} of {targets.length}</dd>
+      <dt>at commit</dt>
+      <dd>{proofs.provenance.commit}</dd>
+    </dl>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 62ch;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.6rem;
+    }
+
+    h3 {
+      font-size: var(--step-0);
+      margin-block-end: 0.4rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1rem;
+    }
+
+    .note {
+      color: var(--mute);
+    }
+
+    .senses {
+      margin: 0;
+      padding-inline-start: 1.2rem;
+      display: grid;
+      gap: 0.7rem;
+      color: var(--graphite);
+      max-width: 68ch;
+    }
+
+    .senses strong {
+      color: var(--ink);
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--step--1);
+      color: var(--graphite);
+      margin-block-end: 1rem;
+    }
+
+    .matrix th {
+      text-align: start;
+      font-weight: 500;
+    }
+
+    .matrix thead th {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+      padding-block-end: 0.4rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      white-space: nowrap;
+    }
+
+    .matrix td,
+    .matrix tbody th {
+      padding-block: 0.5rem;
+      padding-inline-end: 1rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      vertical-align: top;
+    }
+
+    /* A run target is the strongest row on the table, so it carries the
+     * accent on its own edge. No colour anywhere else: the other rows are not
+     * failures. */
+    .matrix tbody tr.ran th {
+      box-shadow: inset 2px 0 0 var(--brand);
+      padding-inline-start: 0.6rem;
+    }
+
+    .where {
+      color: var(--mute);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: clamp(1.2rem, 3vw, 2.5rem);
+      align-items: start;
+    }
+
+    .runners {
+      list-style: none;
+      margin: 0 0 1rem;
+      padding: 0;
+      display: grid;
+      gap: 0.5rem;
+      max-width: 60rem;
+    }
+
+    .runners li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 1rem;
+      padding-block-end: 0.5rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .job {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .steps {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      margin-inline-start: auto;
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-block-end: 1.5rem;
+    }
+  </style>
+</Page>

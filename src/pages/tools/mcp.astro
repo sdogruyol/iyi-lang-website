@@ -1,0 +1,304 @@
+---
+/**
+ * The MCP catalogue, and what a harness has to know to call it.
+ *
+ * Every tool, description, schema and method on this page comes out of
+ * `src/generated/mcp.json`, which scripts/mcp.mjs lifts from the compiler's
+ * own `MCP_TOOLS` literal and dispatch. The help text is the recorded one from
+ * `records/cli.json`.
+ *
+ * This page is the contract. The recorded loop, where an agent actually calls
+ * these tools and the output is a transcript, is /agents/. Nothing here is a
+ * measurement and nothing here ran.
+ */
+import Page from "../../layouts/Page.astro";
+
+import mcp from "../../generated/mcp.json";
+import cli from "../../../records/cli.json";
+
+const base = import.meta.env.BASE_URL;
+
+const verb = cli.verbs.find((entry) => entry.name === "mcp");
+if (!verb) {
+  throw new Error(
+    `tools/mcp: records/cli.json has no "mcp" verb, so this page cannot show ` +
+      `what the server says about itself. Re-record with npm run record:cli.`,
+  );
+}
+
+interface ToolArgument {
+  name: string;
+  type: string;
+  required: boolean;
+  description: string | null;
+  html: string | null;
+}
+
+interface Tool {
+  name: string;
+  description: string;
+  html: string;
+  command: string;
+  optional: string[];
+  line: number;
+  arguments: ToolArgument[];
+  schema: string;
+}
+
+const tools = mcp.tools as unknown as Tool[];
+
+/* The verb's help is no longer printed here: the catalogue is what a harness
+ * sees, and the help text is on the CLI page with every other verb's. What is
+ * kept is the check that the verb exists, because a `records/cli.json` with no
+ * `mcp` verb means the compiler stopped serving this page's subject. */
+
+/* The methods, minus the notification arms, which carry no id and want no
+ * answer: a harness implements those by doing nothing. */
+const requests = mcp.methods.filter((entry) => !entry.method.startsWith("notifications/"));
+const notifications = mcp.methods.filter((entry) => entry.method.startsWith("notifications/"));
+---
+
+<Page
+  kind="TechArticle"
+  title="MCP tools"
+  summary="iyi mcp serves the compiler's own verbs as Model Context Protocol tools over stdio: check, fix, context, test and doc, each one a shell around the same binary. The catalogue, the schemas, and the two LSP methods beyond the protocol."
+>
+  <section class="wrap head">
+    <p class="label">Tools, agents</p>
+    <h1>The compiler, as a toolbox an agent can hold.</h1>
+    <p class="lede">
+      <code>iyi mcp</code> serves {tools.length} tools over stdio. Each one
+      runs this same binary with arguments the command line already takes, so
+      what a harness gets back is what a shell would have gotten. This is the
+      literal the server sends at <code>tools/list</code>, lifted from{" "}
+      {mcp.catalogue.source}.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <ul class="tools">
+      {tools.map((tool) => (
+        <li class="tool">
+          <div class="tool-head">
+            <h2><code>{tool.name}</code></h2>
+            <span class="runs">
+              {tool.command}
+              {tool.optional.length > 0 ? ` [${tool.optional.join(" ")} ...]` : ""}
+            </span>
+          </div>
+          <p class="sub" set:html={tool.html} />
+          <table class="args">
+            <thead>
+              <tr>
+                <th scope="col">argument</th>
+                <th scope="col">type</th>
+                <th scope="col">required</th>
+                <th scope="col">what it is</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tool.arguments.map((argument) => (
+                <tr>
+                  <td><code>{argument.name}</code></td>
+                  <td>{argument.type}</td>
+                  <td>{argument.required ? "yes" : "no"}</td>
+                  <td set:html={argument.html ?? ""} />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="wrap">
+    <h2>Pointing a harness at it</h2>
+    <p class="sub">
+      There is no client stanza in the repository to quote and this page will
+      not invent one: a configuration file belongs to the harness. What a
+      harness needs is the command, the transport and the methods.
+    </p>
+    <dl class="evidence wiring">
+      <dt>command</dt>
+      <dd>{mcp.transport.command}</dd>
+      <dt>transport</dt>
+      <dd>stdio, one JSON-RPC message per line, both directions</dd>
+      <dt>protocol version</dt>
+      <dd>the client's, and {mcp.protocol.version} when the client names none</dd>
+      <dt>requests</dt>
+      <dd>{requests.map((entry) => entry.method).join(", ")}</dd>
+      <dt>notifications</dt>
+      <dd>{notifications.map((entry) => entry.method).join(", ")}</dd>
+      <dt>anything else</dt>
+      <dd>
+        answered <code>{mcp.unknown.code}</code>, <code>{mcp.unknown.message}</code>
+      </dd>
+      <dt>beyond LSP</dt>
+      <dd>
+        {mcp.custom.map((method, i) => (
+          <>
+            {i === 0 ? "" : ", "}
+            <code>{method.method}</code> runs {method.delegates}
+          </>
+        ))}
+      </dd>
+    </dl>
+    <p class="sub">
+      So a harness that speaks LSP needs nothing new and one that speaks MCP
+      needs nothing else. What an agent does with these, recorded against a
+      real server, is <a href={`${base}agents/`}>the agents page</a>; editor
+      setup is on the <a href={`${base}tools/editor/`}>editors page</a>.
+    </p>
+    <dl class="evidence">
+      <dt>lifted by</dt>
+      <dd>{mcp.provenance.generator} from {mcp.catalogue.cite}, at {mcp.provenance.commit}</dd>
+    </dl>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 62ch;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.6rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1rem;
+    }
+
+    .note {
+      color: var(--mute);
+    }
+
+    /* One card per tool: the name, the command it becomes, the sentence the
+     * server sends, then the schema as a table. The command sits beside the
+     * name because "a shell around the same binary" is the claim, and a reader
+     * should be able to check it without opening anything. */
+    .tools {
+      list-style: none;
+      margin: 0 0 1.4rem;
+      padding: 0;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .tool {
+      border: var(--hair) solid var(--hairline);
+      border-radius: 2px;
+      padding: 0.9rem 1.1rem;
+      background: var(--raise);
+    }
+
+    .tool-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.3rem 1rem;
+      margin-block-end: 0.4rem;
+    }
+
+    .tool h3 {
+      font-size: var(--step-1);
+      margin: 0;
+    }
+
+    .runs {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--graphite);
+    }
+
+    .args {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--step--1);
+      color: var(--graphite);
+    }
+
+    .args th {
+      text-align: start;
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+      font-weight: 500;
+      padding-block-end: 0.3rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .args td {
+      padding-block: 0.4rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      vertical-align: top;
+    }
+
+    .args tr:last-child td {
+      border-block-end: 0;
+      padding-block-end: 0;
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: clamp(1.2rem, 3vw, 2.5rem);
+      align-items: start;
+    }
+
+    .methods {
+      list-style: none;
+      margin: 0 0 1rem;
+      padding: 0;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .methods li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.3rem 1rem;
+      padding-block-end: 0.55rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .where {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      margin-inline-start: auto;
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-block-end: 1.5rem;
+    }
+  </style>
+</Page>

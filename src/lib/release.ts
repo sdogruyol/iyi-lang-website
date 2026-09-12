@@ -1,14 +1,19 @@
 /**
  * The latest release, read out of CHANGELOG.md's headings as
- * `scripts/releases.mjs` recorded them. A version number is a fact about the
- * tree like any other, so it is never typed into a page: the generator refuses
- * to write a record whose changelog states no release.
+ * `scripts/releases.mjs` recorded them, and the tarballs it publishes, read out
+ * of `install.sh` as `scripts/install-targets.mjs` recorded them. A version
+ * number and a target name are facts about the tree like any other figure
+ * here, so neither is typed into a page: one generator refuses to write a
+ * record whose changelog states no release, the other refuses one whose
+ * installer and README disagree about what a release ships for.
  *
  * The site does not publish the changelog itself. So everything here that
  * points a reader at a release points at the repository, which is where the
- * notes and the artifacts both live.
+ * notes and the artifacts both live - and at the URL the installer would
+ * fetch, rather than one this file assembles out of strings of its own.
  */
 import record from "../generated/releases.json";
+import install from "../generated/install-targets.json";
 
 export interface Release {
   version: string;
@@ -33,41 +38,43 @@ export function releases(): Release[] {
 
 /**
  * Where a release is published: the tag `install.sh` downloads from, which is
- * the version prefixed with `v`. The page that lists its notes and its
- * artifacts is the repository's, not this site's.
+ * the version prefixed with `v`. The repository is the one that script asks,
+ * so a fork or a rename moves this link with it. The page that lists a
+ * release's notes and its artifacts is the repository's, not this site's.
  */
 export function releaseUrl(release: Release = latestRelease()): string {
-  return `https://github.com/iyilang/iyi/releases/tag/v${release.version}`;
+  return `https://github.com/${install.repo}/releases/tag/v${release.version}`;
 }
 
 /**
- * The tarballs a release publishes, named the way `install.sh` names them:
- * `iyi-$version-$target.tar.gz` under `releases/download/v$version`, for the
- * two `uname` pairs the script accepts. Derived from the recorded version
- * rather than typed into a page, so the links move with the changelog.
+ * The tarballs a release publishes: one per target `install.sh` accepts, named
+ * and located the way that script names and locates them.
+ *
+ * Nothing here is written down twice. `scripts/install-targets.mjs` reads the
+ * targets out of the installer's own `case` arms, cross-checks them against the
+ * refusal it prints and against README.md, and carries the `asset=` and
+ * `base=` strings across with `$version` and `$target` still in them; this
+ * fills those in from the recorded release. The pairs were a literal here
+ * until then, which meant a third published tarball would have appeared
+ * nowhere on this site and a renamed asset would have made every download link
+ * a 404 with nothing in the build able to see it.
  */
 export interface ReleaseAsset {
-  /** The `uname` pair, as the installer prints it when it refuses one. */
+  /** The target, as the installer names the tarball it fetches. */
   target: string;
-  /** The machine, in the words the page uses around it. */
+  /** The machine, in README.md's own words for that platform. */
   machine: string;
   file: string;
   url: string;
 }
 
-const TARGETS: ReadonlyArray<[target: string, machine: string]> = [
-  ["linux-x86_64", "Linux x86-64"],
-  ["darwin-arm64", "macOS arm64"],
-];
+/** install.sh's own template, with the shell's placeholders filled in. */
+const fill = (template: string, version: string, target?: string): string =>
+  template.replaceAll("$version", version).replaceAll("$target", target ?? "");
 
 export function releaseAssets(release: Release = latestRelease()): ReleaseAsset[] {
-  return TARGETS.map(([target, machine]) => {
-    const file = `iyi-${release.version}-${target}.tar.gz`;
-    return {
-      target,
-      machine,
-      file,
-      url: `https://github.com/iyilang/iyi/releases/download/v${release.version}/${file}`,
-    };
+  return install.targets.map(({ target, machine }) => {
+    const file = fill(install.asset, release.version, target);
+    return { target, machine, file, url: `${fill(install.download, release.version)}/${file}` };
   });
 }

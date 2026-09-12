@@ -103,9 +103,34 @@ p {
   text-wrap: pretty;
 }
 
+/* Links -------------------------------------------------------------------
+ *
+ * WCAG 1.4.1: colour cannot be the only thing that marks a link. A
+ * --brand-deep link sitting in --ink body copy differs from the text around it
+ * by nowhere near the 3.0 a colour-only distinction needs, and hover is not a
+ * cue: it does not exist on a touch screen and it is not there when the eye
+ * first crosses the sentence.
+ *
+ * So a link inside running text is underlined, and a link that is its own
+ * block is not. That split is what 1.4.1 actually asks for, and it is drawn
+ * here by element context rather than by class, so no page has to opt in and
+ * this file needs to know nothing about the pages: a nav row, a card, a step
+ * and a CTA are all links in a list or a box, none of them sit in a
+ * paragraph, and each is already distinguishable by its own frame. */
 a {
   color: var(--brand-deep);
   text-decoration: none;
+}
+
+p a,
+dd a,
+td a,
+figcaption a,
+blockquote a,
+.prose a,
+.evidence a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
 }
 
 a:hover {
@@ -154,7 +179,7 @@ samp,
   padding: 0.7rem 1.25rem;
   border-radius: var(--radius);
   background: var(--brand);
-  color: #fff;
+  color: var(--paper);
   font-weight: 600;
   font-size: var(--step-0);
   line-height: 1.2;
@@ -171,7 +196,7 @@ samp,
 .cta.ghost {
   background: transparent;
   color: var(--ink);
-  border-color: var(--hairline);
+  border-color: var(--boundary);
 }
 
 .cta.ghost:hover {
@@ -201,7 +226,7 @@ samp,
   font-weight: 600;
   color: var(--graphite);
   background: var(--paper);
-  border: var(--hair) solid var(--hairline);
+  border: var(--hair) solid var(--boundary);
   border-radius: 6px;
   padding: 0.2rem 0.6rem;
   cursor: pointer;
@@ -281,6 +306,13 @@ samp,
   margin-block-start: var(--flow, 1.05em);
 }
 
+/* Text that exists for a screen reader and for nothing else. Used by the copy
+ * controls' live region in the layout: a button whose label comes from
+ * `aria-label` does not re-announce when its `textContent` changes to
+ * "Copied", so the confirmation the sighted reader gets was reaching nobody
+ * else. Kept in the flow of the page rather than `display: none`, which
+ * removes a node from the accessibility tree and would silence the very
+ * announcement it is here to make. */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -288,6 +320,22 @@ samp,
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* A pane that scrolls sideways: a listing wider than the measure, a compiler
+ * diagnostic with a long caret line, the comparison table with its 40rem
+ * minimum. Content that scrolls and holds nothing focusable is unreachable by
+ * keyboard, so each such pane is a `role="region"` with `tabindex="0"` and a
+ * name, and this rule is what makes the focus visible when it lands there. A
+ * region that is not actually overflowing is still focusable, which is the
+ * cheap price of not being able to measure overflow in CSS. */
+.scroll-x {
+  overflow-x: auto;
+}
+
+.scroll-x:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 
 :focus-visible {
@@ -421,5 +469,30 @@ samp,
   .hero-cta .cta {
     justify-content: center;
     padding-block: 0.85rem;
+  }
+}
+
+/* Reduced motion ---------------------------------------------------------- */
+
+/* Until this block landed there was no `prefers-reduced-motion` query in any
+ * stylesheet on this site. The only handling anywhere was a `matchMedia` check
+ * inside DurationChart's client script, which means the preference was honoured
+ * only for readers who run the script, and the reader most likely to have set
+ * it is not obviously that reader.
+ *
+ * The whole site declares motion in four places and they are all named here or
+ * pinned beside their own rules: this transition, the hamburger's bars in
+ * `layouts/Page.astro`, and DurationChart's two keyframe animations. Four is
+ * small enough to enumerate, and enumerating beats the usual blanket
+ * `animation-duration` override on the universal selector, which would also
+ * flatten a future animation that carries information rather than decorating
+ * one.
+ *
+ * Nothing here hides anything. A figure that only appears once it has animated
+ * is a figure this reader never sees, so every settled state is the default in
+ * CSS and motion is what gets removed. */
+@media (prefers-reduced-motion: reduce) {
+  .cta {
+    transition: none;
   }
 }

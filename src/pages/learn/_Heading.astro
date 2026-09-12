@@ -1,0 +1,87 @@
+---
+/**
+ * A heading inside a lesson's prose, with a link to itself beside it.
+ *
+ * The id is not invented here. Astro's markdown pipeline slugs every heading
+ * already, which is what the in-page contents list in `[...slug].astro` links
+ * to, and MDX hands the rendered element's attributes to whatever component is
+ * mapped over it. So this reads the id it was given and refuses to link when
+ * there is none, rather than deriving a second slug that could disagree with
+ * the first and send a reader to an anchor that is not on the page.
+ *
+ * Underscore prefixed so Astro does not route it: a component that lives beside
+ * the page it serves, which is the only page that can use it, because MDX
+ * component mappings are handed to `<Content />` by the page doing the
+ * rendering.
+ *
+ * The two wrappers beside this file exist because an MDX mapping is keyed on
+ * the element name and carries no depth with it, so the level has to be written
+ * by the mapping rather than read from the heading.
+ */
+interface Props {
+  level: 2 | 3;
+  /** The slug Astro's own pipeline put on the heading. */
+  id?: string;
+}
+
+const { level, id } = Astro.props;
+const Tag = `h${level}` as "h2" | "h3";
+---
+
+{
+  id ? (
+    <Tag id={id} class="anchored">
+      <slot />
+      <a class="anchor" href={`#${id}`} aria-label="Link to this section">#</a>
+    </Tag>
+  ) : (
+    <Tag>
+      <slot />
+    </Tag>
+  )
+}
+
+<style>
+  /* The heading keeps the size and weight the prose gives it; this adds the
+   * link and nothing else. `position: relative` is here so the anchor can sit
+   * in the gutter on a wide screen without shifting the heading's text, which
+   * would make the column's left edge move as a reader scrolled past one. */
+  .anchored {
+    position: relative;
+  }
+
+  .anchor {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    font-weight: 400;
+    color: var(--mute);
+    text-decoration: none;
+    margin-inline-start: 0.45rem;
+    /* Visible, and quiet. The art direction spends its one accent elsewhere,
+     * so this is the muted tone every other secondary mark on the site uses.
+     * It is not hover-only: a link that appears on hover does not exist on a
+     * touch screen and cannot be reached by a keyboard. */
+    opacity: 0.55;
+  }
+
+  .anchor:hover,
+  .anchor:focus-visible {
+    opacity: 1;
+    color: var(--signal-deep);
+  }
+
+  /* Out of the measure entirely where there is room, so the first character of
+   * every heading still lines up with the paragraphs under it. The floor is
+   * measured rather than guessed: the reading column's left edge is
+   * `max(--edge, (100% - --page) / 2)`, which is 1.5rem until the viewport
+   * passes --page, so a 1.5rem outdent sits flush against the window until
+   * the viewport is --page plus twice the outdent. Below that the link stays
+   * beside the heading text, where it is still visible and still reachable. */
+  @media (min-width: 78rem) {
+    .anchor {
+      position: absolute;
+      inset-inline-start: -1.5rem;
+      margin-inline-start: 0;
+    }
+  }
+</style>

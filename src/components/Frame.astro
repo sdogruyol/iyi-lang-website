@@ -1,0 +1,101 @@
+---
+/**
+ * One frame of a recorded session: the command, what it answered, and the
+ * status it exited with.
+ *
+ * `records/agent.json` holds a loop `scripts/record-agent.mjs` ran against a
+ * real compiler on a real project, frame by frame. This renders one of them
+ * and invents nothing: the command line is the argv the recorder spawned, the
+ * body is the bytes that came back off the stream the verb answers on, and the
+ * exit code is the status the process gave.
+ *
+ * It reuses `renderRecording` rather than classifying anything itself, so a
+ * prompt, a command and a line of output are set here exactly as they are set
+ * everywhere else a recording appears on this site.
+ *
+ * THE STREAM IS NAMED, and that is not trivia. `iyi mod context --json`
+ * answers on stdout and `iyi check -f json` answers on stderr, because an
+ * error is an error whatever its format. A harness built by reading a page
+ * that hid that would read an empty stdout as a pass, so the page says which
+ * stream carried the answer and the recorder is what knows.
+ */
+import { renderRecording } from "../lib/recording";
+
+interface Props {
+  command: string;
+  /** What the verb wrote to the stream it answers on. */
+  body: string;
+  /** Which stream that was. */
+  stream: "stdout" | "stderr";
+  exitCode: number;
+  /** Shown in the chrome, in place of a path. */
+  caption?: string;
+}
+
+const { command, body, stream, exitCode, caption } = Astro.props;
+
+if (!command) {
+  throw new Error("Frame: a recorded frame with no command is not a recording");
+}
+
+/* The session as a terminal held it: the prompt line the recorder ran, then
+ * the answer. Composed from the two recorded fields rather than stored as one
+ * blob, so the command can also be copied on its own. */
+const session = `$ ${command}\n${body.replace(/\n$/, "")}`;
+const rendered = renderRecording(session, "console");
+---
+
+<div class="console frame">
+  <div class="console-chrome">
+    <i aria-hidden="true"></i>
+    <i aria-hidden="true"></i>
+    <i aria-hidden="true"></i>
+    <span class="caption">{caption ?? command}</span>
+    <button type="button" class="copy" data-copy={command} aria-label="Copy the command">
+      Copy
+    </button>
+  </div>
+  <pre set:html={rendered} />
+  <dl class="frame-foot evidence">
+    <dt>answered on</dt>
+    <dd>{stream}</dd>
+    <dt>exit</dt>
+    <dd>{exitCode}</dd>
+  </dl>
+</div>
+
+<script>
+  import { wireCopyButtons } from "../lib/copy";
+  wireCopyButtons();
+</script>
+
+<style>
+  .frame {
+    margin-block-end: 1.5rem;
+  }
+
+  /* The status sits under the recording, in the evidence face, because it is
+   * provenance rather than output: the process said it, the program did not
+   * print it. */
+  .frame-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.2rem;
+    margin: 0;
+    padding: 0.5rem 0.9rem;
+    border-block-start: var(--hair) solid var(--hairline);
+  }
+
+  .frame-foot dt {
+    color: var(--mute);
+  }
+
+  .frame-foot dt::after {
+    content: " ";
+  }
+
+  .frame-foot dd {
+    margin: 0;
+    color: var(--graphite);
+  }
+</style>

@@ -1,0 +1,394 @@
+---
+/**
+ * Downloads, and the verification the installer already does.
+ *
+ * The artifacts come from src/lib/release.ts, which derives them from the
+ * changelog: this page never spells a version or a file name. The passages
+ * about verification are lifted by scripts/download.mjs out of install.sh and
+ * the release workflow, with their line ranges.
+ *
+ * WHAT IS DELIBERATELY ABSENT. A digest and a byte size are facts about a
+ * published artifact, which is on the network, and the build has no network.
+ * So this page tells a reader where the digests are rather than printing
+ * numbers it cannot have read.
+ */
+import Page from "../layouts/Page.astro";
+import Measure from "../components/Measure.astro";
+import Lifted from "./tools/_Lifted.astro";
+import download from "../generated/download.json";
+import { latestRelease, releases, releaseAssets, releaseUrl } from "../lib/release";
+import { SPELLED } from "../lib/lessons";
+
+const base = import.meta.env.BASE_URL;
+
+const release = latestRelease();
+const assets = releaseAssets(release);
+const history = releases();
+
+/* The command a reader runs by hand is the command the installer runs, with
+ * the tool it prefers first. Assembled from what scripts/download.mjs read out
+ * of install.sh, never typed. */
+const [preferred] = download.checkers;
+const digestCommand = (file: string) =>
+  [preferred.tool, preferred.args, file].filter(Boolean).join(" ");
+
+/* The machine each asset is for, as install.sh's own case arms name it: the
+ * `uname` pair it accepts and the target it turns that into. */
+const machineOf = (target: string) =>
+  download.accepted.find((entry) => entry.target === target) ?? null;
+---
+
+<Page
+  kind="TechArticle"
+  title="Download"
+  summary="Every iyi release, the tarball for each machine, and how the installer verifies one before it unpacks anything: it downloads the release's checksum file, refuses a tarball that does not match, and leaves nothing behind when it refuses."
+>
+  <section class="wrap head">
+    <p class="label">Download, <a href={releaseUrl(release)}>version {release.version}</a></p>
+    <h1>A tarball per machine, and a checksum the installer will not skip.</h1>
+    <p class="lede">
+      A release publishes one relocatable tarball per machine and one{" "}
+      <code>{download.checksums}</code> file beside them. The installer
+      downloads that file, compares it, and unpacks nothing when it does not
+      match. Installing by hand, the same check is one command and one look.
+    </p>
+    <div class="hero-cta">
+      <a class="cta" href={releaseUrl(release)}>Release {release.version}, {release.date}</a>
+      <a class="cta ghost" href={`${base}install/`}>The one-line installer</a>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>The artifacts</h2>
+    <p class="sub">
+      Named the way the installer names them, from the version the changelog
+      states. Each row is what you download, the machine it is for, and the
+      command that prints its digest.
+    </p>
+    <ul class="assets">
+      {assets.map((asset) => {
+        const machine = machineOf(asset.target);
+        return (
+          <li>
+            <div class="asset-head">
+              <span class="machine">{asset.machine}</span>
+              <span class="uname">
+                {machine ? `uname says ${machine.uname}` : "no case arm in the installer"}
+              </span>
+            </div>
+            <a class="url" href={asset.url}><code>{asset.file}</code></a>
+            <p class="verify">
+              <span class="label">verify</span>
+              <code>{digestCommand(asset.file)}</code>
+            </p>
+          </li>
+        );
+      })}
+    </ul>
+    <p class="sub">
+      What that prints has to equal the line for the same file in{" "}
+      <a href={releaseUrl(release)}><code>{download.checksums}</code></a>, which
+      is attached to the release. This site does not restate the digests: it
+      cannot read them at build time, and a hash copied by hand is exactly the
+      thing a hash exists to catch. They are on the release page, beside the
+      files they are about.
+    </p>
+    <p class="sub">
+      Where <code>{preferred.tool}</code> is missing, the installer falls back
+      to{" "}
+      {download.checkers.slice(1).map((checker) => (
+        <code>{[checker.tool, checker.args].filter(Boolean).join(" ")}</code>
+      ))}
+      , and refuses to continue when neither is there.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>What the installer checks, in its own words</h2>
+    <p class="sub">
+      This is the passage, not a summary of it. Note the last branch: a release
+      that published no checksum file is said out loud rather than passed over.
+    </p>
+    <Lifted
+      text={download.passages.verify.text}
+      caption="install.sh, download and verify"
+      cite={download.passages.verify.cite}
+    />
+    <div class="cols">
+      <div>
+        <h3>The file it looks for is the file CI writes</h3>
+        <p class="sub">
+          The release job computes the digests over the tarballs it is about to
+          attach, and attaches them too. The installer's name for that file and
+          the job's name for it are checked against each other when this page
+          is generated: if they ever differ, the site fails to build rather
+          than telling you a tarball was verified.
+        </p>
+        <Lifted
+          text={download.passages.publish.text}
+          caption="the release job"
+          cite={download.passages.publish.cite}
+        />
+      </div>
+      <div>
+        <h3>And the refusal is tested</h3>
+        <p class="sub">
+          Before any of that ships, CI corrupts one digit of the published
+          checksum file, runs the installer against it, and requires three
+          things: that it fails, that it fails with its own sentence, and that
+          no binary is left behind.
+        </p>
+        <Lifted
+          text={download.passages.tamper.text}
+          caption="the gate over the installer"
+          cite={download.passages.tamper.cite}
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Machines it refuses</h2>
+    <p class="sub">
+      Releases ship {download.accepted.map((entry) => entry.target).join(" and ")},
+      and the installer names what it will not do rather than guessing. Anything
+      else gets this sentence and a pointer to building from source:
+    </p>
+    <p class="refusal"><code>{download.refused}</code></p>
+    <Lifted
+      text={download.passages.refusal.text}
+      caption="install.sh, the uname case"
+      cite={download.passages.refusal.cite}
+    />
+    <p class="sub">
+      Other platforms build from source. The compiler cross-compiles for{" "}
+      <a href={`${base}targets/`}><Measure of="targets" /> targets</a>; these
+      are the ones a release job produces a tarball for.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>The knobs</h2>
+    <p class="sub">
+      The script documents {SPELLED[download.knobs.length]} environment
+      variables and reads exactly those:
+    </p>
+    <dl class="knobs">
+      {download.knobs.map((knob) => (
+        <div class="knob">
+          <dt><code>{knob.name}</code></dt>
+          <dd>
+            <p>{knob.explanation}</p>
+            {knob.fallback ? (
+              <p class="default">defaults to <code>{knob.fallback}</code></p>
+            ) : (
+              <p class="default">unset by default</p>
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+    <Lifted
+      text={download.passages.knobs.text}
+      caption="install.sh, the header"
+      cite={download.passages.knobs.cite}
+    />
+  </section>
+
+  <section class="wrap">
+    <h2>Every release</h2>
+    <p class="sub">
+      The notes for each are on its own page in the repository, written from
+      the tag's own message. This site does not publish the changelog.
+    </p>
+    <ul class="history">
+      {history.map((entry) => (
+        <li>
+          <a href={releaseUrl(entry)}><code>{entry.version}</code></a>
+          <span>{entry.date}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="wrap next">
+    <h2>Then</h2>
+    <div class="hero-cta">
+      <a class="cta" href={`${base}install/`}>Install it</a>
+      <a class="cta ghost" href={`${base}tools/`}>The tools</a>
+      <a class="cta ghost" href={`${base}playground/`}>Try it first</a>
+    </div>
+    <dl class="evidence">
+      <dt>generated by</dt>
+      <dd>{download.provenance.generator}</dd>
+      <dt>quoted from</dt>
+      <dd>{download.provenance.source}</dd>
+      <dt>at commit</dt>
+      <dd>{download.provenance.commit}</dd>
+    </dl>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+      max-width: 22ch;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1.4rem;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.6rem;
+    }
+
+    h3 {
+      font-size: var(--step-0);
+      margin-block-end: 0.4rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1rem;
+    }
+
+    /* One block per tarball: machine, file, and the command that checks it.
+     * The command is on the page rather than in a paragraph about it, because
+     * a reader who is verifying is at a prompt. */
+    .assets {
+      list-style: none;
+      margin: 0 0 1.2rem;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+      gap: 1rem;
+    }
+
+    .assets li {
+      border: var(--hair) solid var(--hairline);
+      border-radius: 2px;
+      padding: 0.9rem 1.1rem;
+      background: var(--raise);
+    }
+
+    .asset-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.2rem 1rem;
+    }
+
+    .machine {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .uname {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+    }
+
+    .assets .url {
+      display: block;
+      margin-block: 0.45rem;
+      word-break: break-all;
+    }
+
+    .verify {
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .refusal {
+      max-width: 70ch;
+      margin-block-end: 1rem;
+    }
+
+    .refusal code {
+      white-space: normal;
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: clamp(1.2rem, 3vw, 2.5rem);
+      align-items: start;
+    }
+
+    .knobs {
+      margin: 0 0 1rem;
+      display: grid;
+      gap: 0.8rem;
+      max-width: 62ch;
+    }
+
+    .knob {
+      padding-block-end: 0.7rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .knob dd {
+      margin: 0.25rem 0 0;
+      color: var(--graphite);
+    }
+
+    .knob p {
+      margin: 0;
+    }
+
+    .default {
+      font-size: var(--step--1);
+      color: var(--mute);
+      margin-block-start: 0.2rem;
+    }
+
+    .history {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+      gap: 0.35rem 1.5rem;
+      max-width: 60rem;
+    }
+
+    .history li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+      padding-block-end: 0.35rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      color: var(--graphite);
+      font-size: var(--step--1);
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-block-end: 1.5rem;
+    }
+  </style>
+</Page>

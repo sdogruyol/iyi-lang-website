@@ -1,0 +1,130 @@
+/* Print.
+ *
+ * There was no `@media print` anywhere on this site, and the five lessons are
+ * a printed surface: they are the one long-form thing here, they are what a
+ * reader takes into a meeting or marks up, and a language tutorial has been
+ * printed by somebody on the day it was published since tutorials existed.
+ *
+ * What the default printout did wrong, in the order it matters.
+ *
+ * IT TRUNCATED THE CODE. `.source` and `.diagnostic` clip a long line and
+ * offer a scrollbar, and paper has no scrollbar: every listing wider than the
+ * measure lost its right-hand end silently, with no mark to say so. On a site
+ * whose argument is carried by real listings and by the exact bytes a compiler
+ * printed, a page that quietly amputates them is worse than one that refuses
+ * to print. They wrap here instead.
+ *
+ * IT PRINTED THE FURNITURE. A masthead, a hamburger that cannot be tapped and
+ * a footer nav of links that cannot be clicked, all charged to the reader's
+ * toner. Gone.
+ *
+ * IT DROPPED THE LINKS. A link on paper is the colour it was and nothing else,
+ * so its destination is lost. Prose links print their href.
+ *
+ * IT KEPT THE PROVENANCE, and that is the one thing the default got right, so
+ * nothing here touches the evidence rails, the citation footers or the
+ * measurement cards. A figure without the machine that measured it is exactly
+ * what this publication refuses, and it does not stop refusing it on paper.
+ *
+ * The palette is the light one. `tokens.css` pins its dark scheme to `screen`
+ * for that reason, so nothing here has to restate a colour.
+ */
+
+@media print {
+  @page {
+    margin: 18mm;
+  }
+
+  body {
+    background: none;
+  }
+
+  /* Furniture. The skip link, the masthead and its menu button, the footer's
+   * link list, and every control: a control on paper is a lie about what the
+   * page can do. */
+  .skip,
+  .masthead,
+  .menu-toggle,
+  .colophon-links,
+  .copy,
+  .replay,
+  .decl-toggle {
+    display: none;
+  }
+
+  /* The listing, unclipped. `pre-wrap` keeps every space and newline the
+   * compiler or the sample wrote, which is the whole point of a verbatim
+   * block, and only adds breaks where the paper runs out. `overflow: visible`
+   * on the pane is what actually stops the clip; without it the wrap has
+   * nothing to wrap into. */
+  .scroll-x,
+  .source,
+  .diagnostic,
+  .console {
+    overflow: visible;
+  }
+
+  .source pre,
+  .source code,
+  .diagnostic pre,
+  .console pre,
+  .prose > pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* The comparison table is held open on screen by a minimum width so its
+   * columns do not collapse into a stack of words. Paper is narrower than that
+   * minimum, so the minimum has to go or the table walks off the sheet. The
+   * pane is named in the selector to outweigh the component's own rule, which
+   * Astro scopes with `:where()` and therefore does not make more specific. */
+  .compare .scroll-x table {
+    min-width: 0;
+  }
+
+  /* Where a link went. Restricted to running text: a nav row or a card would
+   * print its own href beside a label that already says the same thing, and a
+   * fragment link points into the page the reader is holding. */
+  .prose a[href]:not([href^="#"])::after,
+  p a[href]:not([href^="#"])::after,
+  dd a[href]:not([href^="#"])::after,
+  figcaption a[href]:not([href^="#"])::after {
+    content: " (" attr(href) ")";
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--graphite);
+    overflow-wrap: anywhere;
+  }
+
+  /* The measurement, in ink. A browser prints background colours only when the
+   * reader has asked it to, and the duration chart draws its bars and its
+   * track as backgrounds: without this the figure prints as a row of empty
+   * boxes with the readings floating beside nothing. The bars are the
+   * measurement, so they are the one thing on the page allowed to insist. */
+  .chart .bar,
+  .chart .track,
+  .chart .whisker,
+  .console-chrome i {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Nothing that is one piece of evidence is split over two sheets, and no
+   * heading is left stranded at the foot of one. */
+  figure,
+  .source,
+  .diagnostic,
+  .console,
+  .chart,
+  .evidence,
+  .break {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+  }
+}

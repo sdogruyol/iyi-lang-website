@@ -99,26 +99,44 @@ const hi = Math.max(...ratios);
 </div>
 
 <script>
-  // Run once when seen, not on a loop. Honour reduced motion by showing the
-  // finished state rather than by animating faster: the animation IS the
-  // measurement, so a shortened one would be a false reading.
+  // Run once when seen, not on a loop.
+  //
+  // THE DEFECT THIS SHAPE EXISTS TO PREVENT. This script used to be what made
+  // the figure appear: the bars were `width: 0` and the readings `opacity: 0`
+  // in CSS, and only the classes added here granted them a size. With scripts
+  // blocked, the home page's and the why page's flagship evidence rendered as
+  // an empty frame. On a site whose whole rule is that a figure has to be
+  // visible to be checkable, the measurement was the one thing that was not.
+  //
+  // So the settled state is now the default in the stylesheet, and this script
+  // only ever ADDS an animation that starts from zero and lands back on it.
+  // Take the script away and the chart is a finished bar chart; take the
+  // animation away and nothing is lost but the pacing.
+  //
+  // Reduced motion is honoured by doing nothing at all, rather than by
+  // animating faster: the animation IS the measurement, so a shortened one
+  // would be a false reading. The stylesheet pins the same thing, because a
+  // preference that only a running script respects is not respected.
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   document.querySelectorAll<HTMLElement>(".chart").forEach((chart) => {
+    if (reduce.matches) return;
+
+    // The replay control is hidden until this line, for the same reason the
+    // masthead's menu button is: a control that cannot do anything is not
+    // offered.
+    chart.dataset.js = "true";
+
     const play = () => {
-      chart.classList.remove("running", "settled");
+      chart.classList.remove("running");
       // Force a reflow so re-adding the class restarts the animation.
       void chart.offsetWidth;
-      if (reduce.matches) {
-        chart.classList.add("settled");
-        return;
-      }
       chart.classList.add("running");
       const slowest = Number(chart.dataset.slowest ?? "0");
-      window.setTimeout(
-        () => chart.classList.add("settled"),
-        slowest * 1000 + 60,
-      );
+      // Dropping `running` after the slowest bar has landed hands the figure
+      // back to the default rules, which draw the same thing the animation
+      // ended on. There is no third state to keep in step.
+      window.setTimeout(() => chart.classList.remove("running"), slowest * 1000 + 60);
     };
 
     chart
@@ -156,17 +174,25 @@ const hi = Math.max(...ratios);
     border-block-end: var(--hair) solid var(--hairline);
   }
 
+  /* Offered only once the script has claimed the chart, because without one
+   * there is no animation to run again and a dead control is worse than no
+   * control. Same `data-js` handshake the masthead's menu button uses. */
   .replay {
+    display: none;
     font-family: var(--font-mono);
     font-size: var(--step--2);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--graphite);
     background: none;
-    border: var(--hair) solid var(--hairline);
+    border: var(--hair) solid var(--boundary);
     border-radius: 2px;
     padding: 0.22rem 0.55rem;
     cursor: pointer;
+  }
+
+  .chart[data-js="true"] .replay {
+    display: inline-block;
   }
 
   .replay:hover {
@@ -241,12 +267,21 @@ const hi = Math.max(...ratios);
   }
 
   /* The bar is ink. A win is never coloured: the signal red on this site means
-   * a loss or a caveat, and iyi wins this row. */
+   * a loss or a caveat, and iyi wins this row.
+   *
+   * SETTLED IS THE DEFAULT, and this is the load-bearing line of the file.
+   * `--to` and `--at` are written into the built HTML as inline custom
+   * properties by the frontmatter above, so the finished chart is in the
+   * document before a single byte of script runs. The rules under `.running`
+   * below take it away and give it back at real speed; they are the animation,
+   * not the drawing. This was the other way round, and the flagship
+   * measurement on the home page rendered as an empty frame with scripting
+   * off. */
   .bar {
     position: absolute;
     left: 0;
     height: 15px;
-    width: 0;
+    width: var(--to);
     background: var(--ink);
     border-radius: 2px;
   }
@@ -259,11 +294,12 @@ const hi = Math.max(...ratios);
     font-size: var(--step--2);
     font-weight: 600;
     color: var(--ink);
-    opacity: 0;
     white-space: nowrap;
   }
 
-  /* Real time: the bar takes exactly as long as the build took. */
+  /* Real time: the bar takes exactly as long as the build took. `forwards`
+   * holds the end state, which is the state the element already had, so
+   * dropping `.running` when the run finishes is a no-op the eye cannot see. */
   .chart.running .bar {
     animation: grow var(--dur) linear forwards;
   }
@@ -272,15 +308,21 @@ const hi = Math.max(...ratios);
     animation: reveal var(--dur) steps(1, end) forwards;
   }
 
-  /* After the run, and for reduced motion, the finished reading stands. */
-  .chart.settled .bar {
-    animation: none;
-    width: var(--to);
-  }
+  /* The preference, pinned in CSS and not only in the script. The script does
+   * check it, but a reader with scripting off has the preference too, and a
+   * reader whose script fails to run has it as well. Nothing is hidden here:
+   * the default above is already the finished figure, so all this removes is
+   * the motion, which is what was asked for. */
+  @media (prefers-reduced-motion: reduce) {
+    .chart.running .bar,
+    .chart.running .reading {
+      animation: none;
+    }
 
-  .chart.settled .reading {
-    animation: none;
-    opacity: 1;
+    .replay,
+    .chart[data-js="true"] .replay {
+      display: none;
+    }
   }
 
   @keyframes grow {

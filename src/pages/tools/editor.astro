@@ -1,0 +1,207 @@
+---
+/**
+ * Every block on this page is lifted by scripts/editors.mjs out of
+ * editors/README.md in the iyi tree, or read out of editors/vscode/. Nothing
+ * here is a configuration this site wrote: a stanza that works in the
+ * repository and not on the page would be a stanza somebody pastes into their
+ * editor and then debugs.
+ */
+import Page from "../../layouts/Page.astro";
+import Lifted from "./_Lifted.astro";
+import editors from "../../generated/editors.json";
+
+const base = import.meta.env.BASE_URL;
+
+interface Block {
+  kind: string;
+  html?: string;
+  items?: string[];
+  ordered?: boolean;
+}
+
+interface Stanza {
+  lang: string;
+  text: string;
+  from: number;
+  to: number;
+  cite: string;
+}
+
+interface Client {
+  id: string;
+  heading: string;
+  from: number;
+  prose: Block[];
+  stanza: Stanza | null;
+}
+
+const preamble = editors.preamble as unknown as Block[];
+const clients = editors.clients as unknown as Client[];
+const extension = editors.extension;
+const manifest = extension.manifest;
+---
+
+<Page
+  kind="TechArticle"
+  title="Editors"
+  summary="iyi lsp speaks the Language Server Protocol over stdio, so setup is one command and no grammar file. The stanzas for VS Code, Neovim, Helix, Sublime Text and Zed, quoted from the repository's own editors guide."
+>
+  <section class="wrap head">
+    <p class="label">Tools, editors</p>
+    <h1>Point the client at the command.</h1>
+    <p class="lede">
+      <code>iyi lsp</code> speaks the Language Server Protocol over stdio, so
+      setup is a command and a file association: diagnostics, completion,
+      hover, rename and highlighting all arrive through the protocol, and no
+      editor needs a grammar file for <code>.iyi</code>. The one prerequisite
+      is <code>iyi</code> on your <code>PATH</code>.
+    </p>
+    <p class="lede">
+      Every stanza below is quoted from <code>{editors.guide.source}</code> in
+      the compiler's tree with the lines it came from, so what you paste is
+      what the repository tests.
+    </p>
+  </section>
+
+  {clients.map((client) => (
+    <section class="wrap client">
+      <h2>{client.heading}</h2>
+      {client.stanza ? (
+        <Lifted
+          text={client.stanza.text}
+          caption={`${client.heading}, ${client.stanza.lang}`}
+          cite={client.stanza.cite}
+          href={editors.guide.url}
+        />
+      ) : (
+        <p class="sub none">
+          The guide gives this one no stanza, so this page has none to show.
+          What exists is the server side, which is the same for every client.
+        </p>
+      )}
+    </section>
+  ))}
+
+  <section class="wrap next">
+    <p class="sub">
+      The VS Code extension is a client and nothing else:{" "}
+      <a href={extension.url}><code>{extension.path}</code></a> is{" "}
+      {extension.lines} lines over {extension.files.length} files, of which the
+      part that spawns the server is {extension.client.lines}.
+    </p>
+    <div class="hero-cta">
+      <a class="cta" href={`${base}install/`}>Install iyi</a>
+      <a class="cta ghost" href={`${base}tools/mcp/`}>The agent side</a>
+      <a class="cta ghost" href={`${base}tools/cli/`}>Every verb</a>
+    </div>
+    <dl class="evidence">
+      <dt>lifted by</dt>
+      <dd>
+        {editors.provenance.generator} from {editors.provenance.source} and{" "}
+        {editors.provenance.extension}, at {editors.provenance.commit}
+      </dd>
+    </dl>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 60ch;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.6rem;
+    }
+
+    h3 {
+      font-size: var(--step-0);
+      margin-block-end: 0.4rem;
+    }
+
+    .sub,
+    .quoted {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 0.8rem;
+    }
+
+    /* The guide's own paragraphs, marked as somebody else's sentences the way
+     * the rest of the site marks a recording: an edge, not a quotation mark. */
+    .quoted {
+      border-inline-start: var(--hair) solid var(--hairline);
+      padding-inline-start: 0.9rem;
+    }
+
+    .cites {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+    }
+
+    .client h2 {
+      font-size: var(--step-1);
+    }
+
+    .none {
+      color: var(--mute);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+      gap: clamp(1.2rem, 3vw, 2.5rem);
+    }
+
+    .files {
+      list-style: none;
+      margin: 0 0 0.8rem;
+      padding: 0;
+      display: grid;
+      gap: 0.35rem;
+      font-size: var(--step--1);
+    }
+
+    .files li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-block-end: 0.35rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      color: var(--graphite);
+    }
+
+    .points {
+      list-style: none;
+      margin: 0 0 0.8rem;
+      padding: 0;
+      display: grid;
+      gap: 0.5rem;
+      color: var(--graphite);
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-block-end: 1.5rem;
+    }
+  </style>
+</Page>

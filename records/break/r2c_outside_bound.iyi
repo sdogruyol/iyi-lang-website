@@ -1,0 +1,40 @@
+# Breaks R-2c: a def whose parameters and return are all written is typed at
+# its definition, caller or no caller, and a trait-restricted parameter is
+# typed against exactly its bound. Two halves of the rule fail here at once.
+#
+# Nothing in this file calls `loudest`, so under the lazy typing iyi inherited
+# from Crystal its body would never be visited and the build would report
+# itself clean. And `User`, the only implementer of `Greet` in the program, has
+# a `shout` of its own: duck-typed generics would have found it and compiled.
+# `Greet` declares `greet` and nothing else, so the body reaches outside the
+# bound it wrote down, and the message names the witness type the compiler
+# synthesized to type it (SPEC.md R-2c;
+# src/compiler/iyi/semantic/definition_typing.cr).
+module diagnostics/r2c_outside_bound
+
+pub trait Greet
+  abstract def greet : String
+end
+
+pub struct User
+  getter name : String
+
+  def initialize(@name : String)
+  end
+
+  # Present on the concrete type, and irrelevant to the def below: the bound is
+  # what that body is typed against, not whatever happens to implement it.
+  def shout : String
+    "HELLO"
+  end
+end
+
+impl Greet for User
+  def greet : String
+    "Hello, #{name}."
+  end
+end
+
+pub def loudest(g : Greet) : String
+  g.shout
+end

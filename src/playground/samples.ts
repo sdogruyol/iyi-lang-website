@@ -21,16 +21,25 @@
  * path the recording does not cover, which is a caller's signal to say so in
  * words rather than to render a link that leads to nothing.
  *
- * ONE THING THIS MODULE DELIBERATELY DOES NOT DO: reach the highlight record.
- * The engine imports this file, the engine runs in the browser, so anything
- * this file imports is shipped to every visitor of a playground page. The wasm
- * manifest is thirteen small entries and is genuinely needed at run time, to
- * check a module's digest before instantiating it. The highlight record is a
- * quarter of a megabyte of listings and belongs to the build. Importing it here
- * once put all of it in the playground's client bundle, an order of magnitude
- * more JavaScript than the page's other island. A site arguing that a
- * program should link only what it uses does not get to ship that, so recorded
- * source text is read from `src/lib/highlight.ts` by the build only.
+ * THIS MODULE IS THE BUILD'S, AND ONLY THE BUILD'S. It imports the whole wasm
+ * manifest, so anything that imports it ships the whole wasm manifest. That is
+ * exactly what went wrong: the engine imported this file to look a sample up,
+ * the playground island imports the engine, and so every visitor of every
+ * sample page was served the manifest entry, the recorded native output and
+ * the recorded wasm output of every other sample in order to check one digest.
+ * The manifest is one entry per curated sample and the entries carry both
+ * runs' output; that is the right shape for a record and the wrong shape for
+ * a page.
+ *
+ * The fix is a slice rather than a rule nobody can see: `scripts/records.mjs`
+ * writes one small entry per sample into `src/generated/playground/`, the
+ * route imports the one it renders, and `src/playground/entry.ts` is what the
+ * browser gets. So this module is imported by pages, by the recorder-facing
+ * helpers and by `llms.txt`, all of which run in node, and by nothing that
+ * runs in a browser. The same reasoning already kept the highlight record out
+ * of here, a quarter of a megabyte of listings which the build reads through
+ * `src/lib/highlight.ts` instead. A site arguing that a program should link
+ * only what it uses does not get to ship either one.
  */
 import manifest from "../../records/wasm/manifest.json";
 import toc from "../../samples/tour/tour.json";

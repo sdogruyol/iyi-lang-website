@@ -29,6 +29,28 @@ a file in this tree.
 A citation may carry a line number (`src/raise.cr:240`) or a range
 (`src/raise.cr:240-245`), and it may end in a glob (`src/compiler/iyi/*`).
 Both are resolved to the thing on disk that has to exist.
+
+ONE CLAIM, NOT ONLY THE PATH. Resolving paths leaves a blind spot, and it is
+how `doc/ART-DIRECTION.md` came to say that a diagnostic footer "links to the
+spec" when no such link was ever in the built HTML: every path in the sentence
+resolved, and the sentence was still false. Most of that blind spot cannot be
+closed cheaply - a claim about the built page needs the built page - but one
+corner of it can, and it is the corner where these documents actually
+transcribe machine values: the palette table states a hex for a token that
+`src/styles/tokens.css` declares.
+
+So a line that puts a backticked custom property beside a backticked hex is
+read as a statement about that declaration, and the declaration has to say the
+same thing. A token the stylesheet does not declare, a value that has moved,
+and a hex written for a token that is an alias of another are each a failure
+naming the line.
+
+Nothing else about a token is checked, which is what keeps this narrow enough
+to stay switched on. A property mentioned without a value is left alone,
+because `--crystal` and `--budget` are command line flags and no shape tells
+them from a custom property; only the hex beside it makes the sentence a claim
+about the stylesheet. And a token the stylesheet declares but no document
+mentions is not a defect: these documents are an argument, not an inventory.
 """
 
 from __future__ import annotations
@@ -67,6 +89,94 @@ CANDIDATE = re.compile(r"`([^`\n]+)`|\]\(([^)\s]+)\)")
 
 # Trailing punctuation a sentence leaves on a path.
 TRAILING = ".,;:!?)"
+
+# The stylesheet the palette table is a statement about, the block that holds
+# the values, and the shape of a declaration in it. Only the base `:root` block
+# is read: a later block redeclares a token under a condition
+# (`prefers-color-scheme: dark` points each name at its own dark literal), and
+# that is a second context rather than a second value for the one the table
+# states. Reading the whole file instead reports every light value as an alias.
+TOKENS = "src/styles/tokens.css"
+BASE = re.compile(r"^:root\s*\{\n(.*?)^\}", re.S | re.M)
+DECLARATION = re.compile(r"^\s*(--[a-z0-9-]+):\s*([^;]+);", re.M)
+
+# A line of a document that states a value for a token: one property, one hex,
+# nothing to guess about which belongs to which. A row naming two of either is
+# left alone rather than paired by position.
+PROPERTY = re.compile(r"`(--[a-z0-9-]+)`")
+HEX = re.compile(r"`(#[0-9a-fA-F]{3,8})`")
+
+
+def declared() -> dict[str, str]:
+    """Every custom property `tokens.css` declares at the base, and its value."""
+    path = SITE / TOKENS
+    try:
+        text = path.read_text()
+    except OSError:
+        raise SystemExit(
+            f"bench/website_citations.py: cannot read {TOKENS}, which is where "
+            f"this site's palette is committed. Without it the values the "
+            f"documents state cannot be checked against anything."
+        )
+    base = BASE.search(text)
+    if not base:
+        raise SystemExit(
+            f"bench/website_citations.py: {TOKENS} has no top-level `:root` "
+            f"block, so the palette this check reads has moved and it is "
+            f"checking nothing."
+        )
+    tokens = {name: value.strip() for name, value in DECLARATION.findall(base.group(1))}
+    if not tokens:
+        raise SystemExit(
+            f"bench/website_citations.py: {TOKENS} declares no custom property "
+            f"in the shape `--name: value;`, so this check is checking "
+            f"nothing. Follow the file if the declarations moved."
+        )
+    return tokens
+
+
+def stated_colours(tokens: dict[str, str]) -> tuple[list[str], list[str]]:
+    """What the documents say each token's value is, checked against it.
+
+    Returns the lines that check out and the ones that do not, because a
+    document stating nine values and a stylesheet declaring them is evidence
+    worth printing under `--list` as well as a failure worth stopping for.
+    """
+    found: list[str] = []
+    wrong: list[str] = []
+    for doc in DOCS:
+        rel = doc.relative_to(SITE).as_posix()
+        for n, line in enumerate(doc.read_text().splitlines(), 1):
+            names = PROPERTY.findall(line)
+            values = HEX.findall(line)
+            if len(names) != 1 or len(values) != 1:
+                continue
+            name, stated = names[0], values[0]
+            where = f"{rel}:{n}"
+            if name not in tokens:
+                wrong.append(
+                    f"{where}  states {stated} for `{name}`, which {TOKENS} "
+                    f"does not declare. A renamed token leaves a sentence "
+                    f"about a colour nothing on the site has."
+                )
+                continue
+            value = tokens[name]
+            if value.startswith("var("):
+                wrong.append(
+                    f"{where}  states {stated} for `{name}`, but {TOKENS} "
+                    f"declares it as {value}. An alias has no value of its "
+                    f"own, so this writes down a second copy of the one it "
+                    f"points at."
+                )
+                continue
+            if value.lower() != stated.lower():
+                wrong.append(
+                    f"{where}  states {stated} for `{name}`, {TOKENS} declares "
+                    f"{value}. The palette moved and the document did not."
+                )
+                continue
+            found.append(f"ok    {name} = {value}  ({where})")
+    return found, wrong
 
 
 def top_level() -> set[str]:
@@ -168,12 +278,16 @@ def main() -> int:
         return any((root / path).exists() for root in roots(path)) or ignored(path)
 
     missing = {p: w for p, w in seen.items() if not resolves(p)}
+    values, contradicted = stated_colours(declared())
 
     if show_all:
         for path in sorted(seen):
             where = ", ".join(f"{d}:{n}" for d, n in seen[path][:3])
             mark = "GONE" if path in missing else "ok  "
             print(f"{mark}  {path}  ({where})")
+        print()
+        for line in values:
+            print(line)
         print()
 
     if missing:
@@ -189,11 +303,27 @@ def main() -> int:
             "a transcribed number. Follow the file if it moved, or drop the\n"
             "citation if the claim no longer stands."
         )
+
+    if contradicted:
+        print("A WEBSITE DOCUMENT STATES A COLOUR THE STYLESHEET DOES NOT")
+        print()
+        for line in contradicted:
+            print(f"  {line}")
+        print()
+        print(
+            f"The palette is committed in {TOKENS} and the document restates\n"
+            "it, so the two are one claim written twice. Take the value from\n"
+            "the stylesheet, or drop the column: a table of colours the site\n"
+            "does not use reads as evidence and is not."
+        )
+
+    if missing or contradicted:
         return 1
 
     print(
         f"website citations: {len(seen)} paths cited across {len(DOCS)} documents, "
-        "every one resolves"
+        f"every one resolves; {len(values)} colour values stated, every one is "
+        f"what {TOKENS} declares"
     )
     return 0
 

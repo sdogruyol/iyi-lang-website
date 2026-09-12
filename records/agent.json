@@ -1,0 +1,185 @@
+{
+  "recorded": {
+    "compiler": "iyi 0.12.0 (built on Crystal 1.22.0-dev [44b843563] (2026-09-11))",
+    "commit": "415dc4bbe879e630ea6b5c3f9232d97fa56345fe",
+    "machine": "Linux 7.2.4-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
+    "command": "npm run record:agent",
+    "when": "2026-09-12T06:00:41.069Z"
+  },
+  "project": [
+    {
+      "path": "records/agent/app/greeter.iyi",
+      "name": "app/greeter.iyi",
+      "text": "# The dependency. Its exported surface is the whole of what a consumer, or an\n# agent editing one, is allowed to know: two functions with their types\n# written down, and a trait. `greeting` has no `pub`, so it is this module's\n# own business and appears in no consumer's grounding (SPEC.md R-1, IV.2).\nmodule app/greeter\n\npub trait Greet\n  abstract def greet : String\nend\n\n# The exported surface carries its doc comment, so the grounding pack an agent\n# reads says what the function is for and not only what it takes.\npub def polite(name : String) : String\n  \"#{greeting}, #{name}.\"\nend\n\npub def shout(name : String) : String\n  \"#{greeting.upcase}, #{name.upcase}!\"\nend\n\ndef greeting : String\n  \"Hello\"\nend\n",
+      "lines": 23,
+      "bytes": 707
+    },
+    {
+      "path": "records/agent/app.iyi",
+      "name": "app.iyi",
+      "text": "# The file being edited, in the state an agent meets it: one call misspelled.\n# The compiler knows the name it meant, so `iyi check -f json` carries a\n# `suggested_edit` with the exact replacement span and `iyi fix` applies it.\nmodule app\n\nimport app/greeter\nusing app/greeter\n\npub def main : Int32\n  puts polit(\"Türkiye\")\n  0\nend\n",
+      "lines": 12,
+      "bytes": 332
+    },
+    {
+      "path": "records/agent/app_test.iyi",
+      "name": "app_test.iyi",
+      "text": "# A test is a plain program that exits non-zero when it fails; the prelude's\n# `assert` is that in one word. No framework, so nothing here has to be\n# learned before it can be read.\nmodule app/app_test\n\nimport app/greeter\nusing app/greeter\n\nassert polite(\"iyi\") == \"Hello, iyi.\", \"polite greets\"\nassert shout(\"iyi\") == \"HELLO, IYI!\", \"shout shouts\"\n",
+      "lines": 10,
+      "bytes": 349
+    },
+    {
+      "path": "records/agent/other.iyi",
+      "name": "other.iyi",
+      "text": "# Imported by nothing. It is here so `iyi test --affected` has a change it can\n# prove no test reaches, which is the half of test selection that is easy to\n# claim and hard to show.\nmodule app/other\n\npub def unrelated : Int32\n  0\nend\n",
+      "lines": 8,
+      "bytes": 234
+    }
+  ],
+  "frames": [
+    {
+      "id": "ground",
+      "title": "Read the interface, not the repository",
+      "note": "Every import's exported surface as data: signatures, doc comments and the interface hash they are keyed by, with no body anywhere in it. Read out of source, without compiling the file being edited, so it is available while the program is still wrong.",
+      "command": "iyi mod context --json app.iyi",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "{\"file\":\"agent/app.iyi\",\"imports\":[{\"import\":\"app/greeter\",\"api\":{\"module\":\"app/greeter\",\"interface_hash\":\"14c937d996cd42f50dcce4594c179cca\",\"functions\":[{\"name\":\"polite\",\"parameters\":[\"name : String\"],\"returns\":\"String\",\"doc\":\"The exported surface carries its doc comment, so the grounding pack an agent\\nreads says what the function is for and not only what it takes.\",\"rendered\":\"def polite(name : String) : String\"},{\"name\":\"shout\",\"parameters\":[\"name : String\"],\"returns\":\"String\",\"rendered\":\"def shout(name : String) : String\"}],\"types\":[{\"name\":\"Greet\",\"kind\":\"trait\",\"visibility\":\"pub\",\"methods\":[{\"name\":\"greet\",\"parameters\":[],\"returns\":\"String\",\"required\":true,\"rendered\":\"abstract def greet : String\"}]}],\"impls\":[]}}]}\n",
+      "stderr": ""
+    },
+    {
+      "id": "check",
+      "title": "The verdict as data",
+      "note": "`check` is a build with no codegen and its name said plainly. Under `-f json` each error is a record: the file, the line, the column, the span's size, the message, and a `suggested_edit` naming the exact replacement when the compiler knows one.",
+      "command": "iyi check -f json app.iyi",
+      "exitCode": 1,
+      "payload": "stderr",
+      "stdout": "",
+      "stderr": "[{\"file\":\"agent/app.iyi\",\"line\":2,\"column\":28,\"size\":4,\"message\":\"instantiating 'App.main()'\"},{\"file\":\"agent/app.iyi\",\"line\":10,\"column\":8,\"size\":5,\"message\":\"undefined method 'polit' for App:Module\\nDid you mean 'polite'?\",\"suggested_edit\":{\"file\":\"agent/app.iyi\",\"line\":10,\"column\":8,\"size\":5,\"replacement\":\"polite\"}}]\n"
+    },
+    {
+      "id": "fix",
+      "title": "Apply the compiler's own edit",
+      "note": "`fix` applies the suggested edits and recompiles after each one, until the file is clean or an error carries no edit. The agent spends no round on a repair the compiler already knows how to make.",
+      "command": "iyi fix app.iyi",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "fixed app.iyi:10:8: 'polit' -> 'polite'\n",
+      "stderr": ""
+    },
+    {
+      "id": "clean",
+      "title": "Green, and silent about it",
+      "note": "The verdict is the exit code, so a clean program prints nothing. There is no output for a harness to parse for the word success.",
+      "command": "iyi check app.iyi",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "id": "affected-hit",
+      "title": "Re-run what the change reaches",
+      "note": "A test is affected exactly when the changed file is in its transitive import closure. The closure is parsed, never compiled, because R-1 makes the import list syntax.",
+      "command": "iyi test --affected app/greeter.iyi",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "1 passed, 0 failed\n",
+      "stderr": ""
+    },
+    {
+      "id": "affected-miss",
+      "title": "And skip what it does not",
+      "note": "The same question about a module nothing imports. The selection is exact, so the skip is a fact rather than an optimisation that might be wrong.",
+      "command": "iyi test --affected other.iyi",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "0 to run, 1 skipped: no test's imports reach the change\n",
+      "stderr": ""
+    },
+    {
+      "id": "tests-json",
+      "title": "The run as data",
+      "note": "`--json` for a harness that has to read the result rather than a person who reads it.",
+      "command": "iyi test --json .",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "{\"tests\":[{\"file\":\"./app_test.iyi\",\"status\":\"pass\",\"seconds\":0.312}],\"passed\":1,\"failed\":0,\"skipped\":0}\n",
+      "stderr": ""
+    },
+    {
+      "id": "diff-body",
+      "title": "A body moved, so nobody rebuilds",
+      "note": "One module's greeting changed and its declarations did not. `mod diff` reads the two artifacts and answers whether the change reaches anyone, which is the question the whole rule exists to make answerable.",
+      "command": "iyi mod diff before/app/greeter.iyimod after-body/app/greeter.iyimod",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "module          app/greeter\ninterface       unchanged  what a consumer type-checks against\nimplementation  unchanged  the bodies a consumer compiles: macros, generics, the initialiser\nsource          changed    the file\n\nConsumers do not have to be rebuilt: what they compile against is the same.\n",
+      "stderr": ""
+    },
+    {
+      "id": "diff-api",
+      "title": "A declaration moved, so they do",
+      "note": "The same file again, with one exported signature written differently. The artifact names what went and what arrived, so a consumer's rebuild is a consequence rather than a guess.",
+      "command": "iyi mod diff before/app/greeter.iyimod after-api/app/greeter.iyimod",
+      "exitCode": 0,
+      "payload": "stdout",
+      "stdout": "module          app/greeter\ninterface       changed    what a consumer type-checks against\nimplementation  unchanged  the bodies a consumer compiles: macros, generics, the initialiser\nsource          changed    the file\n\n  gone   def shout(name : String) : String\n  new    def shout(name : String, times : Int32) : String\n\nConsumers have to be rebuilt: what they compile against moved.\n",
+      "stderr": ""
+    }
+  ],
+  "pack": {
+    "imports": [
+      "app/greeter"
+    ],
+    "bytes": 731,
+    "sourceBytes": 707,
+    "interfaceHashes": {
+      "app/greeter": "14c937d996cd42f50dcce4594c179cca"
+    }
+  },
+  "suggested": [
+    {
+      "file": "agent/app.iyi",
+      "line": 10,
+      "column": 8,
+      "size": 5,
+      "replacement": "polite"
+    }
+  ],
+  "repaired": {
+    "text": "# The file being edited, in the state an agent meets it: one call misspelled.\n# The compiler knows the name it meant, so `iyi check -f json` carries a\n# `suggested_edit` with the exact replacement span and `iyi fix` applies it.\nmodule app\n\nimport app/greeter\nusing app/greeter\n\npub def main : Int32\n  puts polite(\"Türkiye\")\n  0\nend\n",
+    "changed": [
+      {
+        "line": 10,
+        "before": "  puts polit(\"Türkiye\")",
+        "after": "  puts polite(\"Türkiye\")"
+      }
+    ]
+  },
+  "wire": {
+    "initialize": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "serverInfo": {
+        "name": "iyi",
+        "version": "0.12.0"
+      }
+    },
+    "tools": [
+      "check",
+      "fix",
+      "context",
+      "test",
+      "doc"
+    ],
+    "shell": "[{\"file\":\"agent/app.iyi\",\"line\":2,\"column\":28,\"size\":4,\"message\":\"instantiating 'App.main()'\"},{\"file\":\"agent/app.iyi\",\"line\":10,\"column\":8,\"size\":5,\"message\":\"undefined method 'polit' for App:Module\\nDid you mean 'polite'?\",\"suggested_edit\":{\"file\":\"agent/app.iyi\",\"line\":10,\"column\":8,\"size\":5,\"replacement\":\"polite\"}}]",
+    "mcp": "[{\"file\":\"agent/app.iyi\",\"line\":2,\"column\":28,\"size\":4,\"message\":\"instantiating 'App.main()'\"},{\"file\":\"agent/app.iyi\",\"line\":10,\"column\":8,\"size\":5,\"message\":\"undefined method 'polit' for App:Module\\nDid you mean 'polite'?\",\"suggested_edit\":{\"file\":\"agent/app.iyi\",\"line\":10,\"column\":8,\"size\":5,\"replacement\":\"polite\"}}]",
+    "identical": true,
+    "bytes": 321
+  }
+}

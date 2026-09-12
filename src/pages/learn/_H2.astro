@@ -1,0 +1,8 @@
+---
+/** The `##` of a lesson, mapped onto the anchored heading beside this file. */
+import Heading from "./_Heading.astro";
+
+const { id } = Astro.props;
+---
+
+<Heading level={2} id={id}><slot /></Heading>

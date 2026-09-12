@@ -38,12 +38,34 @@ const targets = platforms.typechecked;
 const ran = new Set(platforms.ran);
 const ranCount = SPELLED[platforms.ran.length];
 const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platforms.how]);
+
+/* The object audit, which is not universal: scripts/targets.mjs reads how many
+ * triples README.md says CI reads the emitted object for and which ones it
+ * says are type-checked only, and checks the arithmetic against the workflow's
+ * list. The sentence below claimed the audit covered every target that is not
+ * run, which was two triples too many, and no gate could see it: a triple
+ * carries no time or size unit. */
+const auditedCount = SPELLED[platforms.audited.length] ?? String(platforms.audited.length);
+const exempt = platforms.auditExempt;
+
+/* The modules a rebuild did not read: the bench project's module count, less
+ * the one whose line changed. The word was written into the sentence below as
+ * "twenty-nine" while the home page wrote "30" into its own, about the same
+ * project - two hand-typed statements of one figure, already disagreeing. The
+ * count is counted now (bench/site_facts.py runs the bench's own generator and
+ * refuses a count README.md contradicts) and the word is indexed, so the
+ * sentence follows the tree instead of remembering it. */
+const rest = facts.structural.modules - 1;
+/* The digits if the bench ever outgrows the spelling table: a sentence reading
+ * "the other 49 modules" is plain, and one reading "the other undefined
+ * modules" is what indexing past the end would have printed. */
+const untouched = SPELLED[rest] ?? String(rest);
 ---
 
 <Page
   kind="TechArticle"
   title="Why iyi"
-  summary="iyi runs your Crystal code today and rebuilds it about 9x faster. Developer experience, AI experience, portability, performance and efficiency: four things, one rule, every number measured."
+  summary={`iyi runs your Crystal code today and rebuilds it about ${loop.claim.value}x faster. Developer experience, AI experience, portability, performance and efficiency: four things, one rule, every number measured.`}
 >
   <section class="hero">
     <div class="wrap">
@@ -83,8 +105,8 @@ const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platform
           <h2>It compiles faster. Measured.</h2>
           <p>
             Change one line in a {facts.structural.generated.toLocaleString("en-GB")}-line
-            project and rebuild. iyi reads the declarations of the other
-            twenty-nine modules and none of their bodies, so the line you just
+            project and rebuild. iyi reads the declarations of the
+            other {untouched} modules and none of their bodies, so the line you just
             changed costs about {loop.claim.value}x less than under Crystal's
             rules, on the same compiler binary. The bars below run at real speed.
           </p>
@@ -311,14 +333,25 @@ const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platform
           ))
         }
       </ul>
+      {/* The audit is not universal and this sentence used to say it was:
+        * "the rest type-check and have the object they emit audited" covered
+        * two triples README.md says are type-checked only. Both the count and
+        * the exceptions are read out of README.md by scripts/targets.mjs now,
+        * so neither is typed here and a change to that row moves this
+        * sentence. */}
       <p class="sub">
         The {ranCount} that run are {ranHow.join(", ")}. The wasm32 build is one
         self-contained module, which is why every program on the{" "}
-        <a href={`${base}playground/`}>tour</a> runs in your browser. The rest
-        type-check and have the object they emit audited for what it asks the
-        machine for; Windows also compiles and links, and what it prints at run
-        time cannot be trusted yet. That is said here rather than left to be
-        found.
+        <a href={`${base}playground/`}>tour</a> runs in your browser. Of the{" "}
+        <Measure of="targets" />, {auditedCount} have the object they emit
+        audited for what it asks the machine for;{" "}
+        {
+          exempt.map((t, i) => (
+            <>{i === 0 ? "" : i === exempt.length - 1 ? " and " : ", "}<code>{t}</code></>
+          ))
+        }{" "}
+        are not. Windows compiles and links, and what it prints at run time
+        cannot be trusted yet. Both are said here rather than left to be found.
       </p>
     </div>
   </section>
@@ -401,10 +434,19 @@ const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platform
           quick on the loop, which is the row that matters.
         </p>
       </Stamped>
+      {/* README.md's own "Where it loses" and the paragraph after it, said in
+        * the same terms: the prelude's floor, where sockets actually live,
+        * which platforms concurrency runs on, and what dependencies do not
+        * have yet. Written looser than that once already - "no sockets ...
+        * yet" read as though the language had none, when std/socket is in the
+        * tree and it is the prelude that stops short. */}
       <p class="sub">
         Young parts, named: iyi's own prelude carries the small-tool floor and
-        no sockets, TLS or serialisation yet; tasks run on Linux and macOS
-        arm64 only; there is no package registry, and <code>--crystal</code>{" "}
+        no more, so it has no TLS and no serialisation, and sockets and format
+        strings live in <code>std/socket</code> and <code>std/format</code>,{" "}
+        outside the prelude every program carries; concurrency runs on Linux
+        and macOS arm64 only; dependencies resolve and pin, but there is no
+        registry and no artifact distribution yet, and <code>--crystal</code>{" "}
         still leans on shards. Every one of these is a line in the README, not
         a footnote.
       </p>
@@ -416,8 +458,10 @@ const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platform
       <h2>Check it yourself.</h2>
       <p class="sub">
         The tour runs in your browser. The lessons run real programs from the
-        repository, and every number above names the command that prints it and
-        the machine it ran on.
+        repository. And every number above is one of two things: counted from
+        the tree, where it is the same on your machine as on ours, or recorded,
+        in which case it carries the command that prints it and, where the
+        number is a duration, the machine it ran on.
       </p>
       <div class="hero-cta">
         <a class="cta" href={`${base}playground/`}>Take the tour</a>

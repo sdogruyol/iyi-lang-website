@@ -12,13 +12,23 @@
  *      a link into the playground where the wasm record says it runs;
  *   3. the lesson itself;
  *   4. break the rule: a program in the tree written to be rejected, and the
- *      verdict a real compiler gave it, recorded byte for byte;
+ *      verdict a real compiler gave it, recorded byte for byte, once per case
+ *      recorded under a rule this step teaches;
  *   5. what the rule bought.
  *
  * Previous and next come from `order`, so the sequence on the page is the
  * sequence in the files rather than a hand maintained pair of links, and the
  * forward link carries the next step's own summary because a path should tell
  * you where it goes.
+ *
+ * Two things the markdown pipeline leaves undone are done here. It slugs every
+ * heading and emits nothing that links to a slug, so the `##` and `###` of a
+ * lesson are mapped onto `_Heading.astro`, which hangs a link on the id the
+ * pipeline already put there. And the same slugs are listed in the rail as the
+ * step's own contents, read off the rendered entry, so the list and the page
+ * cannot drift. No reading time anywhere: doc/ART-DIRECTION.md forbids a time
+ * estimate in copy, and how long a rule takes to learn is not this page's
+ * claim to make.
  *
  * Markdown element styles come from the global `.prose` class in styles. This
  * page styles its own chrome and the spacing around the site's code components,
@@ -27,10 +37,13 @@
 import { render } from "astro:content";
 import Page from "../../layouts/Page.astro";
 import BreakRule from "../../components/BreakRule.astro";
+import H2 from "./_H2.astro";
+import H3 from "./_H3.astro";
 import {
   sequence,
   rulesOf,
   runOf,
+  breakCases,
   inlineMarkdown,
   lessonHref,
   SPELLED,
@@ -59,7 +72,7 @@ interface Props {
 }
 
 const { lesson, previous, next, total } = Astro.props;
-const { Content } = await render(lesson);
+const { Content, headings } = await render(lesson);
 
 const base = import.meta.env.BASE_URL;
 const rules = rulesOf(lesson);
@@ -72,6 +85,24 @@ const spelled = SPELLED[total] ?? String(total);
 // Structural: it is the `order` in the file, so it is the same on every
 // machine, and it is not a claim about what the reader has read.
 const ticks = Array.from({ length: total }, (_, i) => i + 1);
+
+// The lesson's own sections, read off the rendered entry rather than repeated
+// in frontmatter. The ids are the ones Astro's markdown pipeline slugged and
+// the ones `_Heading.astro` links to, so a contents entry and the heading it
+// names cannot disagree. `##` and `###` only: `#` is the lesson's title, which
+// the page already sets, and anything deeper is not a place a reader navigates
+// to. No count of them and no estimate of anything: doc/ART-DIRECTION.md
+// forbids a time estimate in copy, and a list of sections is a map, not a
+// promise about how long the walk takes.
+const sections = headings.filter(
+  (heading) => heading.depth === 2 || heading.depth === 3,
+);
+
+// Every recorded rejection this step shows. The first is the one the lesson's
+// closing paragraph leads into and the one that carries the extra files the
+// rejection needs to make sense; the rest are further cases recorded under the
+// same rule, shown after it rather than left in the record unrendered.
+const broken = breakCases(lesson);
 ---
 
 <Page
@@ -94,6 +125,27 @@ const ticks = Array.from({ length: total }, (_, i) => i + 1);
       <h1>{lesson.data.title}</h1>
       <p class="lede" set:html={inlineMarkdown(lesson.data.summary)} />
     </div>
+
+    {
+      /* In this step, in the rail. The sections are the lesson's own `##` and
+       * `###`, so this is a map of the page rather than a second outline
+       * somebody has to keep in step with it, and every entry links to the id
+       * the heading carries. Beside the opening rather than floating: a reader
+       * decides here whether to read the step or jump to the part they came
+       * for. */
+      sections.length > 0 && (
+        <nav class="toc to-rail" aria-label="In this step">
+          <p class="label">in this step</p>
+          <ol>
+            {sections.map((heading) => (
+              <li class:list={["toc-item", { deep: heading.depth === 3 }]}>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
 
     <section class="says to-wide">
       <p class="label">What the rule says</p>
@@ -139,10 +191,21 @@ const ticks = Array.from({ length: total }, (_, i) => i + 1);
     <hr class="rule to-wide" />
 
     <div class="prose">
-      <Content />
+      {/* The headings carry a link to themselves, which is the one thing the
+        * markdown pipeline does not render: it slugs every heading and nothing
+        * emits an anchor for the slug. Mapped rather than written into each
+        * lesson, so a new lesson gets it by existing. */}
+      <Content components={{ h2: H2, h3: H3 }} />
     </div>
 
-    <BreakRule id={lesson.data.breaks} also={lesson.data.breaksAlso} />
+    {
+      broken.map((entry, i) => (
+        <BreakRule
+          id={entry.id}
+          also={i === 0 ? lesson.data.breaksAlso : undefined}
+        />
+      ))
+    }
 
     <section class="bought to-wide">
       <hr class="rule" />
@@ -233,6 +296,55 @@ const ticks = Array.from({ length: total }, (_, i) => i + 1);
     color: var(--graphite);
     max-width: 58ch;
     margin-block-end: 0;
+  }
+
+  /* The step's sections, in the rail beside its opening. Aligned to the lede
+   * rather than to the top of the head, because the head carries the step
+   * number, the ticks and the title, and a contents list level with the title
+   * reads as part of it. */
+  .toc {
+    padding-block-start: 4.6rem;
+  }
+
+  .toc .label {
+    margin-block-end: 0.7rem;
+  }
+
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    line-height: 1.5;
+  }
+
+  .toc-item + .toc-item {
+    margin-block-start: 0.55rem;
+  }
+
+  .toc-item.deep {
+    padding-inline-start: 1rem;
+  }
+
+  .toc a {
+    color: var(--graphite);
+    text-decoration: none;
+    border-bottom: var(--hair) solid transparent;
+  }
+
+  .toc a:hover,
+  .toc a:focus-visible {
+    color: var(--ink);
+    border-bottom-color: var(--signal);
+  }
+
+  @media (max-width: 62rem) {
+    /* One column now, so the rail is under the opening: it becomes a plain
+     * list of what follows and the alignment padding would only be a gap. */
+    .toc {
+      padding-block-start: 1.8rem;
+    }
   }
 
   /* Where this step sits in the path, drawn as instrument ticks. The filled

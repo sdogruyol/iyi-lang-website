@@ -46,6 +46,18 @@
  * renders them is fed by the event path a checking engine would use. Wiring one
  * in replaces this file and touches nothing else, which is the property the
  * whole `playground/` directory is arranged to have.
+ *
+ * WHAT IT IS HANDED, AND WHY IT NO LONGER READS THE RECORD ITSELF. This engine
+ * used to import `samples.ts` to look a sample up and `diagnostics.ts` to
+ * stream the recorded cases. Both import a whole record, and this file runs in
+ * the browser, so every visitor of every sample page was served the manifest
+ * entry of every other sample and the standard error of every recorded case in
+ * order to run one program. It is handed what it needs now: the page provides
+ * the one entry it is about through `provideEntry`, and the evidence page,
+ * which is the only page that renders recorded diagnostics, provides those.
+ * An engine asked for something nobody handed it refuses by name rather than
+ * guessing, which is the same rule it already followed for a sample the
+ * recording did not cover.
  */
 import type {
   Capabilities,
@@ -54,18 +66,21 @@ import type {
   RunOptions,
   SourceFile,
 } from "../types";
-import { curatedSamples, findSample, wasmProvenance } from "../samples";
-import { recordedDiagnostics } from "../diagnostics";
-import { executeWasm, sha256Hex } from "./execute";
+import { providedEntry } from "../entry";
+import { providedDiagnostics } from "../evidence";
+import { sha256Hex } from "../digest";
+import { executeWasm } from "./execute";
 
 /**
  * The editor's budget.
  *
- * Nonzero because the pane is editable: a visitor should be able to read the
- * program, move around in it, and see for themselves that changing it changes
- * what the page says about the run. 64 KiB because a tab has a memory ceiling
- * and the largest curated sample is a fraction of it, so this is a real limit
- * that no honest use reaches rather than a number chosen to look generous.
+ * Nonzero because the pane is editable, and it is: a visitor can type in it,
+ * the shell hashes what they typed against the digest the recorder wrote for
+ * that sample, and the moment the two differ the run control renames itself
+ * and the line under the pane names the bytes that will actually execute. 64
+ * KiB because a tab has a memory ceiling and the largest curated sample is a
+ * fraction of it, so this is a real limit that no honest use reaches rather
+ * than a number chosen to look generous.
  */
 const MAX_SOURCE_BYTES = 64 * 1024;
 
@@ -75,7 +90,7 @@ const MAX_SOURCE_BYTES = 64 * 1024;
  */
 const NOTES: string[] = [
   "this engine runs precompiled modules and does not compile: there is no iyi compiler in this page, so the text in the editor is never the program that runs",
-  `each module was compiled and linked on ${wasmProvenance.machine} by ${wasmProvenance.compiler} at commit ${wasmProvenance.commit.slice(0, 12)}, and its sha256 is checked against records/wasm/manifest.json before it is instantiated`,
+  "each module was compiled and linked by the iyi compiler and wasi-sdk on the machine stamped beside the sample, and its sha256 is checked against the digest the page hands this engine, out of records/wasm/manifest.json, before it is instantiated",
   "diagnostics here are recorded, not live: this engine runs modules the compiler already produced and never compiles anything, so the only compiler output it can show is output that was captured when they were produced (doc/PLAYGROUND-SERVICE.md)",
   "stdout arrives in the exact chunks fd_write produced, in that order, but after _start returns: suspending a wasm call needs Atomics.wait on a SharedArrayBuffer, and GitHub Pages cannot send the headers that would make this document cross-origin isolated",
   "there is no stdin: reads from fd 0 succeed and report end of file, which is what a program sees when it is run with its input redirected from nothing",
@@ -91,9 +106,10 @@ const CAPABILITIES: Capabilities = {
    * `diagnostics` because when it reports a compiler error it reports a file, a
    * line, a column and the rule that was enforced, which is what the capability
    * names. It claims neither `compile` nor `emit-iyimod` nor `mod-dump` nor
-   * `format`, because it has no compiler, and the shell therefore renders those
-   * four controls disabled with the missing capability named under each. That
-   * reduced interface is the correct one.
+   * `format`, because it has no compiler, and the shell therefore renders no
+   * control for any of them: a disabled button beside the pane would be the
+   * same missing capability stated quietly instead of plainly. That reduced
+   * interface is the correct one.
    */
   supported: ["run", "diagnostics"],
   maxSourceBytes: MAX_SOURCE_BYTES,
@@ -114,8 +130,9 @@ function moduleUrl(wasm: string): string {
 }
 
 /* `sha256Hex` is imported rather than written here. It is the same hash on the
- * same bytes for both engines, and the note about copying before handing the
- * buffer to `crypto.subtle` lives with it in `execute.ts`. */
+ * same bytes for both engines and for the shell's check on the pane, and the
+ * note about copying before handing the buffer to `crypto.subtle` lives with
+ * it in `../digest.ts`. */
 
 /** Modules already fetched and verified in this tab, by sample id. */
 const loaded: Record<string, WebAssembly.Module> = {};
@@ -179,8 +196,15 @@ export const wasiEngine: PlaygroundEngine = {
       /* Recorded real compiler output, streamed as structured events on the
        * same path a checking engine would use. The events carry a file, a
        * line, a column and the rule, which is exactly what the capability
-       * claims, and the pane states in a sentence that they are recorded. */
-      for (const diagnostic of recordedDiagnostics()) {
+       * claims, and the pane states in a sentence that they are recorded.
+       *
+       * Handed in rather than imported. The record is the evidence page's
+       * material and every case carries the compiler's whole standard error;
+       * an engine that imported it would ship all of that to every visitor of
+       * every sample page, none of which renders a diagnostic. So the page
+       * that renders them provides them, and an engine nobody provided any to
+       * streams nothing, which is what the evidence page's gate catches. */
+      for (const diagnostic of providedDiagnostics()) {
         if (cancelled) return;
         yield diagnostic;
       }
@@ -205,20 +229,33 @@ export const wasiEngine: PlaygroundEngine = {
 
     /* Run ----------------------------------------------------------------- */
 
-    const sample = findSample(opts.entry);
-    if (sample === null) {
+    const entry = providedEntry(opts.entry);
+    if (entry === null) {
       yield {
         kind: "unsupported",
         capability: "run",
         reason:
-          `"${opts.entry}" is not in the recording, so there is no module to ` +
-          `run for it. The recording covers ` +
-          `${curatedSamples.map((entry) => entry.path).join(", ")}. This ` +
+          `"${opts.entry}" is not a sample this page handed the engine, so ` +
+          `there is no module to run for it and no digest to check one ` +
+          `against. A playground route provides the one entry it carries, out ` +
+          `of src/generated/playground/, before it asks for a run. This ` +
           `engine cannot compile, so a program it has no module for is a ` +
           `program it cannot run.`,
       };
       return;
     }
+    if (entry.wasm === null || entry.sha256 === null) {
+      yield {
+        kind: "unsupported",
+        capability: "run",
+        reason:
+          `The compiler refused ${entry.path} for wasm32-wasi, so the ` +
+          `recording has no module for it and there is nothing here to ` +
+          `execute. ${entry.note ?? ""}`.trim(),
+      };
+      return;
+    }
+    const wasm = entry.wasm;
 
     /* WHAT THIS ENGINE CANNOT DO, said before every run rather than only when
      * the pane has been edited.
@@ -238,20 +275,21 @@ export const wasiEngine: PlaygroundEngine = {
      * sentence conditional is the wrong trade twice over.
      *
      * The page still answers the conditional question, and answers it before
-     * the visitor clicks: the shell holds the recorded text already, so it
-     * renames the run control, rewrites the line under it, and withdraws the
-     * recorded colouring the moment the pane diverges. That is where the
-     * question belongs, because it is a question about the page rather than
-     * about the engine. */
+     * the visitor clicks: the shell hashes the pane against the source digest
+     * in the entry, so it renames the run control, swaps the line under it for
+     * one naming the bytes that will execute, and withdraws the recorded
+     * colouring the moment the pane diverges. That is where the question
+     * belongs, because it is a question about the page rather than about the
+     * engine, and a digest is a few dozen bytes where the text is a record. */
     yield {
       kind: "unsupported",
       capability: "compile",
       reason:
         `Nothing in this page compiled anything: there is no iyi compiler in ` +
-        `a browser. The run below executes the RECORDED module ${sample.wasm}, ` +
-        `${sample.bytes} bytes, sha256 ${sample.sha256.slice(0, 16)}, built ` +
-        `from ${sample.path} by ${wasmProvenance.compiler} at commit ` +
-        `${wasmProvenance.commit.slice(0, 12)}. If the pane no longer holds ` +
+        `a browser. The run below executes the RECORDED module ${wasm}, ` +
+        `${entry.bytes} bytes, sha256 ${entry.sha256.slice(0, 16)}, built ` +
+        `from ${entry.path} by ${entry.recorded.compiler} at commit ` +
+        `${entry.recorded.commit.slice(0, 12)}. If the pane no longer holds ` +
         `that file, your edit is not in this run.`,
     };
 
@@ -259,11 +297,11 @@ export const wasiEngine: PlaygroundEngine = {
      * kept, because a visitor pressing run twice should not pay the network
      * twice, and because the second run is then measuring the program rather
      * than the download. */
-    const cached = loaded[sample.id];
-    let bytes = loadedBytes[sample.id];
+    const cached = loaded[entry.id];
+    let bytes = loadedBytes[entry.id];
 
     if (cached === undefined) {
-      const url = moduleUrl(sample.wasm);
+      const url = moduleUrl(wasm);
       let response: Response;
       try {
         response = await fetch(url);
@@ -293,7 +331,7 @@ export const wasiEngine: PlaygroundEngine = {
 
       bytes = new Uint8Array(await response.arrayBuffer());
       const digest = await sha256Hex(bytes);
-      if (digest !== sample.sha256) {
+      if (digest !== entry.sha256) {
         /* Refuse. Running bytes that are not the recorded bytes would make
          * every statement the page then makes about provenance false, and it
          * would do it silently, which is worse than not running. */
@@ -302,16 +340,16 @@ export const wasiEngine: PlaygroundEngine = {
           capability: "run",
           reason:
             `${url} served ${bytes.length} bytes whose sha256 is ` +
-            `${digest.slice(0, 16)}, and the record says ${sample.bytes} ` +
-            `bytes at ${sample.sha256.slice(0, 16)}. This engine will not run ` +
+            `${digest.slice(0, 16)}, and the record says ${entry.bytes} ` +
+            `bytes at ${entry.sha256.slice(0, 16)}. This engine will not run ` +
             `a module it cannot show is the recorded one, because everything ` +
             `the page says about where that module came from would then be ` +
-            `unfounded. Regenerate with ${wasmProvenance.command}.`,
+            `unfounded. Regenerate with ${entry.recorded.command}.`,
         };
         return;
       }
 
-      loadedBytes[sample.id] = bytes;
+      loadedBytes[entry.id] = bytes;
     }
 
     /* Instantiate and run, which from here on is `execute.ts`. The
@@ -333,12 +371,12 @@ export const wasiEngine: PlaygroundEngine = {
      * and reverified next time rather than remembered as unusable. */
     yield* executeWasm({
       bytes,
-      name: sample.wasm,
-      argv0: sample.path,
+      name: wasm,
+      argv0: entry.path,
       isCancelled: () => cancelled,
       compiled: cached,
       onCompiled: (module_) => {
-        loaded[sample.id] = module_;
+        loaded[entry.id] = module_;
       },
     });
   },

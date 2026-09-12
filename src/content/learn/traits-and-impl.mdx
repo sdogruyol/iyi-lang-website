@@ -5,6 +5,8 @@ summary: A trait names requirements and an impl satisfies them. The orphan rule 
 rule: R-3
 sample: samples/iyi/hello.iyi
 breaks: r3-orphan-impl
+breaksMore:
+  - r3-unmet-trait-bound
 breaksAlso:
   - records/break/dep/greeter.iyi
   - records/break/dep/user.iyi
@@ -128,3 +130,8 @@ Back to the location rule, because it is the one you will hit first and the
 refusal is the most useful thing in this step. Here are three modules: one owns
 the trait, one owns the type, and the third owns neither and writes the impl
 anyway. Watch which two the compiler offers you.
+
+Then the same rule from the calling side. A type's method set is closed, so a
+bound on a type parameter is a question with a definite answer at the call:
+`Int32` has no `impl Greet` and cannot acquire one later, so the call is refused
+as a missing trait rather than as a failed overload match.

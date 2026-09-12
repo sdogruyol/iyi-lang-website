@@ -1,0 +1,10 @@
+# A test is a plain program that exits non-zero when it fails; the prelude's
+# `assert` is that in one word. No framework, so nothing here has to be
+# learned before it can be read.
+module app/app_test
+
+import app/greeter
+using app/greeter
+
+assert polite("iyi") == "Hello, iyi.", "polite greets"
+assert shout("iyi") == "HELLO, IYI!", "shout shouts"

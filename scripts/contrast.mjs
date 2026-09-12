@@ -80,8 +80,19 @@ const value = (name) => {
 
 /* ------------------------------------------------------------------------ */
 
-/** The grounds prose sits on. */
+/** The grounds prose sits on, in the light scheme. */
 const GROUNDS = ["paper", "raise", "brand-soft"];
+
+/**
+ * And in the dark one. `src/styles/tokens.css` declares the dark palette under
+ * `-dark` names beside the light one and the media query only aliases, which
+ * is deliberate: this gate reads the file with one regex into one flat map, so
+ * redeclaring the same names inside the query would have made it measure the
+ * dark values and print them under the light palette's names. Two palettes
+ * means two sets of rows, which is the cost of the second scheme being
+ * checkable rather than asserted.
+ */
+const GROUNDS_DARK = ["paper-dark", "raise-dark", "brand-soft-dark"];
 
 /**
  * The pairs, each with the floor its role requires.
@@ -117,6 +128,32 @@ const PAIRS = [
     role: "boundary",
     floor: 3,
   })),
+  ...GROUNDS_DARK.flatMap((ground) =>
+    ["ink-dark", "graphite-dark", "mute-dark", "brand-deep-dark", "signal-deep-dark"].map((ink) => ({
+      ink,
+      ground,
+      role: "text",
+      floor: 4.5,
+    })),
+  ),
+  ...GROUNDS_DARK.map((ground) => ({ ink: "brand-dark", ground, role: "display", floor: 3 })),
+  ...["brand-dark", "brand-deep-dark", "ink-dark"].map((ground) => ({
+    ink: "paper-dark",
+    ground,
+    role: "reverse",
+    floor: 4.5,
+  })),
+  ...["paper-dark", "raise-dark"].map((ground) => ({
+    ink: "brand-dark",
+    ground,
+    role: "boundary",
+    floor: 3,
+  })),
+  /* The control-edge token, in both schemes. 1.4.11 asks 3.0 of a non-text
+   * control's own boundary, which --hairline never met at 1.27:1; --boundary
+   * exists to meet it and is gated on every ground a control sits on. */
+  ...GROUNDS.map((ground) => ({ ink: "boundary", ground, role: "boundary", floor: 3 })),
+  ...GROUNDS_DARK.map((ground) => ({ ink: "boundary-dark", ground, role: "boundary", floor: 3 })),
 ];
 
 /**
@@ -125,8 +162,16 @@ const PAIRS = [
  * number is known and not gated, because raising them is a change to the
  * drawing and not to this file. Reported rather than omitted, so nobody reads
  * a green run as a claim about them.
+ *
+ * Each is reported against the grounds of its own scheme. Printing a dark
+ * separator's ratio against a white page would be a number about nothing.
  */
-const UNGATED = ["hairline", "track"];
+const UNGATED = [
+  ["hairline", GROUNDS],
+  ["track", GROUNDS],
+  ["hairline-dark", GROUNDS_DARK],
+  ["track-dark", GROUNDS_DARK],
+];
 
 /* ------------------------------------------------------------------------ */
 
@@ -145,8 +190,8 @@ for (const m of measured) {
     `  ${label}  ${m.ratio.toFixed(2).padStart(5)}:1  floor ${m.floor.toFixed(1)}  ${m.role.padEnd(9)} ${verdict}`,
   );
 }
-for (const name of UNGATED) {
-  const on = GROUNDS.map((g) => `${ratio(value(name), value(g)).toFixed(2)}:1 on ${g}`).join(", ");
+for (const [name, grounds] of UNGATED) {
+  const on = grounds.map((g) => `${ratio(value(name), value(g)).toFixed(2)}:1 on ${g}`).join(", ");
   console.log(`  ${name.padEnd(column)}  ${on}  1.4.11 boundary, not gated`);
 }
 

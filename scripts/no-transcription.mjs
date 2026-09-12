@@ -36,7 +36,15 @@ const SCAN = ["pages", "components", "layouts", "content", "lib", "playground", 
 
 // A decimal with a unit, allowing the common authored spellings. The unit must
 // be a time or size unit; a bare number is a structural count and is legal.
-const RECORDED = /\b\d+(?:\.\d+)?\s*(?:seconds|second|secs|sec|ms|s|KB|MB)\b/;
+//
+// THE BARE `s` NEEDS THE SPACE, and this cost a false failure before it was
+// written down. `\d+\s*s` matched "404s" in the sentence "a URL that itself
+// 404s", which is a verb and not four hundred and four seconds. This project
+// writes a duration with a space between the figure and the unit, every time,
+// in README.md and on every page: 0.13 s, 1.17 s, 1.6 ms. So seconds spelled
+// as one letter must carry that space, while the units that cannot be read as
+// a plural keep matching either way.
+const RECORDED = /\b\d+(?:\.\d+)?(?:\s*(?:seconds|second|secs|ms|KB|MB)|\s+(?:sec|s))\b/;
 // Things that are not measurements but match the shape.
 const ALLOWED = [
   // CSS values are never read: a stylesheet contributes its comments only.

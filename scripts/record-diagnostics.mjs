@@ -74,6 +74,18 @@ const CASES = [
     expect: "this file has not written `using`",
   },
   {
+    id: "r2c-outside-bound",
+    rule: "R-2c",
+    title: "a body typed at its definition, reaching outside its bound",
+    file: "r2c_outside_bound.iyi",
+    // The witness type's own name, because that is the part of the message
+    // that proves definition-site typing did the work: the body was typed
+    // against a synthesized implementer of the bound rather than against the
+    // concrete type sitting in the file, which is what duck typing would have
+    // reached for. The serial suffix is the compile's, so it is not pinned.
+    expect: "for IyiDefTypeWitness",
+  },
+  {
     id: "r3-orphan-impl",
     rule: "R-3",
     title: "an impl in a module that owns neither the trait nor the type",
@@ -86,6 +98,25 @@ const CASES = [
     title: "a type that does not implement a required trait",
     file: "r3_unmet_trait_bound.iyi",
     expect: "does not implement",
+  },
+  {
+    id: "r4-monomorphize-unknown",
+    rule: "R-4",
+    title: "the annotation R-4 names, asked of a compiler that has no such name",
+    file: "r4_dictionary.iyi",
+    // R-4's third sentence is the one clause of the rule table with nothing
+    // behind it (SPEC.md III.9), and this is the compiler saying so in the
+    // only way it can: the annotation is not a feature that misbehaves, it is
+    // a constant nothing declares. A day when this program compiles is the day
+    // the dictionary landed, and this script failing is how the site finds out.
+    expect: "undefined constant Monomorphize",
+  },
+  {
+    id: "r5-global-question",
+    rule: "R-5",
+    title: "a derive that asks about the whole program",
+    file: "r5_global_question.iyi",
+    expect: "`all_subclasses` is not available to a derive",
   },
   {
     id: "errors-non-exhaustive",

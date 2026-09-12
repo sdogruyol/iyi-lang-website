@@ -14,6 +14,14 @@ name: site
 on:
   push:
     branches: [main]
+  # Pull requests build and gate, and do not deploy. Until this line the
+  # workflow only ran after a merge, so every gate in it - the citations, the
+  # type-check, the prose, the links, the budget - reported a defect that was
+  # already on main. A publication that refuses a transcribed number and then
+  # learns about a broken link from its own deploy is checking in the wrong
+  # order.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -22,8 +30,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  # One deploy at a time on main, because Pages has one live site. A pull
+  # request is a different question - "is this branch publishable" - so it gets
+  # its own group, and a superseded push to it cancels the run it made obsolete
+  # rather than holding a runner to answer about a commit nobody will merge.
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -69,18 +81,43 @@ jobs:
         working-directory: site
         run: npm run check
 
-      - name: Generate facts, reference and samples, then build
+      # `npm run build` is the whole chain and it is the same one a developer
+      # runs: `generate` (facts, targets, releases, samples, records, then the
+      # contrast, transcription and blocker gates), `astro build`, then
+      # `postbuild` - the three gates that can only read the built output:
+      #
+      #   prose.mjs   a word welded to the next one across an inline element
+      #   links.mjs   an href, src or #fragment that resolves to nothing, and
+      #               an <img> with no alt; no external URL is fetched
+      #   budget.mjs  the bytes a first view of each route fetches, against
+      #               the ratchet in scripts/budget.json
+      #
+      # They run here rather than as separate steps for the reason the rest of
+      # this repository exists: CI and a laptop must run one chain, or the
+      # build that passes locally is not the build that publishes.
+      - name: Generate, build, and gate the built site
         working-directory: site
         run: npm run build
 
+      # Pages only from main or a dispatch. A pull request has answered the
+      # question it was asked once the gates above pass, and on a fork the
+      # token has no pages scope, so configuring Pages there would fail for a
+      # reason that says nothing about the branch.
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: site/dist
 
+  # `needs: build` is the gate: every check above - the citations, the
+  # type-check, the generators, the records, the prose, the links, the budget -
+  # runs in that job, so nothing reaches the live site without passing all of
+  # them. A pull request never gets here, and it has no artifact to deploy.
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     environment:
       name: github-pages

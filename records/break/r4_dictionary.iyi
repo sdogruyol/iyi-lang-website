@@ -1,0 +1,21 @@
+# Breaks R-4 by asking for the one clause of it that has nothing behind it.
+#
+# R-4's third sentence says `@[Monomorphize]` forces specialisation across a
+# module boundary. SPEC.md III.9 records what that is worth today: nothing in
+# the compiler mentions the annotation, a dictionary or a GC shape. So this is
+# not a feature that misbehaves, it is a name the compiler has never heard,
+# and the rejection below is a compiler declining to accept a promise it
+# cannot keep rather than compiling the program as though the rule were built.
+#
+# What runs instead of the dictionary is the rule's second sentence applied
+# everywhere: a generic's body travels in the artifact and every consumer
+# compiles it again for the types it uses. `bench/generic_boundary.py` is the
+# measurement of what that costs a consumer's front end.
+module diagnostics/r4_dictionary
+
+@[Monomorphize]
+pub def twice(x : T) : Array(T) forall T
+  [x, x]
+end
+
+puts twice(1).size

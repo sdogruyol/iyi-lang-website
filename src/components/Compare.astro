@@ -26,11 +26,29 @@ if (!table) {
 ---
 
 <figure class="compare">
-  <div class="scroll">
+  {/*
+    `min-width: 40rem` below guarantees this pane scrolls sideways on a phone
+    and on a reading page whose measure is narrower than the table. A scrolling
+    box holding nothing focusable is unreachable by keyboard, so it is a named
+    region with a tab stop. The name is the caption when the page gave one and
+    the README citation otherwise, which is what the figcaption says too: a
+    region announced as "region" tells a reader nothing about which table they
+    have landed in.
+  */}
+  <div
+    class="scroll-x"
+    role="region"
+    tabindex="0"
+    aria-label={caption ? `${caption}, quoted from ${table.cite}` : `Table quoted from ${table.cite}`}
+  >
     <table>
       <thead>
         <tr>
-          {table.header.map((cell) => <th set:html={inlineMarkdown(cell)} />)}
+          {/* `scope` is not decoration. Without it a screen reader has to guess
+              which cells a header governs, and it guesses from the table's
+              shape; these tables are a comparison read across the row, which is
+              exactly the shape that guesses wrong. */}
+          {table.header.map((cell) => <th scope="col" set:html={inlineMarkdown(cell)} />)}
         </tr>
       </thead>
       <tbody>
@@ -54,8 +72,10 @@ if (!table) {
     margin: 0;
   }
 
-  .scroll {
-    overflow-x: auto;
+  /* The frame. `overflow-x` is not repeated here: `.scroll-x` in base.css owns
+   * the scrolling and the focus ring for every pane on the site that scrolls
+   * sideways, so a second declaration would be a second place to change it. */
+  .scroll-x {
     border: var(--hair) solid var(--hairline);
     border-radius: var(--radius);
     background: var(--paper);

@@ -8,11 +8,20 @@
  * page says that in one line, lists the steps, and gets out of the way. What
  * the playground does not do, compile what a visitor types, is said once
  * under the list rather than argued; the full account is on the evidence page.
+ *
+ * PROGRESS IS A FACT ABOUT THIS BROWSER, so it is rendered by this browser.
+ * The static HTML marks nothing: a page built in node cannot know which steps
+ * a reader has opened, and a tick rendered at build time would be a claim
+ * about somebody it has never met. The island reads
+ * `src/playground/progress.ts`, which reads local storage, and marks the list
+ * afterwards. Two states, never conflated: opened, and answered, the second
+ * being a step whose exercise was answered with what the program really
+ * prints, checked against the recorder's digest.
  */
 import Page from "../../layouts/Page.astro";
 import { runnable, tourSamples, tourSections } from "../../playground/samples";
 import { recordedText } from "../../lib/highlight";
-import { lessonHref, sequence } from "../../lib/lessons";
+import { SPELLED, lessonHref, sequence } from "../../lib/lessons";
 
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 const lessons = await sequence();
@@ -51,6 +60,13 @@ const sections = tourSections.map((section) => ({
       prints, then move to the next. Each one is a page you can come back to.
     </p>
     <a class="cta" href={`${base}playground/${first.id}/`}>Start with {first.id}</a>
+
+    {/* Empty in the HTML on purpose. Whatever it says is a fact about this
+        browser's own storage, so this browser says it or nobody does. */}
+    <p class="progress" data-role="progress" hidden></p>
+    <button type="button" class="cta ghost forget" data-role="forget" hidden>
+      Forget my progress
+    </button>
   </section>
 
   <section class="wrap">
@@ -62,11 +78,13 @@ const sections = tourSections.map((section) => ({
           <ol class="steps">
             {section.steps.map((step) => (
               <li>
-                <a class="step" href={step.href}>
+                <a class="step" href={step.href} data-step={step.id}>
                   <span class="step-index">{step.n}</span>
                   <span class="step-id">{step.id}</span>
                   <span class="step-blurb">{step.blurb}</span>
                   {!step.runs && <span class="step-native">recorded</span>}
+                  {/* Filled in by the island, and empty until then. */}
+                  <span class="step-state" data-role="state"></span>
                 </a>
               </li>
             ))}
@@ -79,18 +97,75 @@ const sections = tourSections.map((section) => ({
   <section class="wrap after">
     <p>
       Done with the tour? <a href={lessonHref(base, firstLesson)}>Learn the
-      one rule</a> that makes iyi its own language, in five lessons that each
-      run a real program from the repository.
+      one rule</a> that makes iyi its own language, in {SPELLED[lessons.length]}
+      {" "}lessons that each run a real program from the repository.
     </p>
     <p class="honest">
       Each program runs from the module the iyi compiler built for it, checked
       against its recording before it starts. A step marked recorded uses tasks,
       which the browser's target cannot run yet, so it shows what the program
-      printed natively instead. Nothing on these pages compiles what you type
-      yet.{" "}
+      printed natively instead. You can type in any of the panes, and the page
+      says which bytes a run will use the moment what is in one stops being the
+      recorded file, because nothing on these pages compiles what you type.{" "}
       <a href={`${base}playground/evidence/`}>How this works</a>
     </p>
   </section>
+
+  <script>
+    /**
+     * The marks on the list, which exist only in this browser.
+     *
+     * Two states and no bar: a bar implies a distance, and what is worth
+     * knowing here is which steps have been opened and which have been
+     * answered, not a percentage. The store is the same one the sample pages
+     * write, `src/playground/progress.ts`, and it is the whole of this
+     * island's imports: no record reaches this page.
+     */
+    import { clearProgress, readProgress, type TourProgress } from "../../playground/progress";
+
+    (() => {
+      const line = document.querySelector<HTMLElement>('[data-role="progress"]');
+      const forget = document.querySelector<HTMLButtonElement>('[data-role="forget"]');
+      const steps = [...document.querySelectorAll<HTMLAnchorElement>(".step[data-step]")];
+      if (line === null || forget === null || steps.length === 0) return;
+
+      const paint = (progress: TourProgress) => {
+        const visited = new Set(progress.visited);
+        const answered = new Set(progress.answered);
+
+        for (const step of steps) {
+          const id = step.dataset.step ?? "";
+          const state = answered.has(id) ? "answered" : visited.has(id) ? "opened" : "";
+          const mark = step.querySelector<HTMLElement>('[data-role="state"]');
+          if (state === "") {
+            delete step.dataset.state;
+            if (mark) mark.textContent = "";
+          } else {
+            step.dataset.state = state;
+            /* The word rather than a symbol: an icon that means "done" is a
+             * convention a reader has to already know, and there is room. */
+            if (mark) mark.textContent = state;
+          }
+        }
+
+        const opened = steps.filter((step) => visited.has(step.dataset.step ?? "")).length;
+        const right = steps.filter((step) => answered.has(step.dataset.step ?? "")).length;
+        line.hidden = opened === 0;
+        forget.hidden = opened === 0;
+        line.textContent =
+          right === 0
+            ? `${opened} of ${steps.length} opened on this machine.`
+            : `${opened} of ${steps.length} opened on this machine, ${right} answered.`;
+      };
+
+      paint(readProgress());
+
+      forget.addEventListener("click", () => {
+        clearProgress();
+        paint({ visited: [], answered: [] });
+      });
+    })();
+  </script>
 
   <style>
     .head {
@@ -134,7 +209,7 @@ const sections = tourSections.map((section) => ({
 
     .step {
       display: grid;
-      grid-template-columns: auto auto minmax(0, 1fr) auto;
+      grid-template-columns: auto auto minmax(0, 1fr) auto auto;
       align-items: baseline;
       gap: 1rem;
       padding: 0.7rem 1.1rem;
@@ -176,12 +251,51 @@ const sections = tourSections.map((section) => ({
       letter-spacing: 0.08em;
     }
 
+    /* The mark this browser put on a step. Empty, and therefore invisible,
+     * until the island fills it, because the built page knows nothing about
+     * any reader. */
+    .step-state {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .step[data-state="answered"] .step-state {
+      color: var(--brand-deep);
+    }
+
+    /* A left edge on a step that has been opened, in the gutter rather than
+     * around the row, so the list still reads as one list. */
+    .step[data-state] {
+      border-inline-start: 2px solid var(--track);
+    }
+
+    .step[data-state="answered"] {
+      border-inline-start-color: var(--brand);
+    }
+
+    .progress {
+      margin-block: 1.2rem 0.6rem;
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--graphite);
+    }
+
+    .forget {
+      font-size: var(--step--2);
+      padding: 0.35rem 0.7rem;
+      cursor: pointer;
+    }
+
     @media (max-width: 40rem) {
       .step {
         grid-template-columns: auto minmax(0, 1fr);
       }
       .step-blurb,
-      .step-native {
+      .step-native,
+      .step-state {
         grid-column: 2;
       }
     }

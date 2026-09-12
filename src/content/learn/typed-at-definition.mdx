@@ -1,0 +1,108 @@
+---
+title: Typed where it is written
+order: 5
+summary: A def that writes all of its types is typed at its definition, caller or no caller. A trait-restricted parameter is typed against exactly its bound, so a generic body cannot quietly use what it did not declare.
+rule: R-2c
+sample: samples/iyi/collections.iyi
+breaks: r2c-outside-bound
+bought: >-
+  A build, `iyi check` and every keystroke in the editor answer one question the
+  same way, because a fully declared body is typed where it is written rather
+  than once per caller, and a library whose functions nobody has called yet
+  cannot report itself clean. A generic body is checked against the bound it
+  wrote down instead of against whatever type turns up, which is the half duck
+  typed generics never check and Rust checks always.
+sources:
+  - file: src/compiler/iyi/semantic/definition_typing.cr
+    note: the pass, the witness type it synthesizes per simple trait, and a fence around each thing it may not reach, every one of them kept on record with the failure that earned it
+  - file: samples/iyi/collections.iyi
+    note: the header's own sentence about a default method typed only when it is called, and why that file calls every method the trait defines
+  - file: samples/iyi/calc/lexer.iyi
+    note: an exported signature whose callers all live in other modules
+  - file: SPEC.md
+    note: R-2c, including its own list of what it does not reach yet
+---
+
+import Sample from "../../components/Sample.astro";
+
+Step two asked an exported name to write its types down, and spent that writing
+on the consumer: the artifact is enough because the declaration is complete.
+This step spends the same writing a second time, on the module that wrote it.
+
+If a declaration says everything, then nothing is missing when the body is
+checked either. A call was only ever standing in for the types, and the types
+are on the page.
+
+## What lazy typing let through
+
+Crystal types a def when somebody calls it. iyi inherited that, and here is the
+shape of the problem, from the scanner inside the three module calculator.
+
+<Sample
+  path="samples/iyi/calc/lexer.iyi"
+  from="pub def scan"
+  must="Array(Token) | BadCharacter"
+/>
+
+Nothing in that file calls `scan`. Its callers are the parser and the driver,
+in other modules, which is the ordinary shape of a library. So compiling
+`calc/lexer` on its own used to type the signature and skip the body under it,
+and report a clean build about code it never visited. Ask a different
+question, run `iyi check`, open the file in an editor, and you could get a
+different answer, because each one visited a different set of bodies.
+
+R-2c is the rule that closes it: a def whose parameters and return are all
+written is typed at its definition. The declared types stand in for the missing
+call, which is why this is a dividend of step two rather than a new tax. What a
+module exports it had to write down anyway.
+
+## A bound is enough
+
+The interesting half is the parameter whose type is a trait.
+
+A def taking a trait is generic: the body will run on types that do not exist
+yet, and there is no call to learn them from. Duck typed generics answer by
+never checking, and finding out in whichever caller compiled first. Rust
+answers by checking always, against the bound.
+
+iyi answers the way Rust does, and the compiler's own account of how is worth
+reading: for each trait-restricted parameter it synthesizes one witness type,
+implements the trait's abstract requirements with stub bodies, and types the
+body against the witness. So the body is checked against exactly what the
+signature declared, and against nothing the program happens to contain.
+
+That is why the rejection at the foot of this page names a type nobody wrote.
+
+## What it does not reach yet
+
+The rule states its own limits, and this step's program is one of them.
+
+<Sample path="samples/iyi/collections.iyi" region="def describe" />
+
+That signature is fully written and it is still typed per call, because
+`Enumerable` answers an associated type and a witness for one of those is not
+built. Supertrait and generic traits are out for the same reason, along with
+block taking defs, defs that annotate nothing, and `.cr` sources. Each of
+those is written into the premise above rather than discovered later.
+
+The sample this step is grounded in is what that limit costs, and it says so
+in its own header: a default method is only typed when it is called, so a
+trait that merely compiles has proved nothing about its bodies.
+
+<Sample
+  path="samples/iyi/collections.iyi"
+  from="# `std/enumerable.iyi` holds the trait."
+  to="makes, running."
+/>
+
+That is why the file calls every method `Enumerable` defines. It is a test
+standing in for a rule, which is exactly the position every fully declared def
+in the tree was in before this rule existed.
+
+## Reach outside the bound
+
+The clearest way to see a body typed with no caller is to write one that
+cannot be typed, and give it nothing to be called from. The program below
+defines a trait with one requirement, a type that implements it, and a
+function that asks the bound for a method the bound never declared. The type
+in the file happens to have that method. Nothing calls the function at all.

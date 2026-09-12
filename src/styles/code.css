@@ -17,9 +17,16 @@
   border: var(--hair) solid var(--hairline);
   border-radius: 2px;
   margin: 0;
-  overflow-x: auto;
   tab-size: 2;
 }
+
+/* The sideways scroll lives on the `.scroll-x` pane inside the figure, not on
+ * the figure itself. A figure is not focusable and must not become focusable
+ * (a tab stop on the figure would announce the caption again and land the
+ * reader outside the thing that actually scrolls), so the pane wrapping the
+ * <pre> carries the overflow, the tab stop and the region name. Keeping the
+ * frame and the header out of the scrolling box also stops the filename
+ * sliding away from a listing that is being read sideways. */
 
 .source pre {
   margin: 0;
@@ -93,9 +100,17 @@
  * `forall` is the keyword or somebody's variable is exactly the second grammar
  * this file exists to refuse, so they are left alone. Emphasising them is a
  * change to the compiler's highlighter, not to this site. */
+/* Weight 600, and it used to say 700. No 700 mono face was ever loaded:
+ * `scripts/fonts.mjs` ships 400, 400 italic, 500 and 600, which is what the
+ * stylesheets ask for everywhere else. A rule asking for a weight that is not
+ * on the page gets one of two things depending on the browser, a synthetic
+ * smear drawn by thickening the 600 outlines or a silent match to the 600
+ * face, and the site's single typographic argument was resting on which one
+ * the reader happened to have. It now names the face it gets. The gap to the
+ * 500 of a bare keyword is the same gap it has always actually drawn. */
 .tok-rule,
 .k.tok-rule {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
 }
 
@@ -166,7 +181,7 @@
   text-transform: uppercase;
   color: var(--graphite);
   background: none;
-  border: var(--hair) solid var(--hairline);
+  border: var(--hair) solid var(--boundary);
   border-radius: 2px;
   padding: 0.2rem 0.5rem;
   cursor: pointer;

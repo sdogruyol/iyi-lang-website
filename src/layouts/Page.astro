@@ -1,18 +1,60 @@
 ---
-// Fonts are vendored, never fetched from a CDN. A site arguing that a program
-// should link what it uses does not get to pull webfonts off a third party.
-import "@fontsource-variable/figtree/wght.css";
-import "@fontsource/ibm-plex-mono/400.css";
-import "@fontsource/ibm-plex-mono/500.css";
-import "@fontsource/ibm-plex-mono/600.css";
-import "@fontsource/ibm-plex-mono/400-italic.css";
+/* Fonts are vendored, never fetched from a CDN. A site arguing that a program
+ * should link what it uses does not get to pull webfonts off a third party.
+ *
+ * One import, and it is generated. `scripts/fonts.mjs` reads the installed
+ * @fontsource packages and writes every @font-face this site needs, woff2
+ * only, latin and latin-ext only. Importing the packages' own stylesheets, as
+ * this file used to, shipped a legacy .woff beside every face that no browser
+ * capable of rendering this site would ever ask for, and pulled the cyrillic,
+ * cyrillic-ext and vietnamese subsets in behind them: two thirds of the font
+ * payload, for alphabets no page here contains. latin-ext is not optional and
+ * doc/ART-DIRECTION.md says why: the project's name is Turkish. */
+import "../generated/fonts.css";
 
 import "../styles/tokens.css";
 import "../styles/base.css";
 import "../styles/code.css";
+import "../styles/print.css";
+
+/* The two faces every page needs before it can draw a word: the variable sans
+ * the prose is set in and the mono the code is set in, latin in both cases.
+ * They are discovered otherwise only after the stylesheet has been fetched and
+ * parsed, which is one round trip after the browser could have started them,
+ * and there was not a single preload in the whole build. The other faces are
+ * left to be discovered: a page might use no italic and no 600, and preloading
+ * a face nobody needs is the waste this slice went and removed. `crossorigin`
+ * is required even same-origin, because fonts are fetched in CORS mode and a
+ * preload without it fetches the file a second time. */
+import sansLatin from "@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2";
+import monoLatin from "@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2";
+
+import { Image } from "astro:assets";
+import mascot from "../assets/mascot.webp";
 
 import facts from "../generated/facts.json";
 import { latestRelease, releaseUrl } from "../lib/release";
+
+/* The browser chrome's colour, read out of the stylesheet that decides it.
+ * `<meta name="theme-color">` takes a literal and nothing else, so the only
+ * way it is not a second place for the palette to disagree with itself is to
+ * read the first place. Renaming a token here fails the build rather than
+ * leaving a red bar over a white page, which is what this meta said before:
+ * #d1333d, a colour that appears nowhere along the top of any page on the
+ * site. It matches the masthead now, in each scheme. */
+import tokensCss from "../styles/tokens.css?raw";
+
+const token = (name: string): string => {
+  const found = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{3,8})\\s*;`).exec(tokensCss);
+  if (!found) {
+    throw new Error(
+      `Page: src/styles/tokens.css declares no --${name}, so this page cannot ` +
+        `tell the browser what colour to paint its chrome. The token was ` +
+        `renamed or removed.`,
+    );
+  }
+  return found[1];
+};
 
 const release = latestRelease();
 
@@ -21,9 +63,21 @@ interface Props {
   summary?: string;
   /** Schema.org type of the page's main content; WebPage unless a page says. */
   kind?: "WebPage" | "TechArticle" | "CollectionPage";
+  /**
+   * Whether this page is a URL a crawler should keep.
+   *
+   * True for every route the build emits. False for exactly one page, the 404:
+   * Astro writes it to `dist/404.html` and GitHub Pages serves it in place of
+   * any path that does not exist, so `/404/` is not a route this site has. A
+   * self-canonical there points a crawler at a URL that is itself a missing
+   * path, and asks it to index the result. When false this layout emits no
+   * canonical, no `og:url` and a `robots` meta, because the page is real and
+   * worth reading and simply is not an address.
+   */
+  indexable?: boolean;
 }
 
-const { title, summary, kind = "WebPage" } = Astro.props;
+const { title, summary, kind = "WebPage", indexable = true } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const href = (p: string) => `${base.replace(/\/$/, "")}/${p.replace(/^\//, "")}`;
 const here = Astro.url.pathname;
@@ -68,7 +122,10 @@ const ld = {
     {
       "@type": kind,
       "@id": `${canonical}#page`,
-      url: canonical,
+      /* Dropped on a page that is not an address: the 404 is served at every
+       * missing path, so naming one of them as its URL is a claim no crawler
+       * can verify and this one would be false. */
+      ...(indexable ? { url: canonical } : {}),
       name: fullTitle,
       description: summary,
       isPartOf: { "@id": `${Astro.site}#website` },
@@ -81,7 +138,9 @@ const ld = {
 const nav = [
   ["Why iyi", "why/"],
   ["Learn", "learn/"],
+  ["Agents", "agents/"],
   ["Playground", "playground/"],
+  ["Tools", "tools/"],
   ["Install", "install/"],
 ];
 
@@ -95,17 +154,23 @@ const current = (path: string) => here.startsWith(href(path));
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     {summary && <meta name="description" content={summary} />}
-    <link rel="canonical" href={canonical} />
+    {indexable && <link rel="canonical" href={canonical} />}
+    {!indexable && <meta name="robots" content="noindex, follow" />}
+
+    <link rel="preload" as="font" type="font/woff2" href={sansLatin} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={monoLatin} crossorigin />
+
     <link rel="icon" href={href("favicon.ico")} sizes="48x48" />
     <link rel="icon" href={href("favicon-32.png")} type="image/png" sizes="32x32" />
     <link rel="icon" href={href("favicon-192.png")} type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href={href("apple-touch-icon.png")} sizes="180x180" />
     <link rel="manifest" href={href("site.webmanifest")} />
     <link rel="sitemap" href={href("sitemap-index.xml")} />
-    <meta name="theme-color" content="#d1333d" />
+    <meta name="theme-color" content={token("paper")} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={token("paper-dark")} media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteName} />
-    <meta property="og:url" content={canonical} />
+    {indexable && <meta property="og:url" content={canonical} />}
     <meta property="og:title" content={fullTitle} />
     {summary && <meta property="og:description" content={summary} />}
     <meta property="og:image" content={ogImage} />
@@ -125,9 +190,47 @@ const current = (path: string) => here.startsWith(href(path));
     <header class="masthead">
       <div class="wrap masthead-inner">
         <a class="wordmark" href={href("/")} aria-label="iyi, home">
-          <img src={href("mascot.webp")} alt="" width="28" height="26" />
+          {/* 28x26 on the page, and it used to be served as the 1200px
+              original: every visit paid for a hero-sized file to draw a mark
+              the width of a word. `densities` asks astro:assets for the 1x and
+              2x it can actually use. Eager, because it is above the fold on
+              every page and a lazy mark pops in after the header has drawn. */}
+          <Image
+            src={mascot}
+            alt=""
+            width={28}
+            height={26}
+            densities={[1, 2]}
+            loading="eager"
+            decoding="async"
+          />
           <span>iyi</span>
         </a>
+        {/* The scheme switch. Hidden until the script claims the masthead,
+            for the same reason the menu button is: a control that cannot
+            remember a choice is an ornament, and the page already reads the
+            machine's preference without one. Both glyphs ship and CSS shows
+            the one that names what the press will do. */}
+        {/* The two grounds, read out of tokens.css at build time rather than
+            off the live cascade. `getComputedStyle(root)` for `--paper`
+            returns whichever scheme is showing, so on a machine that prefers
+            dark it answers the dark ground and the switch would have written
+            the wrong chrome colour for the light one. */}
+        <button
+          type="button"
+          class="scheme-toggle"
+          data-paper={token("paper")}
+          data-paper-dark={token("paper-dark")}
+        >
+          {/* Words, not glyphs. The moon and sun characters this button first
+              used are outside the latin and latin-ext subsets the site ships,
+              so they fell back to whatever the machine had, and
+              doc/ART-DIRECTION.md forbids an emoji used as an icon anyway. The
+              word names the press: `dark` on a light page makes it dark. */}
+          <span class="to-dark" aria-hidden="true">dark</span>
+          <span class="to-light" aria-hidden="true">light</span>
+          <span class="visually-hidden">Switch the colour scheme</span>
+        </button>
         <button
           type="button"
           class="menu-toggle"
@@ -169,6 +272,48 @@ const current = (path: string) => here.startsWith(href(path));
           toggle.setAttribute("aria-expanded", String(open));
         });
       }
+
+      /* The scheme switch.
+       *
+       * The page is already whatever the machine prefers, decided in
+       * tokens.css by a media query that needs nothing from here. All this
+       * does is write an override onto `<html>` and remember it, which is the
+       * one thing CSS cannot do for itself.
+       *
+       * The `theme-color` metas are rewritten with it. They ship
+       * media-scoped, which is right until a reader overrules the machine and
+       * then says the wrong thing about the browser's own chrome: a red bar
+       * over a white page is the defect those metas were added to fix.
+       */
+      const scheme = document.querySelector<HTMLButtonElement>(".scheme-toggle");
+      if (header && scheme) {
+        const root = document.documentElement;
+        const paper = scheme.dataset.paper ?? "";
+        const paperDark = scheme.dataset.paperDark ?? "";
+
+        const apply = (want: "light" | "dark") => {
+          root.dataset.theme = want;
+          for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+            meta.removeAttribute("media");
+            meta.content = want === "dark" ? paperDark : paper;
+          }
+        };
+
+        /* What the page is right now: an override if one was stored, the
+         * machine's answer otherwise. Read rather than assumed, so the first
+         * press always flips what the reader is looking at. */
+        const stored = localStorage.getItem("iyi-theme");
+        if (stored === "light" || stored === "dark") apply(stored);
+
+        scheme.addEventListener("click", () => {
+          const dark = root.dataset.theme
+            ? root.dataset.theme === "dark"
+            : matchMedia("(prefers-color-scheme: dark)").matches;
+          const want = dark ? "light" : "dark";
+          apply(want);
+          localStorage.setItem("iyi-theme", want);
+        });
+      }
     </script>
 
     <main id="main">
@@ -178,7 +323,17 @@ const current = (path: string) => here.startsWith(href(path));
     <footer class="colophon">
       <div class="wrap colophon-inner">
         <div class="colophon-brand">
-          <img src={href("mascot.webp")} alt="The iyi mascot, a waving heart" width="72" height="68" />
+          {/* At the foot of every page, so it is below the fold on all of
+              them and lazy by definition. */}
+          <Image
+            src={mascot}
+            alt="The iyi mascot, a waving heart"
+            width={72}
+            height={68}
+            densities={[1, 2]}
+            loading="lazy"
+            decoding="async"
+          />
           <p>
             iyi is Turkish for good. The compiler is built on Crystal's and
             carries its licence and copyright: Apache 2.0, Copyright 2012-2026
@@ -208,6 +363,16 @@ const current = (path: string) => here.startsWith(href(path));
       </div>
     </footer>
 
+    {/*
+      Where every copy control's answer is spoken, and the only one on the
+      page. `src/lib/copy.ts` writes into it; nothing else does. It has to be
+      in the document before the text arrives, because a live region inserted
+      together with its contents announces nothing, which is why it is emitted
+      here on every page rather than created next to a button. Empty on load,
+      so it says nothing until somebody presses something.
+    */}
+    <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
+
     <style>
       .skip {
         position: absolute;
@@ -227,21 +392,84 @@ const current = (path: string) => here.startsWith(href(path));
         background: var(--paper);
       }
 
+      /* Wordmark left, everything else right. `space-between` did that while
+       * the masthead held two things; the scheme switch made it three and
+       * space-between centred the nav, so the grouping is stated instead of
+       * falling out of the count. */
       .masthead-inner {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start;
         gap: 2rem;
         min-height: 3.75rem;
         flex-wrap: wrap;
       }
 
+      /* The scheme switch, drawn like the hamburger and shown on the same
+       * handshake: `display: none` until the script sets `data-js`. It sits
+       * last in the source and is pulled to the nav's right, so a reader
+       * tabbing the masthead meets the wordmark, then the sections, then the
+       * control that changes how they look. */
+      .masthead .scheme-toggle {
+        display: none;
+        order: 3;
+        background: none;
+        border: var(--hair) solid var(--boundary);
+        border-radius: 6px;
+        padding: 0.3rem 0.6rem;
+        cursor: pointer;
+        color: var(--graphite);
+        font-family: var(--font-mono);
+        font-size: var(--step--2);
+        line-height: 1.4;
+      }
+
+      /* The nav takes the slack, so it and the switch sit together at the
+       * right edge whether or not the switch is showing. */
+      .masthead nav {
+        margin-inline-start: auto;
+      }
+
+      .masthead[data-js="true"] .scheme-toggle {
+        display: inline-flex;
+      }
+
+      .scheme-toggle:hover {
+        border-color: var(--graphite);
+      }
+
+      /* One glyph at a time, and it names the press rather than the state:
+       * a moon on a light page means "make it dark". The dark branch is
+       * whatever the page actually is, override or preference, which is why
+       * it is written twice the way tokens.css is. */
+      .scheme-toggle .to-light {
+        display: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) .scheme-toggle .to-dark {
+          display: none;
+        }
+        :root:not([data-theme="light"]) .scheme-toggle .to-light {
+          display: inline;
+        }
+      }
+
+      :root[data-theme="dark"] .scheme-toggle .to-dark {
+        display: none;
+      }
+      :root[data-theme="dark"] .scheme-toggle .to-light {
+        display: inline;
+      }
+      :root[data-theme="light"] .scheme-toggle .to-dark {
+        display: inline;
+      }
       /* The hamburger: three bars, shown only below the breakpoint and only
        * once the script has claimed the header. */
       .menu-toggle {
         display: none;
         background: none;
-        border: var(--hair) solid var(--hairline);
+        border: var(--hair) solid var(--boundary);
         border-radius: 6px;
         padding: 0.5rem 0.55rem;
         cursor: pointer;
@@ -274,6 +502,15 @@ const current = (path: string) => here.startsWith(href(path));
       }
       .masthead[data-open="true"] .bars i:nth-child(3) {
         transform: translateY(-6px) rotate(-45deg);
+      }
+
+      /* The bars still cross into an X, they just arrive there. The state is
+       * what the control means; the sweep is decoration, and this is the one
+       * transition in the layout. */
+      @media (prefers-reduced-motion: reduce) {
+        .bars i {
+          transition: none;
+        }
       }
 
       @media (max-width: 52rem) {
@@ -325,7 +562,10 @@ const current = (path: string) => here.startsWith(href(path));
         text-decoration: none;
       }
 
-      .wordmark img {
+      /* `:global(img)` because the element is rendered by astro:assets rather
+       * than written here, and Astro's scoping attribute is applied to the
+       * markup in this file. Scoped by the ancestor, which is this file's. */
+      .wordmark :global(img) {
         display: block;
         height: 1.65rem;
         width: auto;
@@ -394,7 +634,7 @@ const current = (path: string) => here.startsWith(href(path));
         align-items: flex-start;
       }
 
-      .colophon-brand img {
+      .colophon-brand :global(img) {
         flex: none;
         width: 4.5rem;
         height: auto;

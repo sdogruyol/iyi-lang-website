@@ -5,6 +5,9 @@ summary: If a consumer compiles against declarations, the declarations have to b
 rule: R-2
 sample: samples/iyi/calc.iyi
 breaks: r2-missing-return-type
+breaksMore:
+  - r2-not-exported
+  - r2-wrong-return-type
 bought: >-
   The artifact is enough on its own: a consumer types a call from the signature,
   so a module can be compiled against with its source deleted, which is what step
@@ -61,7 +64,7 @@ from a bigger program, the scanner inside the three module calculator.
 <Sample path="samples/iyi/calc/lexer.iyi" region="def scan" />
 
 The signature is fully written: one parameter with its type, and a return type
-that is a union, because scanning can fail and step five is about what that
+that is a union, because scanning can fail and the last step is about what that
 means. Nothing else in the declaration is left to a reader or to a compiler.
 
 Then look inside the body. `tokens`, `index` and `start` are declared by being
@@ -76,9 +79,16 @@ would want it: an exported signature is the documentation a consumer reads, and
 `iyi mod dump --declarations` prints the module as its consumers see it, which
 is the same list of signatures with the bodies gone.
 
-## Leave one off
+## Break it three ways
 
 An exported def with no return type looks like an oversight the compiler could
 just fix, since the body is right there. It cannot, and the reason is worth more
 than the rule: the body stays in this module, so the consumer never sees it. The
 compiler says which symbol it would end up asking the linker for.
+
+Then the other two ways to get this rule wrong, recorded the same way. Reach
+from another module for a name that carries no `pub`, which is the first half
+of the rule refusing to be worked around. And write a body that does not honour
+the return type above it, which is the second half: a written type is a promise
+to everyone compiling against the artifact, so the body is the thing that has
+to give.

@@ -100,6 +100,52 @@ const claimed = (() => {
 })();
 
 /**
+ * The targets whose emitted object CI reads, and the two it does not.
+ *
+ * A third reading of the same file, added because the why page had said "the
+ * rest type-check and have the object they emit audited", which is one claim
+ * too strong: README.md's own FAQ says the audit covers seven of the nine and
+ * names the two it misses. A page that overclaims a check is the same defect
+ * as a page that overstates a figure, and it is worse here, because the check
+ * is the thing the page is offering as evidence.
+ *
+ * The count is cross-checked against the exceptions: seven audited plus two
+ * named has to be the nine the workflow type-checks, or one of the two
+ * sentences has moved and neither can be trusted.
+ */
+const audit = (() => {
+  const text = read(CLAIM);
+  const counted = text.match(/audits the emitted object\s*\n?\s*for (\S+) triples/);
+  if (!counted) {
+    throw new Error(
+      `targets: ${CLAIM} no longer says how many triples CI audits the ` +
+        `emitted object for, so the site cannot say which of them it does.`,
+    );
+  }
+  const exempt = [...text.matchAll(/`([a-z0-9_]+-[a-z0-9_-]+)`(?=[^.]*type-check but are not object-audited)/g)].map(
+    (match) => match[1],
+  );
+  if (exempt.length === 0) {
+    throw new Error(
+      `targets: ${CLAIM} says the object audit covers ${counted[1]} triples ` +
+        `and names none of the ones it leaves out. The sentence that named ` +
+        `them has moved, so the site would be publishing an exception list ` +
+        `it cannot see.`,
+    );
+  }
+  for (const triple of exempt) {
+    if (!typechecked.includes(triple)) {
+      throw new Error(
+        `targets: ${CLAIM} exempts ${triple} from the object audit and ` +
+          `${WORKFLOW} does not type-check it at all, so the two files ` +
+          `disagree about what the platform list even is.`,
+      );
+    }
+  }
+  return { count: counted[1], exempt };
+})();
+
+/**
  * The words of a phrase, and the parts of any word that is itself hyphenated,
  * under the aliases above. `x86-64 glibc` yields `x86_64` and `gnu`;
  * `wasm32-wasi under wasmtime` yields `wasm32-wasi` and also `wasm32` and
@@ -181,6 +227,19 @@ if (facts.structural.targets !== typechecked.length) {
   );
 }
 
+/* The audit's own arithmetic: the triples it covers plus the ones README
+ * exempts have to be the whole list. A sentence that said seven while the
+ * exemption named one would leave a triple in neither set, and the page would
+ * be silent about it rather than wrong about it, which is harder to notice. */
+const audited = typechecked.filter((triple) => !audit.exempt.includes(triple));
+if (SPELLED[audited.length] !== audit.count) {
+  throw new Error(
+    `targets: ${CLAIM} says the object audit covers ${audit.count} triples, ` +
+      `and exempting ${audit.exempt.join(" and ")} from ${typechecked.length} ` +
+      `leaves ${audited.length}. The two sentences no longer agree.`,
+  );
+}
+
 const commit = execFileSync("git", ["-C", repo, "rev-parse", "--short", "HEAD"], {
   encoding: "utf8",
 }).trim();
@@ -198,6 +257,8 @@ writeFileSync(
       provenance: { generator: "scripts/targets.mjs", source: WORKFLOW, claim: CLAIM, commit },
       typechecked,
       ran,
+      audited,
+      auditExempt: audit.exempt,
       how,
     },
     null,
@@ -207,6 +268,7 @@ writeFileSync(
 );
 
 console.log(
-  `targets: ${typechecked.length} type-checked, ${ran.length} run every build ` +
+  `targets: ${typechecked.length} type-checked, ${audited.length} object-audited ` +
+    `(not ${audit.exempt.join(", ")}), ${ran.length} run every build ` +
     `(${ran.join(", ")}), at ${commit}`,
 );

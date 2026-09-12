@@ -23,15 +23,15 @@
 import type { RunEvent } from "../types";
 import { WasiExit, WasiHost, decodeWrites } from "./wasi-preview1";
 
-/** Hex sha256 of exactly these bytes. */
-export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  /* A fresh copy, because `crypto.subtle` wants an ArrayBuffer and a subarray
-   * view would hash the whole underlying buffer. */
-  const digest = await crypto.subtle.digest("SHA-256", bytes.slice().buffer);
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-}
+/* `sha256Hex` moved to `../digest.ts`, and this line is here so the next
+ * reader looking for it in the obvious place finds the reason rather than
+ * writing a second one. The shell hashes the editable pane against the source
+ * digest in the record, and it has to do that before any engine loads: the
+ * engine is fetched in a chunk of its own when a visitor presses Run, and
+ * importing this file for eight lines of hashing would pull the whole WASI
+ * host into the page's first bundle. It is the same function on the same
+ * bytes wherever it is called from, which is the property that mattered when
+ * it lived here. */
 
 /** Yield to the event loop so the page paints one chunk before the next. */
 export function nextFrame(): Promise<void> {

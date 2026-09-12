@@ -1,10 +1,10 @@
 {
   "recorded": {
-    "compiler": "iyi 0.11.0 (built on Crystal 1.22.0-dev [745150426] (2026-09-11))",
-    "commit": "387a6a7c1107b4d587806913c67f104c569a978c",
-    "machine": "Linux 7.2.2-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
+    "compiler": "iyi 0.12.0 (built on Crystal 1.22.0-dev [44b843563] (2026-09-11))",
+    "commit": "44b8435633d47d2d3ba2106abe86e0ea1188257f",
+    "machine": "Linux 7.2.4-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
     "command": "npm run record:diagnostics",
-    "when": "2026-09-11T16:41:23.140Z"
+    "when": "2026-09-12T05:29:45.836Z"
   },
   "cases": [
     {
@@ -53,6 +53,15 @@
       "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2b_using_missing.iyi:9:6\n\n 9 | puts polite(\"iyi\")\n          ^-----\nError: undefined method 'polite' for Diagnostics::R2bUsingMissing:Module\n\n`polite` is exported by `dep/greeter`, and this file has not written `using`. Add `using dep/greeter` to bring its names in unqualified, or call it as `Dep::Greeter.polite` (SPEC.md R-2b)\n"
     },
     {
+      "id": "r2c-outside-bound",
+      "rule": "R-2c",
+      "title": "a body typed at its definition, reaching outside its bound",
+      "path": "records/break/r2c_outside_bound.iyi",
+      "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r2c_outside_bound.iyi",
+      "exitCode": 1,
+      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2c_outside_bound.iyi:39:5\n\n 39 | g.shout\n        ^----\nError: undefined method 'shout' for IyiDefTypeWitness_Diagnostics_R2cOutsideBound_Greet\n"
+    },
+    {
       "id": "r3-orphan-impl",
       "rule": "R-3",
       "title": "an impl in a module that owns neither the trait nor the type",
@@ -69,6 +78,24 @@
       "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r3_unmet_trait_bound.iyi",
       "exitCode": 1,
       "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r3_unmet_trait_bound.iyi:29:6\n\n 29 | puts announce(42)\n           ^-------\nError: Int32 does not implement Diagnostics::R3UnmetTraitBound::Greet, required by `T` in `announce`\n"
+    },
+    {
+      "id": "r4-monomorphize-unknown",
+      "rule": "R-4",
+      "title": "the annotation R-4 names, asked of a compiler that has no such name",
+      "path": "records/break/r4_dictionary.iyi",
+      "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r4_dictionary.iyi",
+      "exitCode": 1,
+      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r4_dictionary.iyi:16:3\n\n 16 | @[Monomorphize]\n        ^-----------\nError: undefined constant Monomorphize\n"
+    },
+    {
+      "id": "r5-global-question",
+      "rule": "R-5",
+      "title": "a derive that asks about the whole program",
+      "path": "records/break/r5_global_question.iyi",
+      "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r5_global_question.iyi",
+      "exitCode": 1,
+      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/dep/global_derive.iyi:16:31\n\n 16 | {% count = field[:type].all_subclasses.size %}\n                              ^-------------\nError: `all_subclasses` is not available to a derive: it answers with the whole program, and a derive may only read the declaration it is attached to and what that declaration's types implement — see SPEC.md II.4\n"
     },
     {
       "id": "errors-non-exhaustive",

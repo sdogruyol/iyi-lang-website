@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
+import { unified } from "@astrojs/markdown-remark";
 
 // GitHub Pages serves this repository at `iyi-lang.com` (the CNAME under
 // public/, which the build copies into dist/ - so the domain is this file's
@@ -22,7 +23,12 @@ export default defineConfig({
   // en dash in authored copy, and the lessons are markdown: a pass that
   // invented one on the way to the page would put it there in the one place
   // the prohibition cannot be seen in the source.
-  markdown: { smartypants: false },
+  //
+  // Declared on the processor rather than as `markdown.smartypants`, which
+  // Astro 7 deprecates and warns about on every build. A build that prints a
+  // warning every time teaches people to read past its output, which is how a
+  // real failure gets missed.
+  markdown: { processor: unified({ smartypants: false }) },
   build: { format: "directory" },
   devToolbar: { enabled: false },
   vite: {

@@ -1,0 +1,119 @@
+---
+title: A generic that crosses a boundary
+order: 6
+summary: Inside a module a generic monomorphises. Crossing a module boundary it is supposed to pass a dictionary keyed on GC shape, and that half of the rule has nothing behind it yet, so the artifact carries the body and the consumer compiles it again.
+rule: R-4
+sample: samples/iyi/immutable.iyi
+breaks: r4-monomorphize-unknown
+bought: >-
+  What the rule has bought so far is the shape that makes a dictionary possible
+  at all: a bound is a trait and nothing else, there are no specialised impls
+  and no blanket impls, so a generic type's method set is knowable without
+  knowing its parameter, which is what one compiled body serving many types
+  requires. What it has not bought is the dictionary, and
+  `bench/generic_boundary.py` is what measures the gap on every push rather
+  than leaving it as a sentence in a specification.
+sources:
+  - file: samples/iyi/immutable.iyi
+    note: the two ways of naming a generic across a boundary, the round trip with `src/std` moved away, and the note on what carries no machine code
+  - file: bench/generic_boundary.py
+    note: R-4 measured, what travels in an artifact by section, and the two structural facts it asserts about a module with no generic and a module that is all generics
+  - file: samples/iyi/generics.iyi
+    note: the impls over generic types, and the sample's own note that this monomorphises today
+  - file: SPEC.md
+    note: II.5 for why a dictionary needs a precise heap layout, and III.9 for what stands in for R-4 today
+---
+
+import Sample from "../../components/Sample.astro";
+
+Step four gave a generic type a trait, and step five typed a generic body
+against its bound. Neither asked what the compiler emits. This step does, and
+it is the one step in this path whose rule is mostly a plan.
+
+Read the premise above as two sentences with a boundary between them. Inside a
+module, monomorphisation: a body per set of types, which is what Crystal does
+and what every C++ template does. Across a module boundary, a dictionary keyed
+on GC shape: one compiled body, serving every type whose values are laid out
+the same way, with the operations it needs passed in.
+
+## The boundary, in a program
+
+`std/list` is a generic type in a module of its own, and this sample is its
+consumer.
+
+<Sample
+  path="samples/iyi/immutable.iyi"
+  from="# Two ways of naming the same type"
+  to='words = List.new'
+/>
+
+Look at the reason written into that comment. The artifact carries no machine
+code for a generic, so `List(String)` is a type this file makes. The producing
+module compiled nothing for it, because it could not know which types would
+turn up.
+
+That is R-1 applied to a generic, and it is also what stands in for R-4's first
+sentence today: the body travels in the artifact and the consumer compiles it
+again, for the types it uses. Monomorphisation, across the boundary the rule
+says a dictionary crosses.
+
+The round trip in the same file is the proof that nothing else is happening.
+
+<Sample
+  path="samples/iyi/immutable.iyi"
+  from="# All of the above, with `src/std` deleted"
+  to="(SPEC.md IV.1f)."
+/>
+
+The second build reads the declarations and the bodies out of the artifact and
+compiles against those alone. A generic struct, a trait with an associated
+type, and a generic impl that answers it all survive having their source moved
+away, which is step one's contract holding at its hardest point.
+
+## What the rule has already bought
+
+A dictionary is one compiled body serving many types. That is only possible if
+a generic type's method set can be known without knowing its parameter, and
+three refusals in step four are what keep that true: a bound is a trait and
+nothing else, a specialised impl is refused, and a blanket impl is refused.
+Every one of them reads as a restriction on the programmer and is a
+prerequisite for the compiled body.
+
+<Sample path="samples/iyi/generics.iyi" region="impl Show for Box(T)" />
+
+One impl, every instantiation. Under R-4 that is one body per GC shape. Today
+it is one body per instantiation, and the sample says so itself rather than
+leaving a reader to assume the better answer.
+
+<Sample
+  path="samples/iyi/generics.iyi"
+  from="# * Under R-4 an impl on a generic type"
+  to="way Crystal does."
+/>
+
+## Why the dictionary is not a free afternoon
+
+A body shared by several types still has to tell the collector which words in
+a value are pointers, so the pointer map has to travel with the shape. That is
+what a GC shape is, and it is why SPEC.md II.5 turned this rule into a
+dependency: a conservative collector guesses at pointers by scanning and
+cannot supply a per shape map. Replacing it is a prerequisite of R-4 rather
+than a runtime decision to be taken afterwards.
+
+The measurement is where this stops being an argument.
+`bench/generic_boundary.py` reads the sample corpus's artifacts by section
+table and reports what travels: the declarations a consumer compiles against,
+the bodies it compiles again, and the object code it only links. It asserts
+the two ends of the rule as it is actually built, that a module with no
+generic ships object code and no body and a module that is all generics ships
+every body and no object code, and it holds the corpus wide share of bodies
+under a line set with headroom. A tripwire rather than a target: what the
+dictionary would take out of a consumer's build, kept honest on every push.
+
+## Ask for the clause that is not there
+
+R-4's third sentence names an annotation, `@[Monomorphize]`, for forcing
+specialisation across a boundary. It is the part of the rule with nothing
+behind it at all, and the compiler does not pretend otherwise. Write it and
+the answer is not a warning, a silent acceptance, or a slower build. It is a
+name the compiler has never heard of.

@@ -58,6 +58,24 @@ const learn = defineCollection({
     // resolved through the same listing index every other sample on the site is
     // read from, so a path that is not in the tree fails the build.
     breaksAlso: z.array(z.string().min(1)).optional(),
+    // Further recorded rejections of the same rule, shown after the first.
+    //
+    // A rule is usually broken more than one way, and records/diagnostics.json
+    // holds a case per way. A recording nothing renders is dead weight that
+    // nobody notices has gone stale, so a step that teaches a rule shows every
+    // case recorded under it rather than one. Each id is resolved against the
+    // record by src/lib/lessons.ts, and the case carries its own rule, so a
+    // step cannot quietly show a rejection that belongs to a different rule.
+    breaksMore: z
+      .array(
+        z
+          .string()
+          .regex(
+            /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+            "each entry is a case id in records/diagnostics.json",
+          ),
+      )
+      .optional(),
     // What the rule bought, in one or two sentences, grounded in the tree. It
     // is a field rather than a closing paragraph because it is the fourth part
     // of every step's shape, and a shape a reader can rely on is one the

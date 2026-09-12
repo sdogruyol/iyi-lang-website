@@ -156,24 +156,27 @@ function walk(dir) {
 const samplesRoot = resolve(repo, "samples", "iyi");
 const tourRoot = resolve(site, "samples", "tour");
 const breakRoot = resolve(site, "records", "break");
-for (const root of [samplesRoot, tourRoot, breakRoot]) {
+// The agent loop's project: four modules this repository authors in iyi, the
+// same way it authors the tour, recorded by scripts/record-agent.mjs and
+// printed on the agents page.
+const agentRoot = resolve(site, "records", "agent");
+const roots = [samplesRoot, tourRoot, breakRoot, agentRoot];
+for (const root of roots) {
   if (!existsSync(root)) {
     throw new Error(`${root} is not there, so there is nothing to record`);
   }
 }
 
-// A listing's key is its path: a sample's in the iyi repository, a tour or a
-// break program's in this one. `samples/iyi/` is the one prefix that is the
+// A listing's key is its path: a sample's in the iyi repository, a tour, break
+// or agent program's in this one. `samples/iyi/` is the one prefix that is the
 // iyi tree's, and the key is what the lessons name.
 const keyOf = (file) =>
   relative(file.startsWith(samplesRoot) ? repo : site, file).split("\\").join("/");
 const fileOf = (key) =>
   key.startsWith("samples/iyi/") ? resolve(repo, key) : resolve(site, key);
-const files = [...walk(samplesRoot), ...walk(tourRoot), ...walk(breakRoot)].map(keyOf);
+const files = roots.flatMap((root) => walk(root)).map(keyOf);
 if (files.length === 0) {
-  throw new Error(
-    `found no .iyi files under ${samplesRoot}, ${tourRoot} or ${breakRoot}`,
-  );
+  throw new Error(`found no .iyi files under ${roots.join(", ")}`);
 }
 
 // ---------------------------------------------------------------------------

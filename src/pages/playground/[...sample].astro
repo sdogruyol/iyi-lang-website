@@ -16,17 +16,39 @@
  *
  * WHY A ROUTE PER SAMPLE RATHER THAN A PICKER THAT SWAPS IN THE BROWSER. Each
  * page carries exactly one program and one recorded colouring. The alternative
- * was one page holding all thirteen, which would have meant shipping every
+ * was one page holding every sample, which would have meant shipping every
  * listing to every visitor so a control could reveal one of them. A site
  * arguing that a program should link only what it uses does not get to do that,
  * and there is a second reason that matters more: a real URL resolves before
  * any script runs, so a lesson's link works with scripts off and survives being
  * bookmarked or shared.
+ *
+ * WHAT THIS ROUTE HANDS THE BROWSER. One entry out of
+ * `src/generated/playground/`, written by `scripts/records.mjs` as this
+ * sample's slice of the verified manifest: the module's name and digest, the
+ * digest of the source the module was built from, the answer key for the
+ * exercise, and the recording's provenance. The glob below is read in node at
+ * build time, and only the one entry this page is about reaches the page. The
+ * island used to reach the whole manifest and the whole diagnostics record
+ * through the engine's import graph, which is what that costs and why it
+ * stopped.
  */
 import Page from "../../layouts/Page.astro";
 import Playground from "../../components/Playground.astro";
 import type { TourStep } from "../../playground/samples";
+import type { SampleEntry } from "../../playground/entry";
 import { curatedSamples, tourSamples } from "../../playground/samples";
+
+/* Eager because this runs in node during the static build and every route
+ * needs one of these. Astro never sends a frontmatter import to a browser, so
+ * what is shipped is what the component serialises and nothing else. */
+const written = import.meta.glob<SampleEntry>("../../generated/playground/*.json", {
+  eager: true,
+  import: "default",
+});
+
+const entries: Record<string, SampleEntry> = {};
+for (const entry of Object.values(written)) entries[entry.id] = entry;
 
 export function getStaticPaths() {
   /* Every step of the tour, runnable or recorded, and every runnable sample
@@ -47,6 +69,20 @@ interface Props {
 const { sample } = Astro.props as Props;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 const runs = "wasm" in sample;
+
+/* The slice for this sample. Missing is fatal rather than silently absent: a
+ * page rendered without it would carry an editor that cannot tell whether the
+ * text in it is still the recorded program, and a run control with no digest
+ * to check the module against. */
+const entry = entries[sample.id];
+if (entry === undefined) {
+  throw new Error(
+    `playground: no entry for "${sample.id}" in src/generated/playground/. ` +
+      `scripts/records.mjs writes one per sample in the verified manifest, ` +
+      `so a missing one means the generator did not run or the manifest does ` +
+      `not name this sample.`,
+  );
+}
 ---
 
 <Page
@@ -57,14 +93,14 @@ const runs = "wasm" in sample;
       : `${sample.path}, and what it printed when the iyi compiler ran it natively.`
   }
 >
-  <Playground sample={sample} />
+  <Playground sample={sample} entry={entry} />
 
   <section class="wrap honest">
     <p>
       {
         runs
-          ? "This page runs the module the compiler built from the listing above. The listing cannot be edited yet, because a browser has no linker and nothing here compiles. There is no standard input, no filesystem and no threads on this target, and one sample fails on purpose for exactly that reason."
-          : "This program does not compile for the browser's target, so this page shows what it printed when the compiler ran it natively, on the machine named above. The listing cannot be edited yet, because nothing here compiles."
+          ? "This page runs the module the compiler built from the listing above. You can type in the pane: nothing here compiles, so what you type cannot run, and the page says which bytes it is running the moment the text stops being the recorded file. There is no standard input, no filesystem and no threads on this target, and one sample fails on purpose for exactly that reason."
+          : "This program does not compile for the browser's target, so this page shows what it printed when the compiler ran it natively, on the machine named above. You can still type in the pane, and the page will say when what is in it is no longer the file the recording is about."
       }{" "}
       <a href={`${base}playground/evidence/`}>The recordings behind this</a>{" "}
       say which bytes ran and what checked them.

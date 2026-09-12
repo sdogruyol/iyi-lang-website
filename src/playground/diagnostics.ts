@@ -111,8 +111,13 @@ const LOCATION = /^In (.+):(\d+):(\d+)\s*$/m;
  *
  * Pure and safe in node, because the shell renders this pane during the static
  * build as well as in the browser.
+ *
+ * Narrowed to the diagnostic arm rather than left as `RunEvent[]`, which is
+ * what this function produces and what `provideDiagnostics` takes. The wider
+ * type made the one call site a type error while the values were already
+ * right.
  */
-export function recordedDiagnostics(): RunEvent[] {
+export function recordedDiagnostics(): Extract<RunEvent, { kind: "diagnostic" }>[] {
   return diagnosticCases.map((entry) => {
     if (!entry.stderr) {
       throw new Error(

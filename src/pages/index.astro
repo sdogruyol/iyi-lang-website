@@ -1,4 +1,5 @@
 ---
+import { Image } from "astro:assets";
 import Page from "../layouts/Page.astro";
 import Measure from "../components/Measure.astro";
 import Stamped from "../components/Stamped.astro";
@@ -7,18 +8,29 @@ import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
 import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
-import { findSample } from "../playground/samples";
-import { latestRelease, releaseUrl } from "../lib/release";
+import { tourSamples, runnable, playgroundHref } from "../playground/samples";
+import { latestRelease, releaseUrl, releaseAssets } from "../lib/release";
 import platforms from "../generated/targets.json";
-import { SPELLED } from "../lib/lessons";
+import { SPELLED, lessonHref, sequence } from "../lib/lessons";
+import mascot from "../assets/mascot.webp";
 
 const release = latestRelease();
 
-/* The tour's first program and what it printed, out of the wasm record. The
- * build refuses a home page whose hello the recorder did not run. */
-const hello = findSample("samples/tour/hello.iyi");
-if (hello === null) {
-  throw new Error("samples/tour/hello.iyi is not in records/wasm/manifest.json");
+/* The tour's first program, what it printed, and the route to it, all taken
+ * from the tour's own table of contents. The page says "the first program of
+ * the tour", so it follows the tour rather than naming a sample: the id and
+ * the path were typed here, and either could have gone on pointing at a
+ * program the tour had moved off the front. */
+const [first] = tourSamples;
+if (first === undefined || !runnable(first)) {
+  throw new Error(
+    "index: the tour's first step has no recorded module, so the home page " +
+      "has no output to show beside it. Regenerate with npm run record:wasm.",
+  );
+}
+const firstHref = playgroundHref(first.path);
+if (firstHref === null) {
+  throw new Error(`index: ${first.path} has no playground page to link to`);
 }
 
 const base = import.meta.env.BASE_URL;
@@ -34,6 +46,37 @@ const massRatio = Math.round(bin.crystal.kb / bin.iyi.kb);
  * scripts/targets.mjs rather than counted into this sentence by hand. */
 const ranCount = SPELLED[platforms.ran.length];
 
+/* The wasm target, found in that run set rather than spelled into the
+ * sentence below: the playground is the one claim on this page that depends on
+ * a specific triple, and a rename of it (wasm32-wasip1 is where this is going)
+ * would otherwise leave the home page naming a target nothing builds. */
+const wasm = platforms.ran.find((t) => t.startsWith("wasm"));
+if (wasm === undefined) {
+  throw new Error(
+    "index: no wasm target is in the run set, so the home page cannot say " +
+      "the playground runs one. scripts/targets.mjs read the workflow and " +
+      "README.md; one of the two dropped it.",
+  );
+}
+
+/* The lessons, counted rather than stated: this card said "Five lessons" while
+ * the count lives in src/content/learn, so adding a lesson made the home page
+ * wrong and no gate could see it. Spelled through the same table and with the
+ * same fallback the learn index uses, which is what a thirteenth lesson would
+ * need. The first step is linked by following the sequence rather than by the
+ * slug this page used to carry, which would have gone to a 404 the day a
+ * lesson was renamed and said nothing on the way. */
+const lessons = await sequence();
+const spelled = SPELLED[lessons.length] ?? String(lessons.length);
+const lessonCount = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
+const firstLesson = lessonHref(base, lessons[0]);
+
+/* The machines a release ships a tarball for, in README.md's own words for
+ * them, through scripts/install-targets.mjs. "Linux x86-64 or macOS arm64" was
+ * typed into the install card, which made this page the third place that pair
+ * was written down and the only one nothing checked. */
+const machines = releaseAssets(release).map((asset) => asset.machine);
+
 const starts = [
   {
     title: "Take the tour",
@@ -43,7 +86,7 @@ const starts = [
   },
   {
     title: "Learn the rule",
-    body: "Five lessons on what makes iyi its own language, each one a real program from the repository, and each one ending in a mistake so you meet the compiler's own error on purpose.",
+    body: `${lessonCount} lessons on what makes iyi its own language, each one a real program from the repository, and each one ending in a mistake so you meet the compiler's own error on purpose.`,
     href: "learn/",
     cta: "Start the lessons",
   },
@@ -79,11 +122,14 @@ const starts = [
         </p>
       </div>
       <div class="hero-art">
-        <img
-          src={`${base}mascot.webp`}
+        <Image
+          src={mascot}
           alt="The iyi mascot: a smiling red heart with yellow gloves, waving"
-          width="480"
-          height="450"
+          width={480}
+          height={450}
+          densities={[1, 2]}
+          loading="eager"
+          decoding="sync"
           fetchpriority="high"
         />
       </div>
@@ -100,17 +146,17 @@ const starts = [
           what the compiler's build of it printed.
         </p>
         <p>
-          <a href={`${base}playground/hello/`}>Run it in the playground</a>
+          <a href={firstHref}>Run it in the playground</a>
         </p>
       </div>
       <div class="try-run">
-        <Sample path="samples/tour/hello.iyi" />
+        <Sample path={first.path} />
         <div class="console">
           <div class="console-chrome" aria-hidden="true">
             <i></i><i></i><i></i>
-            <span class="caption">iyi run samples/tour/hello.iyi</span>
+            <span class="caption">iyi run {first.path}</span>
           </div>
-          <pre><span class="out">{hello.nativeStdout}</span></pre>
+          <pre><span class="out">{first.nativeStdout}</span></pre>
         </div>
       </div>
     </div>
@@ -172,8 +218,8 @@ const starts = [
       <div>
         <h2>Install in one line</h2>
         <p class="section-sub">
-          The latest release into <code>~/.local</code>, on Linux x86-64 or
-          macOS arm64, with both libraries and the samples. Then hello.
+          The latest release into <code>~/.local</code>, on {machines.join(" or ")},
+          with both libraries and the samples. Then hello.
         </p>
         <p><a href={`${base}install/`}>What the installer does, and the by-hand version</a></p>
       </div>
@@ -208,15 +254,15 @@ const starts = [
             <code>iyi check</code> answers as data with suggested edits, and{" "}
             <code>iyi mcp</code> serves it all over the protocol agents speak.
           </p>
-          <a href={`${base}learn/declarations-not-bodies/`}>Declarations, not bodies</a>
+          <a href={firstLesson}>Declarations, not bodies</a>
         </li>
         <li class="card">
           <p class="card-figure"><Measure of="targets" /></p>
           <h3>Portable</h3>
           <p>
             An iyi program compiles for <Measure of="targets" /> targets, and is
-            run on {ranCount} of them on every build. One of those is
-            wasm32-wasi, which is what the playground on this site uses.
+            run on {ranCount} of them on every build. One of those is {wasm},
+            which is what the playground on this site uses.
           </p>
           <a href={`${base}playground/evidence/`}>How the playground runs</a>
         </li>
@@ -238,7 +284,8 @@ const starts = [
     <div class="wrap">
       <h2>Measured, not promised</h2>
       <p class="section-sub">
-        One line changed in one of 30 modules, <Measure of="generated" /> lines
+        One line changed in one of <Measure of="modules" /> modules,{" "}
+        <Measure of="generated" /> lines
         in all, built by iyi and by the same compiler under Crystal's rules, by
         a generator that refuses to start the clock until both print the same
         total. The bars run at real speed.

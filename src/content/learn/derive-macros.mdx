@@ -1,0 +1,105 @@
+---
+title: A macro that can only see one declaration
+order: 7
+summary: A macro is attached to a declaration with `derive`, it reads that declaration and what its field types implement, and it sees nothing global. So it runs once, in the module that declares the type, and what it generated travels in the artifact.
+rule: R-5
+sample: samples/iyi/derive.iyi
+breaks: r5-global-question
+breaksAlso:
+  - records/break/dep/global_derive.iyi
+bought: >-
+  A macro runs once, where the type is declared, and its output is ordinary
+  exported declarations, so a consumer calls a derived method without running
+  the macro and without the producer's source. That is what makes an artifact
+  enough in a language that has macros at all, and it is checked rather than
+  claimed: `bench/samples_roundtrip.sh` builds this step's program from
+  artifacts with `std/derives` deleted.
+sources:
+  - file: samples/iyi/derive.iyi
+    note: the two derives, one macro reading each declaration's own fields, and the sample's own list of what it would report as an error
+  - file: src/std/derives.iyi
+    note: the macros themselves, including the one that asks whether a field's type implements a trait
+  - file: spec/compiler/iyi_derive_spec.cr
+    note: the test that deletes both producer sources and builds the consumer from artifacts alone
+  - file: SPEC.md
+    note: II.4, the precise version of R-5 and the program wide questions it refuses
+---
+
+import Sample from "../../components/Sample.astro";
+
+Every rule so far has been about a consumer compiling against declarations.
+Macros are where that promise is easiest to lose, because a macro that can ask
+anything about the program produces code that depends on the whole program,
+and then no artifact can carry what it produced.
+
+Crystal's macros can ask anything. `all_subclasses` answers with every type in
+the build, `macro finished` runs at the end of one, and `macro_run` shells out
+to a program. R-5 replaces all of it with one arrangement: a macro is attached
+to a declaration, reads that declaration, and sees nothing global.
+
+## Attached, and what that means
+
+`derive` is how a macro is attached, and it goes inside a class or struct body.
+
+<Sample path="samples/iyi/derive.iyi" region="struct Point" />
+
+`described` is an exported macro of `std/derives`, brought in with the same
+`import` and `using` from step three, because a derive macro arrives through
+the ordinary exported macro table and nothing else. What it is handed is the
+declaration it sits in: the type's name, and each field written in the body
+with the type it was written as.
+
+So one macro serves types it was never told about.
+
+<Sample path="samples/iyi/derive.iyi" region="struct Span" />
+
+Two declarations, one macro, and neither type is named anywhere in the macro.
+`std/derives.iyi` in the compiler tree holds it, and its body is a loop over
+the fields it was handed: the macro has nothing else to iterate, which is what
+makes a derive bounded and its output cacheable.
+
+## The question a derive is allowed to ask
+
+Reading names and types would not be enough for anything real. The useful
+question is whether a field's type implements a trait, and a field's type
+arrives as a type rather than as a name, so the macro can ask it.
+
+<Sample path="samples/iyi/derive.iyi" region="struct Tag" />
+
+`@label` is rendered through the trait and `@count` is skipped, because
+`Int32` does not implement it. The trait and the type both belong to another
+module, and the answer arrives from that module's artifact when its source is
+gone. That is the whole of what R-5 permits beyond the declaration itself: the
+export metadata of imported modules, never a walk over the program.
+
+Notice where `derive` sits in that listing. A `getter` is a macro call too, so
+the field it declares exists only once it has run, and a derive reads the
+declarations above it. Put the `getter` below and the compiler says so, naming
+the call and which way to move it, rather than generating a method over the
+fields it happened to see.
+
+## Once, and then in the artifact
+
+The derive expands in the module that declares the type, and the methods it
+generates are that module's own declarations. Two consequences fall out and
+neither needed new machinery.
+
+Coherence holds by itself. A derive generating an `impl` writes it in the
+module that declares the type, which is exactly where step four's orphan rule
+says an impl may live. And you cannot derive a trait onto a type you do not
+own, because you cannot reopen it.
+
+A consumer never runs the macro. It reads the generated signatures out of the
+artifact like any other export, which is why this sample is one of the
+programs `bench/samples_roundtrip.sh` rebuilds with `std/derives` deleted.
+
+## Ask about the whole program
+
+The refusals this arrangement needs are the program wide questions, and they
+are refused for exactly as long as a derive is expanding: outside one they are
+untouched, because they are Crystal's and they are fine in a program that is
+not promising an artifact.
+
+Here is a library module with a derive macro that asks one of them, and a
+program that writes `derive` for it. Everything on the page is legal except
+the question.

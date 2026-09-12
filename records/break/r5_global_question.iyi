@@ -1,0 +1,27 @@
+# Breaks R-5: a macro sees the declaration it is attached to, and nothing
+# global. Everything here is legal. `Point` is this module's own type, the
+# derive is written inside its body where a derive belongs, and `counted`
+# comes from a module this file imports and `using`s, which is the only way a
+# derive macro can arrive. What is refused is the one question the macro asks:
+# `all_subclasses` answers with the whole program rather than with this
+# declaration, so the answer would depend on what else was compiled and the
+# methods it generated could not travel in this module's artifact.
+#
+# The refusal lands at expansion, in the consumer's build, which is where the
+# macro runs. `dep/global_derive.iyi` is the macro (SPEC.md R-5, II.4).
+module diagnostics/r5_global_question
+
+import dep/global_derive
+
+using dep/global_derive
+
+pub struct Point
+  @x : Int32
+
+  def initialize(@x : Int32)
+  end
+
+  derive counted
+end
+
+puts Point.new(1).counted

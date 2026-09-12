@@ -13,38 +13,124 @@
  * scripts/samples.mjs. The rejection each step ends on is named too, carrying
  * the title of a case in records/diagnostics.json, so the index cannot
  * promise a recorded diagnostic that nobody ran.
+ *
+ * There are two tracks and this page shows both, because the rules are not the
+ * syntax and a reader arrives wanting one or the other. The second is the
+ * tour, which lives under /playground/: its sections and its steps are read
+ * out of samples/tour/tour.json through src/playground/samples.ts, resolved
+ * against the wasm recording there, so a step this page offers is a step that
+ * has a page and a recorded run.
  */
 import Measure from "../../components/Measure.astro";
 import Page from "../../layouts/Page.astro";
 import {
   sequence,
   rulesOf,
-  breakCase,
+  breakCases,
   inlineMarkdown,
   lessonHref,
   SPELLED,
 } from "../../lib/lessons";
+import {
+  playgroundHref,
+  runnable,
+  tourSamples,
+  tourSections,
+} from "../../playground/samples";
+import { recordedText } from "../../lib/highlight";
 
 const lessons = await sequence();
 const base = import.meta.env.BASE_URL;
+const playground = `${base.replace(/\/$/, "")}/playground/`;
 
 const steps = lessons.map((lesson, i) => ({
   lesson,
   href: lessonHref(base, lesson),
   rules: rulesOf(lesson),
-  broken: breakCase(lesson.data.breaks),
+  broken: breakCases(lesson),
   next: lessons[i + 1],
 }));
 
 const [first] = steps;
 const spelled = SPELLED[steps.length] ?? String(steps.length);
 const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
+
+// The other track. Every step carries its own page under /playground/, so the
+// href is the recording's, not a guess: `playgroundHref` answers null for a
+// program the wasm record does not cover, and a section that lost a step to
+// that would be offering a link to nothing, so it is a build failure here.
+const tour = tourSections.map((section) => ({
+  title: section.title,
+  blurb: section.blurb,
+  steps: section.steps.map((step) => {
+    const href = playgroundHref(step.id) ?? `${playground}${step.id}/`;
+    return { id: step.id, href, runs: runnable(step) };
+  }),
+}));
+
+const tourStart = tour[0]?.steps[0];
+if (tourStart === undefined) {
+  throw new Error(
+    "samples/tour/tour.json laid out no sections, so this page would offer a " +
+      "second track with no way into it",
+  );
+}
+
+// A program's own opening sentence, read out of the highlight recording rather
+// than described here, so a sample that changes what it documents changes this
+// page with it. The leading comment block is joined before the sentence is cut,
+// because a comment wraps at the file's column and a first line is a fragment
+// as often as it is a sentence: webapp.iyi's runs onto its second line, and
+// showing only the first left the page ending on "injected by".
+function opening(path: string): string {
+  const lines: string[] = [];
+  for (const line of recordedText(path).split("\n")) {
+    const comment = /^#\s?(.*)$/.exec(line);
+    if (comment === null) break;
+    if (comment[1].trim() === "") break;
+    lines.push(comment[1].trim());
+  }
+  const joined = lines.join(" ");
+  const stop = joined.indexOf(". ");
+  const sentence = stop === -1 ? joined : joined.slice(0, stop + 1);
+  if (sentence === "") {
+    throw new Error(
+      `${path} opens with no comment, so this page has nothing to say about ` +
+        `it that the file says itself. Describe it in the file, not here.`,
+    );
+  }
+  return sentence;
+}
+
+// The samples a lesson does not stand on, each linked where it can be run.
+// Named here rather than in a paragraph so the page cannot offer a program the
+// recording has no module for, which is how the old closing paragraph sent a
+// reader to a directory listing that does not exist on this site.
+const grounded = new Set(lessons.map((lesson) => lesson.data.sample));
+const further = [
+  "samples/iyi/collections.iyi",
+  "samples/iyi/immutable.iyi",
+  "samples/iyi/init_order.iyi",
+  "samples/iyi/webapp.iyi",
+]
+  .filter((path) => !grounded.has(path))
+  .map((path) => {
+    const href = playgroundHref(path);
+    if (href === null) {
+      throw new Error(
+        `this page offers ${path} as somewhere to go next and the wasm ` +
+          `recording has no module for it, so the link would not run. Either ` +
+          `record it or name a different sample.`,
+      );
+    }
+    return { name: path.replace(/^samples\/iyi\//, ""), href, blurb: opening(path) };
+  });
 ---
 
 <Page
   kind="CollectionPage"
   title="Learn iyi"
-  summary={`${count} steps in order, one rule each. Compile against declarations rather than bodies, write down what you export, own your own names, replace open classes with traits, and return errors as ordinary values.`}
+  summary={`${count} steps in order, one rule each. Compile against declarations rather than bodies, write down what you export, own your own names, replace open classes with traits, type a body where it is written, cross a boundary with a generic, keep a macro to one declaration, and return errors as ordinary values.`}
 >
   <div class="spread">
     <div class="intro">
@@ -63,6 +149,12 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
       </p>
       <p class="start">
         <a href={first.href}>Start at step one, {first.lesson.data.title}</a>
+      </p>
+      <p class="sideways">
+        Or start with the syntax. <a href={tourStart.href}>The tour</a> is{" "}
+        {tourSamples.length} short programs that run in your browser, from one{" "}
+        <code>puts</code> to tasks and channels, and it is the second track at
+        the foot of this page.
       </p>
     </div>
 
@@ -118,7 +210,7 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
                     Then step {next.data.order}, <a href={lessonHref(base, next)}>{next.data.title}</a>.
                   </>
                 ) : (
-                  <>The last step. After it, the samples are the rest of the language.</>
+                  <>The last step. After it, the tour below is the syntax.</>
                 )
               }
             </p>
@@ -135,7 +227,9 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
             <dt>grounded in</dt>
             <dd>{lesson.data.sample}</dd>
             <dt>breaks</dt>
-            <dd class="breaks">{broken.title}</dd>
+            {broken.map((entry) => (
+              <dd class="breaks">{entry.title}</dd>
+            ))}
           </dl>
         </li>
       ))
@@ -145,18 +239,61 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
   <div class="spread">
     <section class="after to-wide">
       <hr class="rule" />
-      <p class="label">After the last step</p>
+      <p class="label">The second track</p>
+      <h2 class="after-head">The syntax, in {tourSamples.length} short programs</h2>
       <p class="after-body">
-        The samples are the rest of the language. <code>samples/iyi</code> holds{" "}
-        <Measure of="samples" /> programs, each written to document a part of the
-        design rather than to show off. <code>collections.iyi</code> ports an{" "}
-        <code>Enumerable</code> onto traits with associated types, which is where
-        step four starts paying real rent. <code>immutable.iyi</code> is a
-        shareable collection and the copy that makes it safe.{" "}
-        <code>init_order.iyi</code> is about what a module may do while it loads.
-        And <code>webapp.iyi</code> is the Kemal port whose source you deleted in
-        step one.
+        The steps above are the rules, which is what makes iyi a different
+        language from the one it forked. The tour is everything else: the
+        syntax, in the order a person learns a language, each step a program
+        that runs in your browser from the module the compiler built for it.
+        Read the rules first and the tour reads as confirmation. Read the tour
+        first and the rules read as the reason.
       </p>
+
+      <ol class="tour">
+        {
+          tour.map((section) => (
+            <li class="tour-section">
+              <p class="tour-title">{section.title}</p>
+              <p class="tour-blurb">{section.blurb}</p>
+              <p class="tour-steps">
+                {section.steps.map((step) => (
+                  <a class:list={["tour-step", { recorded: !step.runs }]} href={step.href}>
+                    {step.id}
+                  </a>
+                ))}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <p class="after-note">
+        A step set in the quieter face ran natively rather than in the browser:
+        tasks and channels have no wasm target yet, so those two pages show
+        what the program printed on the machine the recording names.
+      </p>
+    </section>
+
+    <section class="after to-wide">
+      <hr class="rule" />
+      <p class="label">And the rest of the samples</p>
+      <p class="after-body">
+        Neither track is the whole repository. <code>samples/iyi</code> holds{" "}
+        <Measure of="samples" /> programs, each written to document a part of
+        the design rather than to show off. The ones no step above is grounded
+        in are the ones to read next, and each of them runs here too:
+      </p>
+      <ul class="further">
+        {
+          further.map((sample) => (
+            <li>
+              <a href={sample.href}><code>{sample.name}</code></a>
+              <span class="further-blurb">{sample.blurb}</span>
+            </li>
+          ))
+        }
+      </ul>
     </section>
   </div>
 </Page>
@@ -334,7 +471,16 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
     }
   }
 
-  /* The end of the path. A walk should say where it stops. */
+  /* The other way in, under the one obvious way in. Quieter than `.start`,
+   * because a reader who wants the rules should not have to choose twice. */
+  .sideways {
+    margin-block: 1.1rem 0;
+    max-width: 58ch;
+    color: var(--graphite);
+  }
+
+  /* The end of the path. A walk should say where it goes next, and the answer
+   * is the other track rather than a directory this site does not publish. */
   .after {
     margin-block: 3rem 1rem;
   }
@@ -343,9 +489,113 @@ const count = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
     margin-block: 1.3rem 0.8rem;
   }
 
+  .after-head {
+    font-size: var(--step-2);
+    margin-block: 0 0.9rem;
+  }
+
   .after-body {
     margin: 0;
     max-width: var(--measure);
     color: var(--graphite);
+  }
+
+  /* The tour, by section. A section is a row: what it covers, then its steps
+   * as the names of the programs, because the program's name is what a reader
+   * will be looking at on the page it links to. */
+  .tour {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+  }
+
+  .tour-section + .tour-section {
+    margin-block-start: 1.6rem;
+    border-top: var(--hair) solid var(--track);
+    padding-block-start: 1.6rem;
+  }
+
+  .tour-title {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .tour-blurb {
+    margin: 0.25rem 0 0;
+    max-width: var(--measure);
+    color: var(--graphite);
+  }
+
+  .tour-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 1rem;
+    margin: 0.7rem 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+  }
+
+  .tour-step {
+    color: var(--graphite);
+    text-decoration: none;
+    border-bottom: var(--hair) solid var(--hairline);
+    padding-block-end: 1px;
+  }
+
+  .tour-step:hover,
+  .tour-step:focus-visible {
+    color: var(--ink);
+    border-bottom-color: var(--signal);
+  }
+
+  /* A step the browser's target cannot run. Set quieter rather than marked
+   * with a badge: the page says what it means once, under the list. */
+  .tour-step.recorded {
+    color: var(--mute);
+    border-bottom-style: dotted;
+  }
+
+  .after-note {
+    margin-block: 1.4rem 0;
+    max-width: var(--measure);
+    font-size: var(--step--1);
+    color: var(--mute);
+  }
+
+  .further {
+    list-style: none;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .further li {
+    display: grid;
+    /* The floor is the longest sample name plus room, so a name never breaks
+     * mid-token and the blurbs line up as a column a reader can scan. */
+    grid-template-columns: minmax(0, 16ch) minmax(0, 1fr);
+    gap: 0.2rem var(--gutter);
+    align-items: baseline;
+  }
+
+  .further a {
+    text-decoration: none;
+    border-bottom: var(--hair) solid var(--hairline);
+    padding-block-end: 1px;
+  }
+
+  .further a:hover {
+    border-bottom-color: var(--signal);
+  }
+
+  .further-blurb {
+    color: var(--graphite);
+  }
+
+  @media (max-width: 42rem) {
+    .further li {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

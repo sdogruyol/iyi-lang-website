@@ -9,14 +9,21 @@
  */
 import type { APIRoute } from "astro";
 import facts from "../generated/facts.json";
+import { getCollection } from "astro:content";
 import { tourSections, wasmProvenance } from "../playground/samples";
 import { latestRelease } from "../lib/release";
 import platforms from "../generated/targets.json";
 import { SPELLED } from "../lib/lessons";
+import agent from "../../records/agent.json";
 
-export const GET: APIRoute = ({ site }) => {
+export const GET: APIRoute = async ({ site }) => {
   const origin = (site ?? new URL("https://iyi-lang.com")).href.replace(/\/$/, "");
   const loop = facts.recorded.edit_loop;
+
+  /* The lessons, counted rather than stated. The path grew from five to eight
+   * in one afternoon and this file said five; an agent reading it would have
+   * been told the site is smaller than it is. */
+  const lessons = await getCollection("learn");
   const bin = facts.recorded.hello_binary;
   const pack = facts.recorded.context_pack;
   const s = facts.structural;
@@ -27,6 +34,17 @@ export const GET: APIRoute = ({ site }) => {
    * count here is worse than one on a page. */
   const ranCount = SPELLED[platforms.ran.length];
   const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platforms.how]);
+
+  /* The loop's verbs and what each one answered with, out of the recording
+   * rather than out of a sentence about it. An agent reading this file gets
+   * the argv, the stream and the status, which is what it needs to run the
+   * loop itself. */
+  const loopFrames = agent.frames
+    .map(
+      (f) =>
+        `    ${f.command}${" ".repeat(Math.max(1, 52 - f.command.length))}exit ${f.exitCode}, answers on ${f.payload}`,
+    )
+    .join("\n");
 
   const tour = tourSections
     .map(
@@ -52,17 +70,21 @@ module exports writes its types down (R-2). \`using\` brings exported names into
 a file because that file asked (R-2b). There are no open classes; \`impl Trait
 for Type\` lives with the trait or the type (R-3).
 
-- Developer experience: change one line in a ${s.generated.toLocaleString("en-GB")}-line project of 30
+- Developer experience: change one line in a ${s.generated.toLocaleString("en-GB")}-line project of ${s.modules}
   modules and rebuild in ${loop.best.iyi} s, against ${loop.best.crystal} s under Crystal's rules on the
   same compiler binary: about ${loop.claim.value}x less. Measured by \`${loop.command}\`
   on ${loop.machine}.
 - AI experience: a module's interface is a file (.iyimod). \`iyi mod context\`
   grounds an edit at ${pack.size_low} to ${pack.size_high}% of the sources' size; a model writing
   against it spent ${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens over ${pack.runs} measured
-  runs (\`${pack.command}\`). The loop is one verb per step: \`iyi check -f json\`
-  (verdict as data with suggested_edit spans), \`iyi fix\`, \`iyi test
-  --affected\`, \`iyi run --sandbox\`, and \`iyi mcp\` / \`iyi lsp\` serving the
-  same verbs over MCP and LSP.
+  runs (\`${pack.command}\`). The loop is one verb per step, and every step of
+  it is recorded from a real run at ${origin}/agents/:
+${loopFrames}
+  \`iyi mcp\` serves ${agent.wire.tools.length} of those verbs over MCP stdio as the tools
+  ${agent.wire.tools.map((t) => `\`${t}\``).join(", ")}, and \`iyi lsp\` serves the same front end to an
+  editor. The answer over the wire is byte for byte the answer in a shell:
+  ${agent.recorded.command} compares them on every recording and refuses to write
+  the record when they differ.
 - Portability: compiles for ${s.targets} targets and is run on ${ranCount} every
   build (${ranHow.join(", ")}).
 - Performance and efficiency: native code through LLVM; a hello world is
@@ -88,10 +110,18 @@ an iyi module; iyi consumes Crystal, not the other way round.
 
 - [Home](${origin}/): the one line, a listing that runs, the Crystal section.
 - [Why iyi](${origin}/why/): the four sides, each with its measurement and machine.
-- [Learn](${origin}/learn/): five lessons on the rule, each running a real program.
+- [Learn](${origin}/learn/): ${SPELLED[lessons.length] ?? lessons.length} lessons on the rule, each running a real program.
 - [Install](${origin}/install/): the one-line installer, the by-hand version, and from source.
 - [Playground](${origin}/playground/): the tour, ${tourSections.reduce((n, x) => n + x.steps.length, 0)} short programs that run in the browser.
 - [Playground evidence](${origin}/playground/evidence/): what ran, what checked it.
+- [For your agents](${origin}/agents/): the loop above as a transcript, every frame a real run.
+- [Tools](${origin}/tools/): the hub. Every verb, the editor clients, the MCP catalogue.
+- [CLI reference](${origin}/tools/cli/): every dispatched verb's own \`--help\`, recorded.
+- [Editors](${origin}/tools/editor/): \`iyi lsp\` over stdio, and the stanza each client needs.
+- [MCP](${origin}/tools/mcp/): the five tools with their inputSchemas, and the client configuration.
+- [Download](${origin}/download/): every artifact, the \`uname\` pair it is for, and how to verify it.
+- [Targets](${origin}/targets/): what CI type-checks, audits and runs, per triple.
+- [Project](${origin}/project/): contributing, security, the code of conduct, the notices.
 
 The design record and the release notes are not on this site: SPEC.md and
 CHANGELOG.md are read in the repository, which is where they are kept current.

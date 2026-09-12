@@ -1,0 +1,12 @@
+# The file being edited, in the state an agent meets it: one call misspelled.
+# The compiler knows the name it meant, so `iyi check -f json` carries a
+# `suggested_edit` with the exact replacement span and `iyi fix` applies it.
+module app
+
+import app/greeter
+using app/greeter
+
+pub def main : Int32
+  puts polit("Türkiye")
+  0
+end

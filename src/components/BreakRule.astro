@@ -51,15 +51,22 @@ const recording = renderRecording(
 );
 ---
 
-<section class="break to-wide">
+<section class="break to-wide" aria-labelledby={`break-${id}`}>
   <hr class="rule" />
   <p class="label">Break it</p>
-  <h2 class="break-title">{broken.title}</h2>
+  <h2 class="break-title" id={`break-${id}`}>{broken.title}</h2>
   <Sample path={broken.path} />
   {also.map((path) => <Sample path={path} />)}
 
   <div class="diagnostic">
-    <pre set:html={recording} />
+    {/* The compiler's caret line is as wide as the source line it points at,
+        so this pane scrolls sideways, and a scrolling pane with nothing
+        focusable inside it cannot be reached with a keyboard at all. Named
+        with the rule the recording cites, because that is what a reader is
+        here to find. */}
+    <div class="scroll-x" role="region" tabindex="0" aria-label={`What the compiler said, ${rule.id}`}>
+      <pre set:html={recording} />
+    </div>
     <span class="cites">
       <span class="cited-rule">{rule.id}</span>
       <span class="cited-premise" set:html={inlineMarkdown(rule.premise)} />

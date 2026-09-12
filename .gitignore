@@ -1,4 +1,4 @@
-# Written by scripts/facts.mjs and scripts/reference.mjs on every build. It is
+# Written by the generators `npm run generate` runs, on every build. It is
 # a copy of numbers and text that already live in this repository, so committing
 # it would create a second place for them to disagree.
 src/generated/

@@ -122,11 +122,7 @@ if (!consumer) {
           ))
         }
       </ol>
-      <p class="sub cite">
-        {thesis.provenance.source} &sect; {thesis.provenance.section}, line{" "}
-        {thesis.provenance.line}, at {thesis.provenance.commit}. Lifted by{" "}
-        <code>{thesis.provenance.generator}</code>, not restated.
-      </p>
+      <p class="sub cite">{thesis.provenance.source}, &sect;{thesis.provenance.section}</p>
     </div>
   </section>
 
@@ -136,20 +132,12 @@ if (!consumer) {
       <p class="sub">
         An agent is handed {SPELLED[record.project.length]} modules with one
         mistake in them and takes them to green with the compiler's own verbs.
-        Below is what those verbs answered, in the order they answered. The
-        recorder refuses to publish a frame whose verdict moved, so a page that
-        loads is a page whose session still runs.
+        Below is what those verbs answered, in the order they answered, run by{" "}
+        <code>{provenance.command}</code>. The recorder refuses to publish a
+        frame whose verdict moved, so a page that loads is a page whose session
+        still runs.
       </p>
-      <dl class="evidence hero-evidence">
-        <dt>recorded by</dt>
-        <dd>{provenance.compiler}</dd>
-        <dt>on</dt>
-        <dd>{provenance.machine}</dd>
-        <dt>with</dt>
-        <dd><code>{provenance.command}</code>, at {provenance.commit.slice(0, 9)}</dd>
-      </dl>
-
-      <p class="sub listing-lead">
+      <p class="sub">
         The file being edited, committed broken on purpose. Its dependency
         exports two functions and keeps a third to itself, which is why nothing
         below mentions the third.
@@ -404,19 +392,6 @@ if (!consumer) {
       max-width: 62ch;
     }
 
-    .hero-evidence {
-      margin-block-start: 2rem;
-      display: grid;
-      grid-template-columns: max-content 1fr;
-      gap: 0.3rem 1.2rem;
-      max-width: 62ch;
-    }
-
-    .hero-evidence dd {
-      margin: 0;
-      color: var(--graphite);
-    }
-
     /* The four properties, numbered by the record rather than by the list, so
      * the numbers on the page are the numbers the sentence below them cites.
      * The two held by rule carry the accent edge; the other two do not, which
@@ -468,10 +443,6 @@ if (!consumer) {
       font-size: var(--step--2);
       color: var(--mute);
       margin-block-end: 0;
-    }
-
-    .listing-lead {
-      margin-block-start: 2rem;
     }
 
     /* The loop, numbered, because the order is the argument. The marker is

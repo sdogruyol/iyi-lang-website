@@ -4,13 +4,23 @@ The website for [iyi](https://github.com/iyilang/iyi), published at
 https://iyi-lang.com from this repository.
 
 The site restates the iyi repository rather than describing it: every number,
-listing and reference page is generated at build time from that tree - its
-README.md, SPEC.md, CHANGELOG.md, the programs under `samples/`, and the
-measurements `bench/doc_numbers.py` already gates there. The one thing this
-repository authors in iyi is the playground's tour under `samples/tour/`:
-short programs in the sections `samples/tour/tour.json` lays out, and those go
-through the same recorders as the repository's own. Nothing on a page is typed
-by hand, and `scripts/no-transcription.mjs` fails the build if a figure is.
+listing and quotation is generated at build time from that tree - its
+README.md, SPEC.md, CHANGELOG.md, its CI workflow, the programs under
+`samples/`, and the measurements `bench/doc_numbers.py` already gates there.
+The one thing this repository authors in iyi is the playground's tour under
+`samples/tour/`: short programs in the sections `samples/tour/tour.json` lays
+out, and those go through the same recorders as the repository's own. Nothing
+on a page is typed by hand, and `scripts/no-transcription.mjs` fails the build
+if a figure is.
+
+SPEC.md and CHANGELOG.md are read in the repository, not here. The site used
+to publish both, cut into 57 of its 128 routes, and no page anywhere linked
+in: every rule citation on the site names a SPEC.md section and line as text.
+A design record marked Draft 0 is not documentation for someone learning the
+language, and it was standing where a language reference should. What the site
+still takes from CHANGELOG.md is which release is current, which reaches the
+masthead, the home page, the install page and llms.txt through
+`scripts/releases.mjs`.
 
 ## Building
 
@@ -46,7 +56,7 @@ without that sysroot by name rather than failing at the linker.
     doc/          the art direction, the stack, the fact base, the playground
                   feasibility and service notes, and screenshots
     samples/tour/ the playground's tour: short programs, this site's own
-    scripts/      the generators: facts, targets, reference, samples,
+    scripts/      the generators: facts, targets, releases, samples,
                   records, and the gates on the palette and the built output
     records/      committed recordings (see above)
     src/          the Astro site

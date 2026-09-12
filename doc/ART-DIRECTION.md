@@ -119,7 +119,9 @@ block is code you could write. A `.console` block is a recording of a real
 run: terminal chrome, a mute `$` prompt, and output that is never highlighted
 because nothing highlighted it in the terminal. A `.diagnostic` block is a
 compiler error, caret line preserved exactly, with the rule it cites pulled
-into a footer that links to the spec.
+into a footer that names the SPEC.md section and line the premise is stated
+at. It names them rather than linking them: the site does not publish SPEC.md,
+and a citation to a file is checkable by anyone holding the repository.
 
 ## Measurements
 
@@ -157,11 +159,10 @@ Captured from the running site in a browser.
 
 | File | What it shows |
 |---|---|
-| `screenshots/40-home.png` | The home page: the one line, the mascot, the listing that runs, the Crystal section with the README's Kemal server, the four cards, the measurement card, and the four ways in. |
+| `screenshots/40-home.png` | The home page: the one line, the mascot, the listing that runs, the Crystal section with the README's Kemal server, the four cards, the measurement card, and the ways in. |
 | `screenshots/41-why.png` | The argument in named axes, with the true-area mass figure. |
 | `screenshots/42-learn.png` | The path's entrance and one step of it. |
 | `screenshots/43-sample-run.png` | A sample route after Run: the program on the left, its output on the right, the module and exit status on one line under it. |
-| `screenshots/44-spec.png` | The generated specification index with its generated-from banner. |
 | `screenshots/45-tour.png` | The playground's table of contents: the tour in sections, each step a page. |
 
 ## Prohibitions

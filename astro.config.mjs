@@ -18,11 +18,10 @@ export default defineConfig({
 
   // SmartyPants is on by default and it rewrites the text it renders: straight
   // quotes become curly, `...` becomes an ellipsis, and prose `--` becomes an
-  // em dash. The SPEC.md and CHANGELOG.md pages are generated verbatim from
-  // those files, so a pass that edits punctuation on the way to the page makes
-  // the generated-from banner a lie. It is off for the whole site rather than
-  // for those pages, because the same pass would put em dashes in copy that is
-  // written without them on purpose.
+  // em dash. It is off because doc/ART-DIRECTION.md forbids an em dash and an
+  // en dash in authored copy, and the lessons are markdown: a pass that
+  // invented one on the way to the page would put it there in the one place
+  // the prohibition cannot be seen in the source.
   markdown: { smartypants: false },
   build: { format: "directory" },
   devToolbar: { enabled: false },

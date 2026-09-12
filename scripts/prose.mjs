@@ -144,22 +144,11 @@ for (const file of htmlFiles(dist)) {
   const HEX = /^[a-f]+$/;
   const figure = new RegExp(`(?<![${WORD}0-9&#.])(\\d[\\d,]*(?:\\.\\d+)*)([a-z]{2,})`, "g");
 
-  /* A SECOND LEGITIMATE CASE, found when the site first met the whole
-   * CHANGELOG: 0.5.0's lexer entry writes `t`otal on purpose — it is
-   * *quoting* the defect where an editor colored one letter of a word.
-   * The weld is the sentence's subject, not a typo, and a released
-   * changelog entry is not edited to appease a gate. Named exactly, page
-   * and pair, so anything new still fires.
-   */
-  const deliberate = new Set(["changelog/index.html: \"...t\" is welded to \"otal\""]);
-
   for (const match of prose.matchAll(opening)) {
     problems.push(`${page}: "${match[1]}" is welded to "${match[2]}..."`);
   }
   for (const match of prose.matchAll(closing)) {
-    const finding = `${page}: "...${match[1]}" is welded to "${match[2]}"`;
-    if (deliberate.has(finding)) continue;
-    problems.push(finding);
+    problems.push(`${page}: "...${match[1]}" is welded to "${match[2]}"`);
   }
   for (const match of text.matchAll(figure)) {
     if (UNIT.test(match[2]) || HEX.test(match[2])) continue;

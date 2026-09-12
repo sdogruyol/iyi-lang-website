@@ -2,7 +2,7 @@
 import Page from "../layouts/Page.astro";
 import Measure from "../components/Measure.astro";
 import Quote from "../components/Quote.astro";
-import { latestRelease, releaseAssets } from "../lib/release";
+import { latestRelease, releaseAssets, releaseUrl } from "../lib/release";
 
 const base = import.meta.env.BASE_URL;
 const release = latestRelease();
@@ -14,7 +14,7 @@ const assets = releaseAssets(release);
   summary="Install iyi with one command: the latest release into ~/.local, on Linux x86-64 or macOS arm64, then run hello. Or unpack the tarball by hand, or build from source."
 >
   <section class="wrap head">
-    <p class="label">Install, <a href={`${base}changelog/`}>version {release.version}</a></p>
+    <p class="label">Install, <a href={releaseUrl(release)}>version {release.version}</a></p>
     <h1>One command, then hello.</h1>
     <p class="lede">
       The installer is a POSIX shell script over <code>curl</code> and{" "}

@@ -89,11 +89,12 @@ an iyi module; iyi consumes Crystal, not the other way round.
 - [Home](${origin}/): the one line, a listing that runs, the Crystal section.
 - [Why iyi](${origin}/why/): the four sides, each with its measurement and machine.
 - [Learn](${origin}/learn/): five lessons on the rule, each running a real program.
-- [Spec](${origin}/spec/): SPEC.md, generated verbatim, one page per section.
-- [Changelog](${origin}/changelog/): CHANGELOG.md, verbatim.
 - [Install](${origin}/install/): the one-line installer, the by-hand version, and from source.
 - [Playground](${origin}/playground/): the tour, ${tourSections.reduce((n, x) => n + x.steps.length, 0)} short programs that run in the browser.
 - [Playground evidence](${origin}/playground/evidence/): what ran, what checked it.
+
+The design record and the release notes are not on this site: SPEC.md and
+CHANGELOG.md are read in the repository, which is where they are kept current.
 
 ## The tour
 

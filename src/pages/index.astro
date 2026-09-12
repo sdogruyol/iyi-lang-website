@@ -8,7 +8,7 @@ import Quote from "../components/Quote.astro";
 import Compare from "../components/Compare.astro";
 import facts from "../generated/facts.json";
 import { findSample } from "../playground/samples";
-import { latestRelease } from "../lib/release";
+import { latestRelease, releaseUrl } from "../lib/release";
 import platforms from "../generated/targets.json";
 import { SPELLED } from "../lib/lessons";
 
@@ -48,12 +48,6 @@ const starts = [
     cta: "Start the lessons",
   },
   {
-    title: "Read the spec",
-    body: "The design record, generated verbatim from SPEC.md: what was measured, what was thrown away, and why.",
-    href: "spec/",
-    cta: "Read the spec",
-  },
-  {
     title: "Install it",
     body: "One command installs the latest release into ~/.local on Linux or macOS, with both libraries and the samples. The second command runs hello.",
     href: "install/",
@@ -81,7 +75,7 @@ const starts = [
           <a class="cta ghost" href={`${base}install/`}>Install</a>
         </div>
         <p class="release">
-          <a href={`${base}changelog/`}>Version {release.version}</a>, {release.date}
+          <a href={releaseUrl(release)}>Version {release.version}</a>, {release.date}
         </p>
       </div>
       <div class="hero-art">

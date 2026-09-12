@@ -1,30 +1,43 @@
 /**
  * The latest release, read out of CHANGELOG.md's headings as
- * `scripts/reference.mjs` recorded them. A version number is a fact about the
- * tree like any other, so it is never typed into a page: the build refuses to
- * publish one if the changelog's first release does not read as one.
+ * `scripts/releases.mjs` recorded them. A version number is a fact about the
+ * tree like any other, so it is never typed into a page: the generator refuses
+ * to write a record whose changelog states no release.
+ *
+ * The site does not publish the changelog itself. So everything here that
+ * points a reader at a release points at the repository, which is where the
+ * notes and the artifacts both live.
  */
-import reference from "../generated/reference/index.json";
+import record from "../generated/releases.json";
 
 export interface Release {
   version: string;
   date: string;
 }
 
-const HEADING = /^(\d+\.\d+\.\d+)\s+[—-]+\s+(\d{4}-\d{2}-\d{2})$/;
-
 export function latestRelease(): Release {
-  const first = reference.changelog.releases.find(
-    (release) => HEADING.test(release.heading),
-  );
+  const [first] = record.releases;
   if (first === undefined) {
     throw new Error(
-      `release: no heading in ${reference.changelog.source} reads as ` +
-        `"version — date", so the site cannot say which release is current`,
+      `release: ${record.provenance.source} states no release, so the site ` +
+        `cannot say which one is current`,
     );
   }
-  const [, version, date] = HEADING.exec(first.heading)!;
-  return { version, date };
+  return { version: first.version, date: first.date };
+}
+
+/** Every release the changelog states, newest first. */
+export function releases(): Release[] {
+  return record.releases.map(({ version, date }) => ({ version, date }));
+}
+
+/**
+ * Where a release is published: the tag `install.sh` downloads from, which is
+ * the version prefixed with `v`. The page that lists its notes and its
+ * artifacts is the repository's, not this site's.
+ */
+export function releaseUrl(release: Release = latestRelease()): string {
+  return `https://github.com/iyilang/iyi/releases/tag/v${release.version}`;
 }
 
 /**

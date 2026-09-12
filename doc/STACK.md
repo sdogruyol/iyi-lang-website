@@ -37,12 +37,13 @@ Alternatives considered and rejected, in writing, because the brief asks for it.
 ```
 site/
   astro.config.mjs          base /iyi, static output, trailing slash
-  package.json              build chain: facts, targets, reference, samples, then astro
+  package.json              build chain: facts, targets, releases, samples, then astro
   scripts/
     facts.mjs               runs bench/site_facts.py, writes generated/facts.json
     targets.mjs             reads the platforms out of iyi's CI workflow and the
                             run set out of README.md, writes generated/targets.json
-    reference.mjs           splits SPEC.md and CHANGELOG.md into sections
+    releases.mjs            reads CHANGELOG.md's release headings, writes
+                            generated/releases.json
     samples.mjs             copies samples/iyi/*.iyi into generated/samples/
     contrast.mjs            build gate: computes the palette's contrast, and
                             forbids a hand-typed ratio in src/styles
@@ -51,9 +52,9 @@ site/
                             next one in the built HTML
   src/
     styles/                 tokens.css, base.css, code.css
-    components/             Measure, Stamped, DurationChart, Sample, Quote, Record
+    components/             Measure, Stamped, DurationChart, Sample, Quote, Compare
     layouts/Page.astro      masthead, colophon, fonts, styles
-    pages/                  index, playground, learn, spec, changelog
+    pages/                  index, why, playground, learn, install
     playground/             the slot: types, registry, engines
     generated/              build output, gitignored, never edited
 ```
@@ -93,11 +94,18 @@ The two classes of number are rendered differently by design; see
 
 ## What is generated versus authored
 
-- **Generated, verbatim, never edited:** the SPEC sections and the CHANGELOG,
-  split from the repository's own files by `scripts/reference.mjs`, each
-  carrying a generated-from banner with the commit. PROPOSED sections are
-  badged in the signal colour because they are exactly the parts that will
-  move.
+- **Generated, verbatim, never edited:** the README recordings a page quotes,
+  lifted by anchor with their line range by `scripts/samples.mjs`, and the
+  compiler diagnostics a lesson shows, replayed byte for byte out of
+  `records/diagnostics.json`.
+- **Not published at all:** SPEC.md and CHANGELOG.md. The site used to cut
+  them into 57 of its 128 routes, and nothing anywhere linked in: every rule
+  citation on the site names a SPEC.md section and line as text. A design
+  record marked Draft 0, whose Part III is open questions and whose Appendix B
+  is decisions awaiting a call, is not documentation, and a reader who reached
+  it from a search for how the language works got the wrong answer confidently.
+  Both files stay in the repository. `scripts/releases.mjs` reads the one thing
+  the site still needs from either: which release is current.
 - **Generated, transcluded:** sample code in lessons, copied from
   `samples/iyi/` by `scripts/samples.mjs`, so a sample that changes in the
   repository changes on the site. Renaming a sample a lesson names fails the

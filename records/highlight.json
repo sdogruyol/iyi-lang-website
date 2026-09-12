@@ -4,7 +4,7 @@
     "commit": "f4f4b3e43253731af28dd1dd9298321558db121c",
     "machine": "Linux 7.2.4-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
     "command": "npm run record:highlight",
-    "when": "2026-09-12T08:16:01.067Z"
+    "when": "2026-09-12T08:25:30.684Z"
   },
   "files": {
     "samples/iyi/app/formal.iyi": "<span class=\"c\"># A second module, exporting a `title` of its own. See `../modules.iyi`.</span>\n<span class=\"k tok-rule\">module</span> app<span class=\"o\">/</span>formal\n\n<span class=\"k tok-rule\">pub</span> <span class=\"k\">def</span> <span class=\"m\">title</span> : <span class=\"t\">String</span>\n  <span class=\"s\">&quot;esteemed colleague&quot;</span>\n<span class=\"k\">end</span>\n\n<span class=\"k tok-rule\">pub</span> <span class=\"k\">def</span> <span class=\"m\">address</span>(name : <span class=\"t\">String</span>) : <span class=\"t\">String</span>\n  <span class=\"s\">&quot;Good day, </span><span class=\"i\">#{</span>name<span class=\"i\">}</span><span class=\"s\">.&quot;</span>\n<span class=\"k\">end</span>\n",

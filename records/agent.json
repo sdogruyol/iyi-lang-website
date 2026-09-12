@@ -1,10 +1,10 @@
 {
   "recorded": {
-    "compiler": "iyi 0.12.0 (built on Crystal 1.22.0-dev [7d6d45ff2] (2026-09-12))",
+    "compiler": "iyi 0.12.0 (built on Crystal 1.22.0-dev [f4f4b3e43] (2026-09-12))",
     "commit": "f4f4b3e43253731af28dd1dd9298321558db121c",
     "machine": "Linux 7.2.4-1-cachyos x86_64, AMD Ryzen AI 9 465 w/ Radeon 880M",
     "command": "npm run record:agent",
-    "when": "2026-09-12T08:13:32.459Z"
+    "when": "2026-09-12T08:25:27.955Z"
   },
   "project": [
     {
@@ -104,7 +104,7 @@
       "command": "iyi test --json .",
       "exitCode": 0,
       "payload": "stdout",
-      "stdout": "{\"tests\":[{\"file\":\"./app_test.iyi\",\"status\":\"pass\",\"seconds\":0.27}],\"passed\":1,\"failed\":0,\"skipped\":0}\n",
+      "stdout": "{\"tests\":[{\"file\":\"./app_test.iyi\",\"status\":\"pass\",\"seconds\":0.242}],\"passed\":1,\"failed\":0,\"skipped\":0}\n",
       "stderr": ""
     },
     {

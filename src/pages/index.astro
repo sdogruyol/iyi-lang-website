@@ -11,7 +11,7 @@ import facts from "../generated/facts.json";
 import { tourSamples, runnable, playgroundHref } from "../playground/samples";
 import { latestRelease, releaseUrl, releaseAssets } from "../lib/release";
 import platforms from "../generated/targets.json";
-import { SPELLED, lessonHref, sequence } from "../lib/lessons";
+import { SPELLED, sequence } from "../lib/lessons";
 import mascot from "../assets/mascot.webp";
 
 const release = latestRelease();
@@ -36,6 +36,7 @@ if (firstHref === null) {
 const base = import.meta.env.BASE_URL;
 const loop = facts.recorded.edit_loop;
 const bin = facts.recorded.hello_binary;
+const pack = facts.recorded.context_pack;
 
 const ratios = loop.ratios as number[];
 const loopClaim = `About ${loop.claim.value}x less than Crystal, on the line you just changed.`;
@@ -63,13 +64,10 @@ if (wasm === undefined) {
  * the count lives in src/content/learn, so adding a lesson made the home page
  * wrong and no gate could see it. Spelled through the same table and with the
  * same fallback the learn index uses, which is what a thirteenth lesson would
- * need. The first step is linked by following the sequence rather than by the
- * slug this page used to carry, which would have gone to a 404 the day a
- * lesson was renamed and said nothing on the way. */
+ * need. */
 const lessons = await sequence();
 const spelled = SPELLED[lessons.length] ?? String(lessons.length);
 const lessonCount = `${spelled[0].toUpperCase()}${spelled.slice(1)}`;
-const firstLesson = lessonHref(base, lessons[0]);
 
 /* The machines a release ships a tarball for, in README.md's own words for
  * them, through scripts/install-targets.mjs. "Linux x86-64 or macOS arm64" was
@@ -101,17 +99,18 @@ const starts = [
 
 <Page
   title="iyi, a friendly, fast language for people and their agents"
-  summary="iyi is a friendly, fast programming language for people and their agents. Modules compile against declarations, so builds are quick, binaries are small, and a tool can read an interface without a repository."
+  summary="iyi is a compiled language written for two readers: the person editing the code and the agent editing it beside them. Modules compile against declarations, never bodies, so a build reads less and so does a model, and a grounded edit spent fewer prompt tokens over twenty-six measured runs."
 >
   <section class="hero">
     <div class="wrap hero-inner">
       <div class="hero-copy">
         <h1>A friendly, fast language for people and their agents.</h1>
         <p class="lede">
-          iyi is a compiled language with a simple rule at its heart: a module
-          builds against its dependencies' declarations, never their bodies. So
-          builds are quick, programs are small, and an agent can read exactly
-          the interface it needs.
+          iyi is a compiled language written for two readers: the person
+          editing the code and the agent editing it beside them. One rule
+          serves both. A module builds against its dependencies' declarations,
+          never their bodies, so a build reads less, a program carries less,
+          and a model reads an interface instead of a repository.
         </p>
         <div class="hero-cta">
           <a class="cta" href={`${base}playground/`}>Take the tour</a>
@@ -159,6 +158,64 @@ const starts = [
           <pre><span class="out">{first.nativeStdout}</span></pre>
         </div>
       </div>
+    </div>
+  </section>
+
+  {/* The agent argument, before the Crystal one, because it is the reason
+      this language exists rather than a feature it grew. It is one rule seen
+      from the other side: a build that reads declarations instead of bodies is
+      a model that reads declarations instead of bodies, and the card is what
+      that cost when it was measured. */}
+  <section class="agents" id="agents">
+    <div class="wrap agents-inner">
+      <div class="agents-copy">
+        <p class="label">Written for agents</p>
+        <h2>A model reads the interface, not the repository.</h2>
+        <p class="agents-lede">
+          A module compiles against its dependencies' declarations, never their
+          bodies. That one rule is why a module's interface is a file, and why{" "}
+          <code>iyi mod context</code> can hand an agent the exact surface of
+          every import with no body in it and no repository behind it. The
+          context window is the new compile time, and this is a language that
+          spends it like one.
+        </p>
+        <ul class="checks">
+          <li>
+            <strong>Grounding is one command.</strong> Not a convention, not a
+            retrieval step: <code>iyi mod context --json</code> prints the
+            surface an edit is allowed to know.
+          </li>
+          <li>
+            <strong>The verdict is data.</strong> <code>iyi check -f json</code>{" "}
+            answers with the file, the line, the span and the exact replacement
+            when the compiler knows the fix, and <code>iyi fix</code> applies
+            it.
+          </li>
+          <li>
+            <strong>The servers are in the binary.</strong>{" "}
+            <code>iyi lsp</code> for an editor and <code>iyi mcp</code> for a
+            harness, both over stdio, both shells around the same front end a
+            build uses.
+          </li>
+        </ul>
+        <div class="hero-cta">
+          <a class="cta" href={`${base}agents/`}>See the recorded loop</a>
+        </div>
+      </div>
+      <Stamped
+        claim={`${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens.`}
+        band={`The grounding pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`}
+        subject={pack.subject}
+        machine={pack.machine}
+        command={pack.command}
+        outcome="win"
+      >
+        <p class="stamp-note">
+          Rounds to green were the model's, and they were tied{" "}
+          {pack.rounds_tied} times and lost {pack.rounds_lost} times. Both
+          readings come off one gate and both are published.
+        </p>
+      </Stamped>
     </div>
   </section>
 
@@ -246,15 +303,16 @@ const starts = [
           <a href={`${base}why/`}>Why it is fast</a>
         </li>
         <li class="card">
-          <p class="card-figure mono">iyi mod context</p>
+          <p class="card-figure">{pack.tokens_low} to {pack.tokens_high}%</p>
           <h3>Made for agents</h3>
           <p>
-            A module's interface is a file, not a convention. One command
-            grounds an edit in every import's exact surface,{" "}
-            <code>iyi check</code> answers as data with suggested edits, and{" "}
-            <code>iyi mcp</code> serves it all over the protocol agents speak.
+            Fewer prompt tokens for the same edit, because a module's interface
+            is a file and not a convention. One command grounds an edit in
+            every import's exact surface, <code>iyi check</code> answers as
+            data with suggested edits, and <code>iyi mcp</code> serves it all
+            over the protocol agents speak.
           </p>
-          <a href={firstLesson}>Declarations, not bodies</a>
+          <a href={`${base}agents/`}>The loop, recorded</a>
         </li>
         <li class="card">
           <p class="card-figure"><Measure of="targets" /></p>
@@ -444,6 +502,48 @@ const starts = [
 
     .try-run .console {
       margin-block-start: 0.9rem;
+    }
+
+    /* Agents ----------------------------------------------------------- */
+
+    /* A band, so the page reads hero, a program, then the argument. The
+     * measurement sits beside the copy rather than under it: the claim and
+     * what it cost are one thing. */
+    .agents {
+      background: var(--raise);
+      border-block: var(--hair) solid var(--hairline);
+    }
+
+    .agents-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: clamp(1.5rem, 4vw, 3.5rem);
+      align-items: start;
+    }
+
+    @media (max-width: 60rem) {
+      .agents-inner {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .agents h2 {
+      margin-block: 0.4rem 0.8rem;
+      max-width: 30ch;
+    }
+
+    .agents-lede {
+      color: var(--graphite);
+      font-size: var(--step-0);
+      max-width: 54ch;
+      margin-block-end: 1.4rem;
+    }
+
+    .stamp-note {
+      color: var(--graphite);
+      font-size: var(--step--1);
+      max-width: 52ch;
+      margin-block: 0 0.8rem;
     }
 
     /* Crystal ---------------------------------------------------------- */

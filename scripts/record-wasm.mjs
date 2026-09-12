@@ -29,12 +29,6 @@
 // since this ran no longer matches its own recorded module either, and
 // records.mjs says so by name.
 //
-// `expect` is the same idea applied to the run rather than to the source: the
-// digests of the output this script watched the program produce, so a tour
-// step can ask what a program prints and check the answer in the browser
-// without the answer being anywhere on the page. It is written here, by the
-// thing that saw the output, and nowhere else; see "The answer key" below.
-//
 // Regenerate with: npm run record:wasm
 
 import { execFileSync, spawnSync } from "node:child_process";
@@ -62,49 +56,6 @@ const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(site
 const samplesDir = resolve(repo, "samples", "iyi");
 const tourDir = resolve(site, "samples", "tour");
 const out = resolve(site, "records", "wasm");
-
-// ---------------------------------------------------------------------------
-// The answer key
-// ---------------------------------------------------------------------------
-
-// Every tour step asks what its program prints before it will run it, and the
-// answer is checked in the visitor's browser. The answer therefore must not be
-// on the page, and it must not be typed anywhere at all: an expected output
-// written by hand is a second copy of a run, and the one thing this whole
-// pipeline exists to prevent is a second copy drifting from the first.
-//
-// So the key is digests of the output this run actually produced. `output`
-// covers the whole of it and `lines` covers each line, so a visitor who is
-// close can be told how many lines they have right without being told what the
-// rest are. Sixteen hex characters per line rather than the full digest
-// because this is a quiz and not a signature, and a line of a program's output
-// is bandwidth a reader pays for once per line of every sample they open.
-//
-// NORMALISATION, mirrored in src/playground/entry.ts and recomputed by
-// scripts/records.mjs. Trailing whitespace is invisible, so a visitor who
-// typed it has still typed the right answer; trailing blank lines appear in a
-// textarea by pressing return. Nothing else is touched, because case, inner
-// spacing and punctuation are the program's output.
-const normalise = (text) =>
-  text
-    .split("\n")
-    .map((line) => line.replace(/[\s\uFEFF]+$/, ""))
-    .join("\n")
-    .replace(/\n+$/, "");
-
-const digest = (text) => createHash("sha256").update(text, "utf8").digest("hex");
-
-// The output the page shows for this sample: what the module printed where
-// there is a module, and what the native binary printed where the compiler
-// refused the target. Asking about the other one would be asking about a run
-// the reader cannot see.
-function answerKey(shown) {
-  const text = normalise(shown);
-  return {
-    output: digest(text),
-    lines: text === "" ? [] : text.split("\n").map((line) => digest(line).slice(0, 16)),
-  };
-}
 
 // A sample whose wasm run does not match its native run needs a sentence
 // saying why, and the sentence is prose so it is written here rather than
@@ -434,7 +385,6 @@ for (const { id, slug, set, relative, source } of order) {
       reason,
       exitCode: nativeRun.status,
       nativeStdout: nativeRun.stdout,
-      expect: answerKey(nativeRun.stdout),
     });
     continue;
   }
@@ -589,7 +539,6 @@ for (const { id, slug, set, relative, source } of order) {
     wasmStdout,
     identical,
     note,
-    expect: answerKey(wasmStdout),
   });
 }
 

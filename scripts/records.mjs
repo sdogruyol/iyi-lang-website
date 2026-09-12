@@ -497,27 +497,12 @@ if (agent) {
 // at build time, and where it runs the program it does not need to be told
 // what the program will print.
 //
-// WHAT IS ADDED. The answer key and, where a recorded diagnostic names this
-// sample's own file, the position to draw it at. Both are computed here from
-// records that are already verified above; nothing is invented and nothing is
-// typed.
+// WHAT IS ADDED. Where a recorded diagnostic names this sample's own file,
+// the position to draw it at. It is computed here from records that are
+// already verified above; nothing is invented and nothing is typed.
 
 const generated = resolve(site, "src", "generated", "playground");
 const entries = [];
-
-// The normalisation rule, mirrored from scripts/record-wasm.mjs, which writes
-// the digests this recomputes, and from src/playground/entry.ts, which applies
-// it to what a visitor types. Trailing whitespace is invisible and trailing
-// blank lines are a property of a textarea, so neither can be the difference
-// between a right answer and a wrong one. Nothing else is touched.
-const normalise = (text) =>
-  text
-    .split("\n")
-    .map((line) => line.replace(/[\s\uFEFF]+$/, ""))
-    .join("\n")
-    .replace(/\n+$/, "");
-
-const hash = (text) => createHash("sha256").update(text, "utf8").digest("hex");
 
 if (manifest && Array.isArray(manifest.samples)) {
   // A recorded case lands on a listing when the compiler's own header names
@@ -542,46 +527,18 @@ if (manifest && Array.isArray(manifest.samples)) {
   for (const sample of [...manifest.samples, ...(manifest.nativeOnly ?? [])]) {
     if (typeof sample?.id !== "string" || sample.id === "") continue;
 
-    // The output the page shows for this sample: the module's where there is a
-    // module, the native binary's where the compiler refused the target.
-    // Asking a reader about the other one would be asking about a run they
-    // cannot see.
+    // A page shows the run its reader can see: the module's output where
+    // there is a module, the native binary's where the compiler refused the
+    // target. A sample with neither cannot render a recorded run at all.
     const shown = sample.wasm ? sample.wasmStdout : sample.nativeStdout;
     if (typeof shown !== "string") {
       problem(
         "records/wasm/manifest.json",
-        `sample "${sample.id}" records no output, so its page can neither ` +
-          `show a recorded run nor check an answer against one`,
+        `sample "${sample.id}" records no output, so its page cannot show a ` +
+          `recorded run`,
       );
       continue;
     }
-    const text = normalise(shown);
-    const expect = {
-      output: hash(text),
-      lines: text === "" ? [] : text.split("\n").map((line) => hash(line).slice(0, 16)),
-    };
-
-    // The recorder writes the same key from the output it watched appear. It
-    // is recomputed here rather than copied so that the two cannot drift: a
-    // record whose key does not describe its own recorded output is a record
-    // somebody edited, and the exercise would then mark a right answer wrong.
-    if (sample.expect !== undefined) {
-      const recorded = sample.expect;
-      const same =
-        recorded?.output === expect.output &&
-        Array.isArray(recorded.lines) &&
-        recorded.lines.length === expect.lines.length &&
-        recorded.lines.every((line, at) => line === expect.lines[at]);
-      if (!same) {
-        problem(
-          "records/wasm/manifest.json",
-          `sample "${sample.id}" carries an expected output that is not the ` +
-            `digest of the output recorded beside it. Regenerate with: npm ` +
-            `run record:wasm`,
-        );
-      }
-    }
-
     entries.push({
       file: `${sample.id.replace(/\//g, "-")}.json`,
       data: {
@@ -597,7 +554,6 @@ if (manifest && Array.isArray(manifest.samples)) {
          * a native-only sample's reason explains why there is only one. Both
          * are the one sentence the recording asked the page to carry. */
         note: sample.note ?? sample.reason ?? null,
-        expect,
         diagnostic: caseAt[sample.path] ?? null,
         recorded: manifest.recorded,
       },

@@ -8,13 +8,12 @@
  * did. Nothing here leaves the tab, there is no account, and clearing site
  * data clears it.
  *
- * WHAT IS RECORDED, and it is deliberately two things rather than one.
- * `visited` is every step whose page was opened, which is a fact about
- * navigation. `answered` is every step whose exercise was answered with what
- * the program really prints, checked against the digest the recorder wrote,
- * which is a fact about the program. The table of contents shows both and
- * never conflates them: opening a page is not the same as knowing what it
- * does, and a progress bar that said otherwise would be flattering the reader.
+ * WHAT IS RECORDED, and it is one thing. `visited` is every step whose page
+ * was opened, which is a fact about navigation and nothing more. There used
+ * to be a second set, the steps whose "what does this print" exercise had
+ * been answered, and the table of contents counted them. The question went,
+ * so the count went with it: a store that kept a score for a quiz nobody is
+ * asked is a store that has outlived its reason.
  *
  * NODE SAFETY: the build imports this file to type the island, so nothing here
  * touches `localStorage` at import time, and every read and write is wrapped.
@@ -25,13 +24,12 @@
 
 const KEY = "iyi:playground:tour";
 
-/** The steps a visitor has opened, and the ones they have answered. */
+/** The steps a visitor has opened. */
 export interface TourProgress {
   visited: string[];
-  answered: string[];
 }
 
-const EMPTY: TourProgress = { visited: [], answered: [] };
+const EMPTY: TourProgress = { visited: [] };
 
 /**
  * What is stored, or nothing.
@@ -46,12 +44,11 @@ export function readProgress(): TourProgress {
     const stored = localStorage.getItem(KEY);
     if (stored === null) return EMPTY;
     const parsed = JSON.parse(stored) as TourProgress;
-    if (!Array.isArray(parsed?.visited) || !Array.isArray(parsed?.answered)) {
+    if (!Array.isArray(parsed?.visited)) {
       return EMPTY;
     }
     return {
       visited: parsed.visited.filter((id) => typeof id === "string"),
-      answered: parsed.answered.filter((id) => typeof id === "string"),
     };
   } catch {
     return EMPTY;
@@ -59,17 +56,16 @@ export function readProgress(): TourProgress {
 }
 
 /**
- * Add one step to one of the two sets and store the result.
+ * Add one step to the set and store the result.
  *
  * Returns what is now stored, so a caller that has just marked something can
  * render from it without reading the key back and without holding a second
  * copy that could drift from the stored one.
  */
-export function markStep(id: string, as: keyof TourProgress): TourProgress {
-  const progress = readProgress();
-  const set = new Set(progress[as]);
-  set.add(id);
-  const next: TourProgress = { ...progress, [as]: [...set] };
+export function markStep(id: string): TourProgress {
+  const visited = new Set(readProgress().visited);
+  visited.add(id);
+  const next: TourProgress = { visited: [...visited] };
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {

@@ -56,7 +56,7 @@ interface Props {
    * only ran natively and is shown with what it printed. */
   sample: TourStep;
   /** The same step as the browser is allowed to see it: digests, the module's
-   * name, the answer key, and nothing else. */
+   * name, and nothing else. */
   entry: SampleEntry;
 }
 
@@ -118,13 +118,6 @@ const prev = at > 0 ? tourSamples[at - 1] : null;
 const next = at >= 0 && at < tourSamples.length - 1 ? tourSamples[at + 1] : null;
 const section = tourSections.find((s) => s.steps.some((step) => step.id === sample.id));
 const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
-
-/* The exercise, on the steps where it is a question rather than a reading
- * comprehension test. A tour step that runs here hides its output until
- * somebody presses Run, so asking what it prints is a real question; a step
- * whose output is already on the page because the browser cannot run it would
- * be asking a reader to copy what is in front of them. */
-const asks = runs && sample.set === "tour";
 ---
 
 <section class="bench wrap" aria-label="Run a recorded program">
@@ -278,34 +271,6 @@ const asks = runs && sample.set === "tour";
     <a href={`${base}playground/evidence/`}>How this works</a>
   </p>
 
-  {
-    asks && (
-      <div class="quiz" data-role="quiz">
-        <p class="quiz-ask">
-          <strong>Before you run it.</strong> What does this program print?
-        </p>
-        <textarea
-          class="quiz-answer"
-          rows="4"
-          spellcheck="false"
-          data-role="answer"
-          aria-label="What this program prints"
-        />
-        <div class="quiz-bar">
-          <button type="button" class="cta ghost" data-role="check">
-            Check
-          </button>
-          <p class="quiz-verdict" data-role="verdict" aria-live="polite" />
-        </div>
-        <p class="quiz-note">
-          Checked in this tab, against digests of what the program printed when
-          the recorder ran it. The output itself is not on this page, which is
-          why the check can only tell you how far you got.
-        </p>
-      </div>
-    )
-  }
-
   <div class="local">
     <p class="foot">
       <strong>Try it on your machine.</strong> Copy the program into{" "}
@@ -358,7 +323,7 @@ const asks = runs && sample.set === "tour";
   import type { Capability, PlaygroundEngine, RunEvent } from "../playground/types";
   import { CAPABILITY_LABEL } from "../playground/types";
   import type { SampleEntry } from "../playground/entry";
-  import { normaliseOutput, parseEntry, provideEntry } from "../playground/entry";
+  import { parseEntry, provideEntry } from "../playground/entry";
   import { sha256Hex } from "../playground/digest";
   import { SHARE_LIMIT, decodeShare, encodeShare } from "../playground/share";
   import { markStep } from "../playground/progress";
@@ -412,7 +377,7 @@ const asks = runs && sample.set === "tour";
 
     /* One step of the tour, opened. Recorded before anything else, because a
      * visitor who reads a page and leaves has still read it. */
-    if (entry.set === "tour") markStep(entry.id, "visited");
+    if (entry.set === "tour") markStep(entry.id);
 
     /* The recorded colouring, kept so that restoring the program restores it.
      * It is markup the build wrote out of the compiler's own token stream;
@@ -605,57 +570,6 @@ const asks = runs && sample.set === "tour";
 
     openShared();
     addEventListener("hashchange", openShared);
-
-    /* ------------------------------------------------------------------ *
-     * The exercise: what does it print, checked against a digest.
-     * ------------------------------------------------------------------ */
-
-    const answer = document.querySelector<HTMLTextAreaElement>('[data-role="answer"]');
-    const verdict = document.querySelector<HTMLElement>('[data-role="verdict"]');
-    const checkBtn = document.querySelector<HTMLButtonElement>('[data-role="check"]');
-
-    if (answer && verdict && checkBtn) {
-      const digestOf = async (text: string) =>
-        sha256Hex(new TextEncoder().encode(text));
-
-      checkBtn.addEventListener("click", () => {
-        void (async () => {
-          const typed = normaliseOutput(answer.value);
-          if (typed === "") {
-            verdict.textContent = "Type what you think it prints first.";
-            return;
-          }
-          try {
-            if ((await digestOf(typed)) === entry.expect.output) {
-              verdict.textContent = "That is what it prints.";
-              verdict.dataset.state = "right";
-              markStep(entry.id, "answered");
-              return;
-            }
-            /* Not right, so say how far it got and no further. The per-line
-             * digests are short on purpose: they can confirm a line somebody
-             * has already written and they cannot hand one over. */
-            let right = 0;
-            for (const line of typed.split("\n")) {
-              const digest = (await digestOf(line)).slice(0, 16);
-              if (digest !== entry.expect.lines[right]) break;
-              right += 1;
-            }
-            verdict.dataset.state = "wrong";
-            verdict.textContent =
-              right === 0
-                ? "Not what it prints. Press Run and read what it does."
-                : right === 1
-                  ? "The first line is right, the rest is not yet."
-                  : `The first ${right} lines are right, the rest is not yet.`;
-          } catch {
-            verdict.textContent =
-              "This browser will not hash text for this page, so the answer " +
-              "cannot be checked here. Press Run and compare.";
-          }
-        })();
-      });
-    }
 
     /* ------------------------------------------------------------------ *
      * The run.
@@ -1049,69 +963,6 @@ const asks = runs && sample.set === "tour";
     inset-inline-start: calc(var(--col) * 1ch);
     width: calc(var(--wide) * 1ch);
     border-block-end: 2px solid var(--signal);
-  }
-
-  /* THE EXERCISE. One question, one box, one verdict. */
-  .quiz {
-    margin-block-start: 1.4rem;
-    max-width: var(--measure);
-  }
-
-  .quiz-ask {
-    margin: 0 0 0.5rem;
-    font-size: var(--step--1);
-    color: var(--graphite);
-  }
-
-  .quiz-answer {
-    display: block;
-    width: 100%;
-    padding: 0.6rem 0.7rem;
-    background: var(--paper);
-    border: var(--hair) solid var(--boundary);
-    border-radius: var(--radius);
-    color: var(--ink);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    line-height: 1.6;
-    tab-size: 2;
-    resize: vertical;
-  }
-
-  .quiz-answer:focus-visible {
-    outline: 2px solid var(--brand);
-    outline-offset: 1px;
-  }
-
-  .quiz-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.6rem 1rem;
-    margin-block-start: 0.7rem;
-  }
-
-  .quiz-verdict {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: var(--step--2);
-    color: var(--graphite);
-  }
-
-  /* A wrong answer is a caveat about this attempt, which is what the signal
-   * colour means everywhere else on the site. A right one is the brand. */
-  .quiz-verdict[data-state="right"] {
-    color: var(--brand-deep);
-  }
-
-  .quiz-verdict[data-state="wrong"] {
-    color: var(--signal-deep);
-  }
-
-  .quiz-note {
-    margin: 0.6rem 0 0;
-    font-size: var(--step--2);
-    color: var(--mute);
   }
 
   .pane-output {

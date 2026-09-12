@@ -21,9 +21,7 @@
  * WHAT IS NOT HERE, deliberately: the output. `nativeStdout` and `wasmStdout`
  * are the bulk of a manifest entry, and a page that already runs the program
  * does not need to be told what it will print. Where a page shows a recorded
- * run, the build renders that text into the HTML. What the client gets instead
- * is `expect`, digests of that same output, which is what lets a visitor's
- * answer be checked in the browser without the answer being on the page.
+ * run, the build renders that text into the HTML.
  *
  * NODE SAFETY: the build imports this too, so nothing here touches a browser
  * global at import time. `crypto.subtle` is reached only from the shell, which
@@ -37,22 +35,6 @@ export interface EntryProvenance {
   machine: string;
   command: string;
   when: string;
-}
-
-/**
- * The answer key for this sample's exercise, and the reason it is digests.
- *
- * A page that asked what a program prints and then carried the answer in its
- * own markup would be a page with the answer on it. These are SHA-256 over the
- * normalised output: `output` over the whole of it, `lines` one per line, so a
- * visitor who is close can be told how far they got without being told what
- * they missed. Every one of them is computed from the recorded run by
- * `scripts/records.mjs`, and the recorder writes the same digests into the
- * manifest so the two can be compared rather than trusted.
- */
-export interface EntryExpect {
-  output: string;
-  lines: string[];
 }
 
 /**
@@ -88,29 +70,8 @@ export interface SampleEntry {
   exitCode: number;
   identical: boolean;
   note: string | null;
-  expect: EntryExpect;
   diagnostic: EntryDiagnostic | null;
   recorded: EntryProvenance;
-}
-
-/**
- * The rule for comparing two runs of output, written here and mirrored in
- * `scripts/records.mjs`, which computes the digests this is compared against.
- *
- * Trailing whitespace is invisible, so a visitor who types the right answer
- * with a space after it has typed the right answer, and a page that says
- * otherwise is failing them for something they cannot see. Trailing blank
- * lines go for the same reason: a textarea gains one every time somebody
- * presses return before pressing the button. Nothing else is touched. Case,
- * inner spacing and punctuation are the program's output and changing any of
- * them would be answering a different question.
- */
-export function normaliseOutput(text: string): string {
-  return text
-    .split("\n")
-    .map((line) => line.replace(/[\s\uFEFF]+$/, ""))
-    .join("\n")
-    .replace(/\n+$/, "");
 }
 
 /**
@@ -141,12 +102,6 @@ export function parseEntry(json: string | null | undefined): SampleEntry {
       `the entry for ${entry.id} names a module and does not say what it ` +
         `hashes to, and this page does not run bytes it cannot check`,
     );
-  }
-  if (
-    typeof entry.expect?.output !== "string" ||
-    !Array.isArray(entry.expect?.lines)
-  ) {
-    throw new Error(`the entry for ${entry.id} carries no expected output`);
   }
 
   return entry;

@@ -14,9 +14,7 @@
  * a reader has opened, and a tick rendered at build time would be a claim
  * about somebody it has never met. The island reads
  * `src/playground/progress.ts`, which reads local storage, and marks the list
- * afterwards. Two states, never conflated: opened, and answered, the second
- * being a step whose exercise was answered with what the program really
- * prints, checked against the recorder's digest.
+ * afterwards. One state, and it claims nothing more than it knows: opened.
  */
 import Page from "../../layouts/Page.astro";
 import { runnable, tourSamples, tourSections } from "../../playground/samples";
@@ -115,11 +113,10 @@ const sections = tourSections.map((section) => ({
     /**
      * The marks on the list, which exist only in this browser.
      *
-     * Two states and no bar: a bar implies a distance, and what is worth
-     * knowing here is which steps have been opened and which have been
-     * answered, not a percentage. The store is the same one the sample pages
-     * write, `src/playground/progress.ts`, and it is the whole of this
-     * island's imports: no record reaches this page.
+     * One state and no bar: a bar implies a distance, and what is worth
+     * knowing here is which steps have been opened. The store is the same one
+     * the sample pages write, `src/playground/progress.ts`, and it is the
+     * whole of this island's imports: no record reaches this page.
      */
     import { clearProgress, readProgress, type TourProgress } from "../../playground/progress";
 
@@ -131,38 +128,31 @@ const sections = tourSections.map((section) => ({
 
       const paint = (progress: TourProgress) => {
         const visited = new Set(progress.visited);
-        const answered = new Set(progress.answered);
 
         for (const step of steps) {
-          const id = step.dataset.step ?? "";
-          const state = answered.has(id) ? "answered" : visited.has(id) ? "opened" : "";
           const mark = step.querySelector<HTMLElement>('[data-role="state"]');
-          if (state === "") {
-            delete step.dataset.state;
-            if (mark) mark.textContent = "";
-          } else {
-            step.dataset.state = state;
+          if (visited.has(step.dataset.step ?? "")) {
+            step.dataset.state = "opened";
             /* The word rather than a symbol: an icon that means "done" is a
              * convention a reader has to already know, and there is room. */
-            if (mark) mark.textContent = state;
+            if (mark) mark.textContent = "opened";
+          } else {
+            delete step.dataset.state;
+            if (mark) mark.textContent = "";
           }
         }
 
         const opened = steps.filter((step) => visited.has(step.dataset.step ?? "")).length;
-        const right = steps.filter((step) => answered.has(step.dataset.step ?? "")).length;
         line.hidden = opened === 0;
         forget.hidden = opened === 0;
-        line.textContent =
-          right === 0
-            ? `${opened} of ${steps.length} opened on this machine.`
-            : `${opened} of ${steps.length} opened on this machine, ${right} answered.`;
+        line.textContent = `${opened} of ${steps.length} opened on this machine.`;
       };
 
       paint(readProgress());
 
       forget.addEventListener("click", () => {
         clearProgress();
-        paint({ visited: [], answered: [] });
+        paint({ visited: [] });
       });
     })();
   </script>
@@ -262,18 +252,10 @@ const sections = tourSections.map((section) => ({
       letter-spacing: 0.08em;
     }
 
-    .step[data-state="answered"] .step-state {
-      color: var(--brand-deep);
-    }
-
     /* A left edge on a step that has been opened, in the gutter rather than
      * around the row, so the list still reads as one list. */
     .step[data-state] {
       border-inline-start: 2px solid var(--track);
-    }
-
-    .step[data-state="answered"] {
-      border-inline-start-color: var(--brand);
     }
 
     .progress {

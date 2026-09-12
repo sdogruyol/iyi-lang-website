@@ -39,12 +39,11 @@
     background: none;
   }
 
-  /* Furniture. The skip link, the masthead and its menu button, the footer's
-   * link list, and every control: a control on paper is a lie about what the
-   * page can do. */
+  /* Furniture. The skip link, the masthead - which carries both controls, so
+   * neither needs a line here - the footer's link list, and every control in
+   * the page: a control on paper is a lie about what the page can do. */
   .skip,
   .masthead,
-  .menu-toggle,
   .colophon-links,
   .copy,
   .replay,

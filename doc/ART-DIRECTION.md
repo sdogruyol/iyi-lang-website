@@ -109,7 +109,7 @@ printing a lesson under a dark preference would empty a toner cartridge into
 the page.
 
 And the machine's answer can be overruled. The masthead carries one control,
-a mono word naming what the press will do, that writes `data-theme` onto
+drawn with the mark of what the press will do, that writes `data-theme` onto
 `<html>` and remembers it. It is `display: none` until a script claims the
 masthead, the same handshake the menu button uses, so nothing that cannot
 work is ever offered: with scripts blocked the page is still whatever the
@@ -118,10 +118,15 @@ That is why the alias list is written twice in `src/styles/tokens.css`, once
 behind the preference and once behind the attribute, and the preference block
 carries `:not([data-theme="light"])` so the override can turn it off.
 
-The word is a word and not a glyph on purpose. The first draft used a moon
-and a sun, both outside the latin and latin-ext subsets the site ships, so
-they fell back to whatever the reader's machine had; and an emoji is never an
-icon here.
+The mark is geometry in the markup and not a character. The first draft used
+the moon and sun codepoints, both outside the latin and latin-ext subsets the
+site ships, so they fell back to whatever the reader's machine had; the second
+spelled the press as the mono words `dark` and `light`, which read as a label
+rather than a control and sat badly beside the menu button on a phone. Both
+are inline SVG now, hairline strokes in `currentColor` at the weight of the
+rules around them, and an emoji is still never an icon here. The switch and
+the menu button are one square each, the same box and the same edge, 36 to a
+side on a pointer and 44 on a thumb, so the pair reads as a pair.
 
 The mascot is cut out of its background and the code is set in weight rather
 than hue, which is why one drawing and one highlighting scheme serve both

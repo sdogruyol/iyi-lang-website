@@ -208,8 +208,7 @@ const current = (path: string) => here.startsWith(href(path));
         {/* The scheme switch. Hidden until the script claims the masthead,
             for the same reason the menu button is: a control that cannot
             remember a choice is an ornament, and the page already reads the
-            machine's preference without one. Both glyphs ship and CSS shows
-            the one that names what the press will do. */}
+            machine's preference without one. */}
         {/* The two grounds, read out of tokens.css at build time rather than
             off the live cascade. `getComputedStyle(root)` for `--paper`
             returns whichever scheme is showing, so on a machine that prefers
@@ -221,13 +220,22 @@ const current = (path: string) => here.startsWith(href(path));
           data-paper={token("paper")}
           data-paper-dark={token("paper-dark")}
         >
-          {/* Words, not glyphs. The moon and sun characters this button first
+          {/* Drawn, not typed. The moon and sun characters this button first
               used are outside the latin and latin-ext subsets the site ships,
-              so they fell back to whatever the machine had, and
-              doc/ART-DIRECTION.md forbids an emoji used as an icon anyway. The
-              word names the press: `dark` on a light page makes it dark. */}
-          <span class="to-dark" aria-hidden="true">dark</span>
-          <span class="to-light" aria-hidden="true">light</span>
+              so they fell back to whatever the machine had, and an emoji is
+              never an icon here. These two are geometry in the markup: no
+              request, no font, no glyph table to miss them. Both ship and CSS
+              shows the one that names what the press will do - the moon on a
+              light page, because pressing it makes the page dark. */}
+          <svg class="to-dark" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M14 8.53A6 6 0 1 1 7.47 2a4.67 4.67 0 0 0 6.53 6.53z" />
+          </svg>
+          <svg class="to-light" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="3" />
+            <path
+              d="M8 1.1V3.4M8 12.6V14.9M1.1 8H3.4M12.6 8H14.9M3.12 3.12l1.63 1.63M11.25 11.25l1.63 1.63M3.12 12.88l1.63-1.63M11.25 4.75l1.63-1.63"
+            />
+          </svg>
           <span class="visually-hidden">Switch the colour scheme</span>
         </button>
         <button
@@ -391,10 +399,11 @@ const current = (path: string) => here.startsWith(href(path));
         background: var(--paper);
       }
 
-      /* Wordmark left, everything else right. `space-between` did that while
-       * the masthead held two things; the scheme switch made it three and
-       * space-between centred the nav, so the grouping is stated instead of
-       * falling out of the count. */
+      /* Wordmark left, controls right, the nav between them. Every child
+       * states its own order, because a source order that grew a third child
+       * left both controls stranded in the middle of a 390px bar with the
+       * right edge empty, and dropped the switch onto a row of its own below
+       * the sections the moment the menu opened. */
       .masthead-inner {
         display: flex;
         align-items: center;
@@ -404,43 +413,72 @@ const current = (path: string) => here.startsWith(href(path));
         flex-wrap: wrap;
       }
 
-      /* The scheme switch, drawn like the hamburger and shown on the same
-       * handshake: `display: none` until the script sets `data-js`. It sits
-       * last in the source and is pulled to the nav's right, so a reader
-       * tabbing the masthead meets the wordmark, then the sections, then the
-       * control that changes how they look. */
+      .masthead .wordmark {
+        order: 1;
+      }
+      .masthead nav {
+        order: 2;
+      }
       .masthead .scheme-toggle {
-        display: none;
         order: 3;
-        background: none;
-        border: var(--hair) solid var(--boundary);
-        border-radius: 6px;
-        padding: 0.3rem 0.6rem;
-        cursor: pointer;
-        color: var(--graphite);
-        font-family: var(--font-mono);
-        font-size: var(--step--2);
-        line-height: 1.4;
+      }
+      .masthead .menu-toggle {
+        order: 4;
       }
 
       /* The nav takes the slack, so it and the switch sit together at the
-       * right edge whether or not the switch is showing. */
+       * right edge. Below the breakpoint the nav is a row of its own and the
+       * switch takes the slack instead. */
       .masthead nav {
         margin-inline-start: auto;
+      }
+
+      /* One square for both controls, so the pair reads as a pair: same box,
+       * same hairline, same radius, the mark centred in it. Both appear on
+       * the same handshake - `display: none` until the script sets `data-js`
+       * - because a control that cannot remember a choice or unfold a menu is
+       * an ornament. They sit after the nav in the source, so a reader
+       * tabbing the masthead meets the wordmark, then the sections, then the
+       * controls, and the menu items follow the button that opens them. */
+      .masthead .scheme-toggle,
+      .masthead .menu-toggle {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        inline-size: 2.25rem;
+        block-size: 2.25rem;
+        padding: 0;
+        background: none;
+        border: var(--hair) solid var(--boundary);
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--graphite);
       }
 
       .masthead[data-js="true"] .scheme-toggle {
         display: inline-flex;
       }
 
-      .scheme-toggle:hover {
+      .masthead .scheme-toggle:hover,
+      .masthead .menu-toggle:hover {
         border-color: var(--graphite);
       }
 
-      /* One glyph at a time, and it names the press rather than the state:
-       * a moon on a light page means "make it dark". The dark branch is
-       * whatever the page actually is, override or preference, which is why
-       * it is written twice the way tokens.css is. */
+      /* The two marks are drawn at the weight of the rules around them, in
+       * `currentColor`, and shown one at a time. The mark names the press
+       * rather than the state, so a light page offers the moon. The dark
+       * branch is whatever the page actually is, override or preference,
+       * which is why it is written twice the way tokens.css is. */
+      .scheme-toggle svg {
+        inline-size: 1.125rem;
+        block-size: 1.125rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
       .scheme-toggle .to-light {
         display: none;
       }
@@ -450,7 +488,7 @@ const current = (path: string) => here.startsWith(href(path));
           display: none;
         }
         :root:not([data-theme="light"]) .scheme-toggle .to-light {
-          display: inline;
+          display: block;
         }
       }
 
@@ -458,27 +496,14 @@ const current = (path: string) => here.startsWith(href(path));
         display: none;
       }
       :root[data-theme="dark"] .scheme-toggle .to-light {
-        display: inline;
+        display: block;
       }
       :root[data-theme="light"] .scheme-toggle .to-dark {
-        display: inline;
+        display: block;
       }
+
       /* The hamburger: three bars, shown only below the breakpoint and only
        * once the script has claimed the header. */
-      .menu-toggle {
-        display: none;
-        background: none;
-        border: var(--hair) solid var(--boundary);
-        border-radius: 6px;
-        padding: 0.5rem 0.55rem;
-        cursor: pointer;
-        color: var(--ink);
-      }
-
-      .menu-toggle:hover {
-        border-color: var(--graphite);
-      }
-
       .bars {
         display: grid;
         gap: 4px;
@@ -517,9 +542,35 @@ const current = (path: string) => here.startsWith(href(path));
           display: inline-flex;
         }
 
+        /* A thumb, not a pointer: both controls grow to the 44 by 44 target
+         * and sit beside each other at the right edge. The 2rem gap the bar
+         * uses to separate the wordmark from the sections is the wrong
+         * distance between two buttons that belong together. */
+        .masthead-inner {
+          gap: 0.5rem;
+        }
+
+        .masthead .scheme-toggle,
+        .masthead .menu-toggle {
+          inline-size: 2.75rem;
+          block-size: 2.75rem;
+        }
+
+        .masthead .scheme-toggle {
+          margin-inline-start: auto;
+        }
+
+        /* A row of its own, whether it folds or not: with scripts blocked
+         * the sections are a plain list under the wordmark, and with the
+         * script there they unfold into the same place. */
+        .masthead nav {
+          flex-basis: 100%;
+          margin-inline-start: 0;
+        }
+
         .masthead[data-js="true"] nav {
           display: none;
-          flex-basis: 100%;
+          order: 5;
           padding-block: 0.25rem 0.75rem;
         }
 

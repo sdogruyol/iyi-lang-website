@@ -3,15 +3,12 @@
  * A block of the repository, set on a page of this site.
  *
  * `Quote` does this for README.md, against `src/generated/readme.json`. The
- * pages under /tools/, /download/, /targets/ and /project/ lift from a dozen
- * other files (the editors guide, the MCP server, install.sh, the workflow,
- * CONTRIBUTING.md), so their blocks arrive from their own generators instead.
- * What does not change is the rule: text that a page shows in mono is text a
- * generator read out of a file, travelling with the lines it came from, and
- * the citation is on the page rather than in a tooltip.
- *
- * The underscore keeps Astro from routing this file. It is a component that
- * happens to live under pages/ because pages/ is where it is used.
+ * pages under /download/, /targets/ and /project/ lift from other files
+ * (install.sh, the CI workflow, CONTRIBUTING.md), so their blocks arrive from
+ * their own generators instead. What does not change is the rule: text that a
+ * page shows in mono is text a generator read out of a file, travelling with
+ * the lines it came from, and the citation is on the page rather than in a
+ * tooltip.
  *
  * `.source` is the site's existing listing face, which also exempts the block
  * from scripts/prose.mjs: a listing is a token stream, not prose, and scanning

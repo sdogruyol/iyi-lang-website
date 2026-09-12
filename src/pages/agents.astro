@@ -272,12 +272,18 @@ if (!consumer) {
 
   <section>
     <div class="wrap">
-      <h2>The same verbs, over the protocol</h2>
+      <h2>The servers are in the binary</h2>
       <p class="sub">
-        <code>iyi mcp</code> is a shell around the same binary, so there is no
-        agent mode and no forked behaviour. It serves{" "}
-        {wire.tools.map((tool) => <code>{tool}</code>)} over stdio. Same verb,
-        same file, two doors:
+        There is nothing to install and no second implementation to keep in
+        step. <code>iyi lsp</code> speaks the Language Server Protocol to an
+        editor and <code>iyi mcp</code> serves{" "}
+        {wire.tools.map((tool, i) => (
+          <>{i === 0 ? "" : i === wire.tools.length - 1 ? " and " : ", "}<code>{tool}</code></>
+        ))}{" "}
+        as Model Context
+        Protocol tools to a harness, both over stdio, and both are shells
+        around the same front end a build uses. So there is no agent mode and
+        no forked behaviour: same verb, same file, two doors.
       </p>
       <div class="two">
         <div class="console">
@@ -311,8 +317,9 @@ if (!consumer) {
         </dl>
       </Stamped>
       <p class="sub">
-        Each tool's schema and the client configuration are on the{" "}
-        <a href={`${base}tools/mcp/`}>MCP page</a>.
+        Which is why an editor that speaks LSP and a harness that speaks MCP
+        both need nothing new. Every verb either of them can reach is on the
+        command line too, and <code>iyi help</code> lists them.
       </p>
     </div>
   </section>

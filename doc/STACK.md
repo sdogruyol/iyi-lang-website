@@ -57,9 +57,10 @@ site/
   src/
     styles/                 tokens.css, base.css, code.css
     components/             Measure, Stamped, DurationChart, Sample, Quote,
-                            Compare, Frame
-    layouts/Page.astro      masthead, colophon, fonts, styles
-    pages/                  index, why, agents, playground, learn, install
+                            Compare, Frame, Lifted
+    layouts/Page.astro      masthead, colophon, fonts, styles, scheme switch
+    pages/                  index, why, agents, playground, learn, install,
+                            download, targets, project
     playground/             the slot: types, registry, engines
     generated/              build output, gitignored, never edited
 ```

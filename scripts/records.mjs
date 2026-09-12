@@ -420,13 +420,13 @@ if (highlight) {
 }
 
 // ---------------------------------------------------------------------------
-// agent.json and cli.json, verified if they are there
+// agent.json, verified if it is there
 // ---------------------------------------------------------------------------
 
-// These two records arrived after the three above and are produced by their
-// own recorders on a machine with the toolchain. They are checked exactly like
-// the others when they are committed, and their absence is not a problem here:
-// a record whose recorder has not landed yet would otherwise fail every build
+// This record arrived after the three above and is produced by its own
+// recorder on a machine with the toolchain. It is checked exactly like the
+// others when it is committed, and its absence is not a problem here: a
+// record whose recorder has not landed yet would otherwise fail every build
 // in the meantime, and a gate that has to be disabled to get work done is a
 // gate people learn to disable. Once the file exists, every field below is
 // mandatory.
@@ -477,58 +477,6 @@ if (agent) {
   }
 }
 
-const cli = optional("cli.json");
-
-if (cli) {
-  const file = "records/cli.json";
-  checkProvenance("cli.json", cli);
-
-  const usage = cli.usage;
-  if (typeof usage?.text !== "string" || usage.text === "") {
-    problem(file, `has no usage block, so nothing says which verbs exist`);
-  }
-  for (const field of ["from", "to", "source"]) {
-    if (usage && usage[field] === undefined) {
-      problem(file, `usage names no ${field}, so the quote cannot be cited`);
-    }
-  }
-  if (!Array.isArray(cli.verbs) || cli.verbs.length === 0) {
-    problem(file, `records no verbs`);
-  } else {
-    for (const verb of cli.verbs) {
-      const name = verb?.name;
-      if (typeof name !== "string" || name === "") {
-        problem(file, `has a verb with no name`);
-        continue;
-      }
-      if (typeof verb.help !== "string" || verb.help === "") {
-        problem(file, `verb "${name}" records no help text`);
-        continue;
-      }
-      // The count is a fact about the text beside it, so it is recomputed
-      // rather than believed: a record written before a verb's help changed
-      // would otherwise cite a length nothing has.
-      const lines = verb.help.replace(/\n$/, "").split("\n").length;
-      if (verb.lines !== lines) {
-        problem(
-          file,
-          `verb "${name}" says its help is ${verb.lines} lines and the ` +
-            `recorded text is ${lines}`,
-        );
-      }
-      // A verb the usage block does not name is a verb the page would list
-      // out of nowhere, which is how a renamed subcommand survives on a site
-      // after it stops existing in the tree.
-      if (typeof usage?.text === "string" && !usage.text.includes(name)) {
-        problem(
-          file,
-          `verb "${name}" does not appear in the usage block it was taken ` +
-            `from. Regenerate with: npm run record:cli`,
-        );
-      }
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // The per-sample entries the browser gets
@@ -706,6 +654,5 @@ console.log(
     `${entries.length} playground entries written to src/generated/playground/` +
     (marked ? ` (${marked} carrying a recorded diagnostic)` : "") +
     (agent ? ", agent record verified" : "") +
-    (cli ? `, ${cli.verbs?.length ?? 0} cli verbs verified` : "") +
     `, recorded at ${manifest.recorded.commit.slice(0, 9)}`,
 );

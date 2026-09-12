@@ -80,8 +80,9 @@ for Type\` lives with the trait or the type (R-3).
   runs (\`${pack.command}\`). The loop is one verb per step, and every step of
   it is recorded from a real run at ${origin}/agents/:
 ${loopFrames}
-  \`iyi mcp\` serves ${agent.wire.tools.length} of those verbs over MCP stdio as the tools
-  ${agent.wire.tools.map((t) => `\`${t}\``).join(", ")}, and \`iyi lsp\` serves the same front end to an
+  Both servers are in the binary, with nothing to install: \`iyi mcp\` serves
+  ${agent.wire.tools.length} of those verbs over MCP stdio as the tools
+  ${agent.wire.tools.map((t) => `\`${t}\``).join(", ")}, and \`iyi lsp\` speaks LSP over stdio to an
   editor. The answer over the wire is byte for byte the answer in a shell:
   ${agent.recorded.command} compares them on every recording and refuses to write
   the record when they differ.
@@ -115,10 +116,6 @@ an iyi module; iyi consumes Crystal, not the other way round.
 - [Playground](${origin}/playground/): the tour, ${tourSections.reduce((n, x) => n + x.steps.length, 0)} short programs that run in the browser.
 - [Playground evidence](${origin}/playground/evidence/): what ran, what checked it.
 - [For your agents](${origin}/agents/): the loop above as a transcript, every frame a real run.
-- [Tools](${origin}/tools/): the hub. Every verb, the editor clients, the MCP catalogue.
-- [CLI reference](${origin}/tools/cli/): every dispatched verb's own \`--help\`, recorded.
-- [Editors](${origin}/tools/editor/): \`iyi lsp\` over stdio, and the stanza each client needs.
-- [MCP](${origin}/tools/mcp/): the five tools with their inputSchemas, and the client configuration.
 - [Download](${origin}/download/): every artifact, the \`uname\` pair it is for, and how to verify it.
 - [Targets](${origin}/targets/): what CI type-checks, audits and runs, per triple.
 - [Project](${origin}/project/): contributing, security, the code of conduct, the notices.
